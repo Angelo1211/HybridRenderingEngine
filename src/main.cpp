@@ -4,21 +4,19 @@
 // PURPOSE      : Program initialization and shutdown
 // ===============================
 
-//#include "engine.h"
-#include "SDL.h"
+#include "engine.h"
 #include <stdio.h>
 
 int main( int argc, char* args[] ){
-    // Engine SSGE; //"Simple" Software Graphics Engine
-    // if(SSGE.startUp()){
-    //     SSGE.run();
-    // }
-    // else{
-    //     printf("SSGE could not initialize successfully. Shutting down.\n");
-    // }
-    // SSGE.shutDown();
 
-    printf("HRE could not load!\n");
+    Engine HRE; //Hybrid Rendering Engine
+    if(HRE.startUp()){
+        HRE.run();
+    }
+    else{
+        printf("HRE could not initialize successfully. Shutting down.\n");
+    }
+    HRE.shutDown();
 
     return 0;
 }

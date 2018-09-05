@@ -7,7 +7,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/modules")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(SDL2_PATH "C:\\vs_dev_lib\\SDL2-2.0.8-MinGW")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  # using Intel C++
+  # using Intel C++ (Does nothing yet)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   set(SDL2_PATH "C:\\vs_dev_lib\\SDL2-2.0.8-MSVC")
 endif()
@@ -17,7 +17,10 @@ find_package(SDL2 REQUIRED)
 find_package(OpenMP REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR} include libs)
 
+# Some useful compiler flags that are not used now
 #-fopt-info-vec-all -xCORE-AVX2 -no-prec-sqrt -g -ffast-math -static -static-libgcc -static-libstdc++ 
+
+
 file(GLOB source_files "*.h" "*.cpp" "src/*.cpp" "include/*.h" "libs/*.h")
 add_executable(softwareRenderer ${source_files})
 
