@@ -1,12 +1,13 @@
 // ===============================
 // AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-07-10
+// CREATE DATE  : 2018-09-05
 // ===============================
 
 //Includes
 #include "displayManager.h"
 #include <cstdio>
 #include <cstring>
+#include "glad/glad.h"
 
 //Dummy constructors/destructors
 DisplayManager::DisplayManager(){}
@@ -20,14 +21,42 @@ bool DisplayManager::startUp(){
         success = false;
     }
     else{
-        if( !createWindow() ){
-            success = false;
-        }
-        else{
-            if( !createScreenSurface() ){
-                success = false;
-            }
-        }
+        // if( !createWindow() ){
+        //     success = false;
+        // }
+        SDL_GL_LoadLibrary(NULL);
+
+        // Request an OpenGL 4.5 context (should be core)
+        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+
+        // Also request a depth buffer
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        mWindow = SDL_CreateWindow(
+            "Hybrid Renderer", 
+            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+            SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL
+        );
+        
+        mContext = SDL_GL_CreateContext(mWindow);
+
+        //Checking OpenGL properties
+        gladLoadGLLoader(SDL_GL_GetProcAddress);
+
+        printf("Vendor:   %s\n", glGetString(GL_VENDOR));
+        printf("Renderer: %s\n", glGetString(GL_RENDERER));
+        printf("Version:  %s\n", glGetString(GL_VERSION));        
+
+        
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+
+        int w,h;
+        SDL_GetWindowSize(mWindow, &w, &h);
+        glViewport(0, 0, w, h);
+        glClearColor(0.0f, 0.5f, 1.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     return success;
 }
@@ -42,17 +71,17 @@ void DisplayManager::shutDown(){
 
 //Applies the rendering results to the window screen by copying the pixelbuffer values
 //to the screen surface.
-void DisplayManager::swapBuffers(Buffer<Uint32> *pixels){
-    //Allows surface editing 
-    SDL_LockSurface(mSurface);
+void DisplayManager::swapBuffers(){
+    // //Allows surface editing 
+    // SDL_LockSurface(mSurface);
 
-    //Copy pixels buffer resuls to screen surface
-    std::memcpy(mSurface->pixels, pixels->buffer, pixels->mHeight*pixels->mPitch);
-    SDL_UnlockSurface(mSurface);
+    // //Copy pixels buffer resuls to screen surface
+    // std::memcpy(mSurface->pixels, pixels->buffer, pixels->mHeight*pixels->mPitch);
+    // SDL_UnlockSurface(mSurface);
 
-    //Apply surface changes to window
-    SDL_UpdateWindowSurface(mWindow);
-
+    // //Apply surface changes to window
+    // SDL_UpdateWindowSurface(mWindow);
+    SDL_GL_SwapWindow(mWindow);
 }
 
 //Entry point to SDL
@@ -65,24 +94,24 @@ bool DisplayManager::startSDL(){
 }
 
 //Inits window with the display values crated at compile time
-bool DisplayManager::createWindow(){
-    mWindow = SDL_CreateWindow( "SoftwareRenderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-    if( mWindow == nullptr){
-        printf("Could not create window. Error: %s\n", SDL_GetError() );
-        return false;
-    }
-    return true;
-}
+// bool DisplayManager::createWindow(){
+//     mWindow = SDL_CreateWindow( "SoftwareRenderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+//     if( mWindow == nullptr){
+//         printf("Could not create window. Error: %s\n", SDL_GetError() );
+//         return false;
+//     }
+//     return true;
+// }
 
 //Gets the screen surface
 //I know this is "Old" SDL and it's not really recommended anymore
 //But given that I am doing 100% cpu based rendering it makes sense
-//After all I'm not usin any of the new functionality
-bool DisplayManager::createScreenSurface(){
-    mSurface = SDL_GetWindowSurface(mWindow);
-    if(mSurface == NULL){
-        printf("Could not create window surface. Error: %s\n", SDL_GetError());
-        return false;
-    }
-    return true;
-}
+// //After all I'm not usin any of the new functionality
+// bool DisplayManager::createScreenSurface(){
+//     mSurface = SDL_GetWindowSurface(mWindow);
+//     if(mSurface == NULL){
+//         printf("Could not create window surface. Error: %s\n", SDL_GetError());
+//         return false;
+//     }
+//     return true;
+// }

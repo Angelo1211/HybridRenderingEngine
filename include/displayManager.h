@@ -2,17 +2,14 @@
 #define DISPLAYMANAGER_H
 // ===============================
 // AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-07-10
-// PURPOSE      : Manages the SDL screen itself and drawing to the display. 
+// CREATE DATE  : 2018-09-05
+// PURPOSE      : TODO
 // ===============================
-// SPECIAL NOTES: Uses the old SDL1.2 backend because it's significantly faster
-// for  pure software rendering. Using the new one would incur a 6ms penalty even on 
-// empty frames. Probably has to do with sending data to the gpu every frame.
+// SPECIAL NOTES: TODO 
 // ===============================
 
 //Includes
 #include "SDL.h"
-#include "buffer.h"
 
 class DisplayManager{
     public:
@@ -32,17 +29,18 @@ class DisplayManager{
         void shutDown();
 
         //Swaps the pixel buffer with the window surface buffer and draws to screen
-        void swapBuffers(Buffer<Uint32> *pixelBuffer);
+        void swapBuffers();
 
     private:
         //Wrappers for SDL init functions
         bool startSDL();
-        bool createWindow();
-        bool createScreenSurface();
+        // bool createWindow();
+        // bool createScreenSurface();
 
         //Pointers to the SDL window and surface
-        SDL_Surface  *mSurface;
+        // SDL_Surface  *mSurface;
         SDL_Window   *mWindow;
+        SDL_GLContext mContext;
 };
 
 #endif

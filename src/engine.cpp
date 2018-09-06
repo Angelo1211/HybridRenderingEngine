@@ -18,7 +18,10 @@ bool Engine::startUp(){
     //Start up of all SDL Display related content
     if( !gDisplayManager.startUp() ){
         success = false;
-        printf("Failed to initialize window manager.\n");
+        printf("Failed to initialize window display manager.\n");
+    }
+    else{
+
     }
     // else{
     //     //Initis scene manager and loads default scene
@@ -75,11 +78,25 @@ void Engine::run(){
     unsigned int start = 0;;
     unsigned int total = 0;
 
+    //Temp stuff ignore for now
+    SDL_Event event;
+
     printf("Entered Main Loop!\n");
     while(!done){
         ++count;
         start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
+        
 
+
+        //TEMP TEMP TEMP
+        gDisplayManager.swapBuffers();
+        while( SDL_PollEvent(&event) ){
+            if(event.type == SDL_QUIT){
+                done = true;
+            }
+        }
+
+        
         // //Handle all user input
         // //Any changes to the scene are directly sent to the respective objects in
         // //the scene class. Also sets exit flag based on user input.
