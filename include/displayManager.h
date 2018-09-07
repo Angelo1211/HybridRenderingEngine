@@ -5,7 +5,7 @@
 // CREATE DATE  : 2018-09-05
 // PURPOSE      : TODO
 // ===============================
-// SPECIAL NOTES: TODO 
+// SPECIAL NOTES: TODO update comments
 // ===============================
 
 //Includes
@@ -24,12 +24,13 @@ class DisplayManager{
         DisplayManager();
         ~DisplayManager();
 
+        // TODO
         //Initializes SDL context and creates window according to above values
         bool startUp();
         void shutDown();
 
-        //Swaps the pixel buffer with the window surface buffer and draws to screen
-        void swapBuffers();
+        //TODO
+        void update();
 
     private:
         //Wrappers for SDL init functions
@@ -38,7 +39,6 @@ class DisplayManager{
         // bool createScreenSurface();
 
         //Pointers to the SDL window and surface
-        // SDL_Surface  *mSurface;
         SDL_Window   *mWindow;
         SDL_GLContext mContext;
 };

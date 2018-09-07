@@ -6,7 +6,6 @@
 //Includes
 #include "displayManager.h"
 #include <cstdio>
-#include <cstring>
 #include "glad/glad.h"
 
 //Dummy constructors/destructors
@@ -56,7 +55,9 @@ bool DisplayManager::startUp(){
         SDL_GetWindowSize(mWindow, &w, &h);
         glViewport(0, 0, w, h);
         glClearColor(0.0f, 0.5f, 1.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
     }
     return success;
 }
@@ -64,6 +65,7 @@ bool DisplayManager::startUp(){
 //Closes down sdl and destroys window.
 //SDL surface is also destroyed in the call to destroy window
 void DisplayManager::shutDown(){
+    SDL_GL_DeleteContext(mContext); 
     SDL_DestroyWindow(mWindow);
     mWindow = nullptr;
     SDL_Quit();
@@ -71,16 +73,8 @@ void DisplayManager::shutDown(){
 
 //Applies the rendering results to the window screen by copying the pixelbuffer values
 //to the screen surface.
-void DisplayManager::swapBuffers(){
-    // //Allows surface editing 
-    // SDL_LockSurface(mSurface);
+void DisplayManager::update(){
 
-    // //Copy pixels buffer resuls to screen surface
-    // std::memcpy(mSurface->pixels, pixels->buffer, pixels->mHeight*pixels->mPitch);
-    // SDL_UnlockSurface(mSurface);
-
-    // //Apply surface changes to window
-    // SDL_UpdateWindowSurface(mWindow);
     SDL_GL_SwapWindow(mWindow);
 }
 

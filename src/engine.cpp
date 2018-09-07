@@ -7,6 +7,8 @@
 #include "engine.h"
 #include <stdio.h>
 #include "SDL.h"
+#include "glad/glad.h"
+#include <math.h>
 
 //Dummy constructors and destructors
 Engine::Engine(){}
@@ -63,8 +65,8 @@ void Engine::shutDown(){
     // gSceneManager.shutDown();
     // printf("Closed Scene manager.\n");
     
-    // gDisplayManager.shutDown();
-    // printf("Closed display manager.\n");
+     gDisplayManager.shutDown();
+    printf("Closed display manager.\n");
 }
 
 //Runs main application loop 
@@ -79,8 +81,84 @@ void Engine::run(){
     unsigned int total = 0;
 
     //Temp stuff ignore for now
+    //---------------------------------------------------------------------------------------
+  
     SDL_Event event;
+    
+    //GPU Memory stuff
+    float vertices[] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f,  0.5f, 0.0f
+    };  
+    //Init VBO
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
 
+    //Init VAO
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+
+    glBindVertexArray(VAO);
+
+
+    //Copy data into VBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    //Set the pointers to the beginning of the vertex attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    
+
+
+
+    //Vertex shader stuff
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_ARRAY);
+
+    const char *vertexSource = "#version 450 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "layout (location = 1) in vec3 aColor;\n"
+    "out vec3 ourColor;\n"
+    "void main()\n"
+    "{\n"
+    "   gl_Position = vec4(aPos, 1.0);\n"
+    "   ourColor = aColor;\n"
+    "}\0";
+
+    glShaderSource(vertexShader, 1, &vertexSource, NULL);
+    glCompileShader(vertexShader);
+
+
+    //Fragment shader stuff
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    const char *fragmentSource = "#version 450 core\n"
+    "out vec4 FragColor;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "}\n\0";
+
+    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+    glCompileShader(fragmentShader);
+
+    //Shader program stuff
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+
+    //---------------------------------------------------------------------------------------
     printf("Entered Main Loop!\n");
     while(!done){
         ++count;
@@ -88,16 +166,42 @@ void Engine::run(){
         
 
 
-        //TEMP TEMP TEMP
-        gDisplayManager.swapBuffers();
+        
+        //TEMP input processing
         while( SDL_PollEvent(&event) ){
             if(event.type == SDL_QUIT){
                 done = true;
             }
         }
 
-        
-        // //Handle all user input
+
+
+        //TEMP Rendering
+        double intpart;
+        glClearColor(0.0f, 0.5f , 1.0f, 0.0f);
+
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gDisplayManager.update();
+
+
+
+
+
+
+        //Monitoring time taken per frame to gauge engine performance
+        deltaT = SDL_GetTicks() - start;
+        printf("%2.1d: Frame elapsed time (ms):%d\n",count, deltaT);
+        total += deltaT;
+    }
+    printf("Closing down engine.\n");
+    printf("Average frame time over %2.1d frames:%2.fms.\n", count, total/(float)count);
+}
+
+
+ // //Handle all user input
         // //Any changes to the scene are directly sent to the respective objects in
         // //the scene class. Also sets exit flag based on user input.
         // gInputManager.processInput(done, deltaT);
@@ -108,12 +212,3 @@ void Engine::run(){
 
         // //Contains the render setup and actual software rendering loop
         // gRenderManager.render();
-
-        //Monitoring time taken per frame to gauge engine performance
-        deltaT = SDL_GetTicks() - start;
-        printf("%2.1d: Frame elapsed time (ms):%d\n",count, deltaT);
-        total += deltaT;
-    }
-    printf("Closing down engine.\n");
-    printf("Average frame time over %2.1d frames:%2.fms.\n", count, total/(float)count);
-}
