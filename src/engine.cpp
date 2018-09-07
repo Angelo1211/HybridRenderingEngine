@@ -82,80 +82,112 @@ void Engine::run(){
 
     //Temp stuff ignore for now
     //---------------------------------------------------------------------------------------
-  
+    
+    //Raw shader data
+    // const char *vertexSource = "#version 450 core\n"
+    // "layout (location = 0) in vec3 aPos;\n"
+    // "out vec4 vertexColor;\n"
+    // "void main()\n"
+    // "{\n"
+    // "   gl_Position = vec4(aPos, 1.0);\n"
+    // "   vertexColor = vec4(0.5, 0.0, 0.5, 1.0);\n"
+    // "}\0";
+
+    const char *vertexSource = "#version 450 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "void main()\n"
+    "{\n"
+    "   gl_Position = vec4(aPos, 1.0);\n"
+    "}\0";
+
+    const char *fragmentSource = "#version 450 core\n"
+    "out vec4 FragColor;\n"
+    "uniform vec4 uniformColor;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor  = uniformColor;\n"
+    "}\n\0";
+
+     //Vertex shader stuff
+    int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexSource, NULL);
+    glCompileShader(vertexShader);
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if(!success){
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        printf("Vertex shader compilation failed %s\n", infoLog );
+    }
+
+    //Fragment shader stuff
+    int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+    glCompileShader(fragmentShader);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if(!success){
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        printf("Fragment shader compilation failed %s\n", infoLog );
+    }
+
+    //Linking shaders
+    int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success){
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        printf("Shader Linking failed %s\n", infoLog );
+    }
+
+    //Deleting shaders
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
     SDL_Event event;
     
-    //GPU Memory stuff
+    //Vertex data 
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f,  0.5f, 0.0f
+     0.5f,  0.5f, 0.0f,  // top right
+     0.5f, -0.5f, 0.0f,  // bottom right
+    -0.5f, -0.5f, 0.0f,  // bottom left
+    -0.5f,  0.5f, 0.0f   // top left 
+    };
+    unsigned int indices[] = {  // note that we start from 0!
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle
     };  
-    //Init VBO
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
 
-    //Init VAO
-    unsigned int VAO;
+
+    //Init VBO, VAO
+    unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
-
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    
+    //Bind vertex array object first
     glBindVertexArray(VAO);
 
-
-    //Copy data into VBO
+    //Bind and set vertex buffers
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    //Bind and set element buffers
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     //Set the pointers to the beginning of the vertex attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    //Unbinding VBO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    //Unbinding vertex array
+    glBindVertexArray(0);
     
-
-
-
-    //Vertex shader stuff
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_ARRAY);
-
-    const char *vertexSource = "#version 450 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "layout (location = 1) in vec3 aColor;\n"
-    "out vec3 ourColor;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos, 1.0);\n"
-    "   ourColor = aColor;\n"
-    "}\0";
-
-    glShaderSource(vertexShader, 1, &vertexSource, NULL);
-    glCompileShader(vertexShader);
-
-
-    //Fragment shader stuff
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    const char *fragmentSource = "#version 450 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\n\0";
-
-    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-    glCompileShader(fragmentShader);
-
-    //Shader program stuff
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 
 
     //---------------------------------------------------------------------------------------
@@ -177,13 +209,17 @@ void Engine::run(){
 
 
         //TEMP Rendering
-        double intpart;
-        glClearColor(0.0f, 0.5f , 1.0f, 0.0f);
+        glClearColor(0.0f, 0.5f , 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
+        float greenVal = (sin(start/1000.0f)+1.0f) * 2.0f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "uniformColor");
         glUseProgram(shaderProgram);
+        glUniform4f(vertexColorLocation, 0.0f, greenVal, 0.0f, 1.0f);
+
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+       
         gDisplayManager.update();
 
 
@@ -196,8 +232,9 @@ void Engine::run(){
         printf("%2.1d: Frame elapsed time (ms):%d\n",count, deltaT);
         total += deltaT;
     }
-    printf("Closing down engine.\n");
-    printf("Average frame time over %2.1d frames:%2.fms.\n", count, total/(float)count);
+    printf("\nPerformance Stats:\n------------------\n");
+    printf("Average frame time over %2.1d frames:%2.fms.\n\n", count, total/(float)count);
+    printf("Closing down engine...\n");
 }
 
 
