@@ -30,15 +30,16 @@ class DisplayManager{
         void shutDown();
 
         //TODO
-        void update();
+        void swapDisplayBuffer();
 
     private:
-        //Wrappers for SDL init functions
+        //Init functions
         bool startSDL();
-        // bool createWindow();
-        // bool createScreenSurface();
+        bool startOpenGL();
+        bool createWindow();
+        bool createGLContext();
 
-        //Pointers to the SDL window and surface
+        //Pointers to the SDL window and OpenGL Context
         SDL_Window   *mWindow;
         SDL_GLContext mContext;
 };

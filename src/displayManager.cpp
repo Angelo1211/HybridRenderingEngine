@@ -13,56 +13,31 @@ DisplayManager::DisplayManager(){}
 DisplayManager::~DisplayManager(){}
 
 //Initializes the window and obtains the surface on which we draw.
-//Also first place where SDL is initialized. 
+//Also first place where SDL and the OpenGL Context is initialized.
 bool DisplayManager::startUp(){
     bool success = true;
     if( !startSDL() ){
         success = false;
     }
     else{
-        // if( !createWindow() ){
-        //     success = false;
-        // }
-        SDL_GL_LoadLibrary(NULL);
-
-        // Request an OpenGL 4.5 context (should be core)
-        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-
-        // Also request a depth buffer
-        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-        mWindow = SDL_CreateWindow(
-            "Hybrid Renderer", 
-            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL
-        );
-        
-        mContext = SDL_GL_CreateContext(mWindow);
-
-        //Checking OpenGL properties
-        gladLoadGLLoader(SDL_GL_GetProcAddress);
-
-        printf("Vendor:   %s\n", glGetString(GL_VENDOR));
-        printf("Renderer: %s\n", glGetString(GL_RENDERER));
-        printf("Version:  %s\n", glGetString(GL_VERSION));        
-
-        
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
-
-        int w,h;
-        SDL_GetWindowSize(mWindow, &w, &h);
-        glViewport(0, 0, w, h);
-        glClearColor(0.0f, 0.5f, 1.0f, 0.0f);
-
-
+        if( !startOpenGL() ){
+            success = false;
+        }
+        else{
+            if (!createWindow()){
+                success = false;
+            }
+            else{
+                if( !createGLContext()){
+                    success = false;
+                }
+            }
+        }
     }
     return success;
 }
 
-//Closes down sdl and destroys window.
-//SDL surface is also destroyed in the call to destroy window
+//Closes down the opengl context and sdl, also destroys window.
 void DisplayManager::shutDown(){
     SDL_GL_DeleteContext(mContext); 
     SDL_DestroyWindow(mWindow);
@@ -70,11 +45,27 @@ void DisplayManager::shutDown(){
     SDL_Quit();
 }
 
-//Applies the rendering results to the window screen by copying the pixelbuffer values
-//to the screen surface.
-void DisplayManager::update(){
-
+//Swaps the finished drawn buffer with the window bufffer.
+void DisplayManager::swapDisplayBuffer(){
     SDL_GL_SwapWindow(mWindow);
+}
+
+//Entry point to OpenGL
+bool DisplayManager::startOpenGL(){
+    if(SDL_GL_LoadLibrary(NULL) != 0 ){
+        printf("Failed to initialize OpenGL. Error: %s\n", SDL_GetError() );
+        return false;
+    }
+    else{
+        // Request an OpenGL 4.5 context (should be core)
+        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+
+        // Also request a depth buffer
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    }
+    return true;
 }
 
 //Entry point to SDL
@@ -86,25 +77,43 @@ bool DisplayManager::startSDL(){
     return true;
 }
 
-//Inits window with the display values crated at compile time
-// bool DisplayManager::createWindow(){
-//     mWindow = SDL_CreateWindow( "SoftwareRenderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-//     if( mWindow == nullptr){
-//         printf("Could not create window. Error: %s\n", SDL_GetError() );
-//         return false;
-//     }
-//     return true;
-// }
+//TODO
+bool DisplayManager::createWindow(){
+    mWindow = SDL_CreateWindow( "Hybrid Renderering Engine", 
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+        SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
+    if( mWindow == nullptr){
+        printf("Could not create window. Error: %s\n", SDL_GetError() );
+        return false;
+    }
+    return true;
+}
 
-//Gets the screen surface
-//I know this is "Old" SDL and it's not really recommended anymore
-//But given that I am doing 100% cpu based rendering it makes sense
-// //After all I'm not usin any of the new functionality
-// bool DisplayManager::createScreenSurface(){
-//     mSurface = SDL_GetWindowSurface(mWindow);
-//     if(mSurface == NULL){
-//         printf("Could not create window surface. Error: %s\n", SDL_GetError());
-//         return false;
-//     }
-//     return true;
-// }
+//Todo
+bool DisplayManager::createGLContext(){
+    mContext = SDL_GL_CreateContext(mWindow);
+    if(mContext == nullptr){
+        printf("Could not create OpenGL context. Error: %s\n", SDL_GetError() );
+        return false;
+    }
+    else{
+        if (!gladLoadGLLoader(SDL_GL_GetProcAddress)){
+            printf("GLAD could not load SDL Context.");
+            return false;
+        }
+        else{
+            //Vendor Information
+            printf("Vendor:   %s\n", glGetString(GL_VENDOR));
+            printf("Renderer: %s\n", glGetString(GL_RENDERER));
+            printf("Version:  %s\n", glGetString(GL_VERSION));
+
+            //TODO: move this somewhere else
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            int w, h;
+            SDL_GetWindowSize(mWindow, &w, &h);
+            glViewport(0, 0, w, h);
+            return true;
+        }
+    }
+}

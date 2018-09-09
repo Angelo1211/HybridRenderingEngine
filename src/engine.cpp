@@ -8,9 +8,10 @@
 #include "SDL.h"
 #include "glad/glad.h"
 #include "shader.h"
+#include <assimp/Importer.hpp>
+
 #include <math.h>
 #include <stdio.h>
-
 //Dummy constructors and destructors
 Engine::Engine(){}
 Engine::~Engine(){}
@@ -24,34 +25,31 @@ bool Engine::startUp(){
         printf("Failed to initialize window display manager.\n");
     }
     else{
-
+        //Initis scene manager and loads default scene
+        // if( !gSceneManager.startUp() ){
+        //     success = false;
+        //     printf("Failed to initialize scene manager.\n");
+        // }
+        // else{
+        //     //Initializes rendererer manager, which is in charge of high level
+        //     //rendering tasks (render queue, locating render scene etc)
+        //     //It gets passed references to the other major subsystems for use later
+        //     //on setup of the render queue.
+        //     if( !gRenderManager.startUp(gDisplayManager, gSceneManager) ){
+        //         success = false;
+        //         printf("Failed to initialize render manager.\n");
+        //     }
+        //     else{
+        //         //Initializing input manager that manages all mouse, keyboard and
+        //         //mousewheel input. It needs access to the scene manager to apply the
+        //         //changes on the scene caused by user input. 
+        //         if ( !gInputManager.startUp(gSceneManager) ){
+        //             success = false;
+        //             printf("Failed to initialize input manager.\n");
+        //         }
+        //     }
+        // }
     }
-    // else{
-    //     //Initis scene manager and loads default scene
-    //     if( !gSceneManager.startUp() ){
-    //         success = false;
-    //         printf("Failed to initialize scene manager.\n");
-    //     }
-    //     else{
-    //         //Initializes rendererer manager, which is in charge of high level
-    //         //rendering tasks (render queue, locating render scene etc)
-    //         //It gets passed references to the other major subsystems for use later
-    //         //on setup of the render queue.
-    //         if( !gRenderManager.startUp(gDisplayManager, gSceneManager) ){
-    //             success = false;
-    //             printf("Failed to initialize render manager.\n");
-    //         }
-    //         else{
-    //             //Initializing input manager that manages all mouse, keyboard and
-    //             //mousewheel input. It needs access to the scene manager to apply the
-    //             //changes on the scene caused by user input. 
-    //             if ( !gInputManager.startUp(gSceneManager) ){
-    //                 success = false;
-    //                 printf("Failed to initialize input manager.\n");
-    //             }
-    //         }
-    //     }
-    // }
     return success;
 }
 
@@ -84,17 +82,10 @@ void Engine::run(){
     //Temp stuff ignore for now
     //---------------------------------------------------------------------------------------
     
-    //Raw shader data
-    // const char *vertexSource = "#version 450 core\n"
-    // "layout (location = 0) in vec3 aPos;\n"
-    // "out vec4 vertexColor;\n"
-    // "void main()\n"
-    // "{\n"
-    // "   gl_Position = vec4(aPos, 1.0);\n"
-    // "   vertexColor = vec4(0.5, 0.0, 0.5, 1.0);\n"
-    // "}\0";
-
     SDL_Event event;
+
+    //Init Shader
+    Shader basicShader("basicShader.vert", "basicShader.frag");
     
     //Vertex data 
     float vertices[] = {
@@ -103,9 +94,6 @@ void Engine::run(){
     -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
      0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
     };
-
-    //Init Shader
-    Shader basicShader("basicShader.vert", "basicShader.frag");
 
     //Init VBO, VAO
     unsigned int VBO, VAO;
@@ -169,11 +157,7 @@ void Engine::run(){
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
        
-        gDisplayManager.update();
-
-
-
-
+        gDisplayManager.swapDisplayBuffer();
 
 
         //Monitoring time taken per frame to gauge engine performance

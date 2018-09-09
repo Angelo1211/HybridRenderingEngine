@@ -45,9 +45,6 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
             const char* vShaderCode = vertexCode.c_str();
             const char* fShaderCode = fragmentCode.c_str();
 
-            printf("%s\n",vShaderCode);
-            SDL_Delay(3000);
-
             //Vertex shader stuff
             int vertexShader = glCreateShader(GL_VERTEX_SHADER);
             glShaderSource(vertexShader, 1, &vShaderCode, NULL);
