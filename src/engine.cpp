@@ -8,8 +8,9 @@
 #include "SDL.h"
 #include "glad/glad.h"
 #include "shader.h"
-#include <assimp/Importer.hpp>
+#include "glm/glm.hpp"
 
+#include <assimp/Importer.hpp>
 #include <math.h>
 #include <stdio.h>
 //Dummy constructors and destructors

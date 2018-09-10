@@ -33,7 +33,7 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
         else{ //Frgment shader file exists
             vShaderStream << vShaderFile.rdbuf();    
             fShaderStream << fShaderFile.rdbuf();    
-
+            
             //Close Files
             vShaderFile.close();
             fShaderFile.close();
