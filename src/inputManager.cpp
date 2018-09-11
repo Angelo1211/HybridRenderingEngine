@@ -1,10 +1,12 @@
 // ===============================
 // AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-07-02
+// CREATE DATE  : 2018-07-11
 // ===============================
 
 //Headers
 #include "inputManager.h"
+#include <string>
+#include "glm/glm.hpp"
 
 //Dummy constructors and destructors
 InputManager::InputManager(){}
@@ -23,12 +25,15 @@ void InputManager::shutDown(){
     //Nothing to do yet
 }
 
+void InputManager::setCamera(Camera *testCamera){
+    sceneCamera = testCamera;
+}
+
 //Goes through the list of every event that has occurred since the last call
 //of this function and either performs and exit or sends the result to the even handler
 void InputManager::processInput(bool &done, unsigned int deltaT){
     SDL_Event event;
     while(SDL_PollEvent(&event)){
-
         //First check if user requests an exit
         if(event.type == SDL_QUIT){
             done = true;
@@ -51,7 +56,7 @@ void InputManager::processInput(bool &done, unsigned int deltaT){
 void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int deltaT){
     //Normally would be multiplied by deltaT but caused issues with large fps 
     //differences
-    float speed = sceneCamera->camSpeed;// * deltaT;
+    float speed = sceneCamera->camSpeed *  deltaT;
 
     //Handling keyboard input
     if( event->type == SDL_KEYDOWN ){
@@ -65,33 +70,33 @@ void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int delta
         switch( event->key.keysym.sym )
         {   
             //SCENE CODE
-            case SDLK_1:
-            sceneID = "teapotSingle";
-            break;
+            // case SDLK_1:
+            // sceneID = "teapotSingle";
+            // break;
 
-            case SDLK_2:
-            sceneID = "teapotMultiMaterial";
-            break;
+            // case SDLK_2:
+            // sceneID = "teapotMultiMaterial";
+            // break;
 
-            case SDLK_3:
-            sceneID = "chest";
-            break;
+            // case SDLK_3:
+            // sceneID = "chest";
+            // break;
 
-            case SDLK_4:
-            sceneID = "firehydrant";
-            break;
+            // case SDLK_4:
+            // sceneID = "firehydrant";
+            // break;
 
-            case SDLK_5:
-            sceneID = "cerberus";
-            break;
+            // case SDLK_5:
+            // sceneID = "cerberus";
+            // break;
 
-            case SDLK_6:
-            sceneID = "statue";
-            break;
+            // case SDLK_6:
+            // sceneID = "statue";
+            // break;
 
-            case SDLK_7:
-            sceneID = "multipleMesh";
-            break;
+            // case SDLK_7:
+            // sceneID = "multipleMesh";
+            // break;
 
             //WINDOW CONTROL OPTIONS
             case SDLK_ESCAPE:
@@ -164,19 +169,19 @@ void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int delta
 
         //Only switch scene if a scene-key (1-5) was pressed
         //Exit if the scene could not be loaded for some reason
-        if ( sceneID != "0" ){
-            if( !sceneController->switchScene(sceneID) ){
-                printf("Failed to switch scene! Quitting.\n");
-                done = true;
-                return;
-            }
-            else{
-                printf("Loaded %s Scene.\n", sceneID.c_str());
-                sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
-                sceneCamera->resetCamera(); 
-            }
+        // if ( sceneID != "0" ){
+        //     if( !sceneController->switchScene(sceneID) ){
+        //         printf("Failed to switch scene! Quitting.\n");
+        //         done = true;
+        //         return;
+        //     }
+        //     else{
+        //         printf("Loaded %s Scene.\n", sceneID.c_str());
+        //         sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
+        //         sceneCamera->resetCamera(); 
+        //     }
 
-        }
+        // }
     }
     //Handling Mouse Motion
     else if( event->type == SDL_MOUSEMOTION){
@@ -202,8 +207,8 @@ void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int delta
             sceneCamera->front.x = cos( sceneCamera->pitch * M_PI / 180.0f ) * cos( sceneCamera->yaw * M_PI / 180.0f );
             sceneCamera->front.y = sin( sceneCamera->pitch * M_PI / 180.0f );
             sceneCamera->front.z = cos( sceneCamera->pitch * M_PI / 180.0f ) * sin( sceneCamera->yaw * M_PI / 180.0f );
-            sceneCamera->front   = sceneCamera->front.normalized();
-            sceneCamera->side    = sceneCamera->front.crossProduct(sceneCamera->up);
+            sceneCamera->front   = glm::normalize(sceneCamera->front);
+            sceneCamera->side    = glm::cross(sceneCamera->front, sceneCamera->up);
         }
     }
     //Handling mouse wheel movement

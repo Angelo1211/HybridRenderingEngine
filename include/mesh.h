@@ -11,9 +11,15 @@
 
 //Headers
 #include "glm/glm.hpp"
-#include "geometry.h"
 #include "shader.h"
 #include <vector>
+
+//Beware the tale of the circular dependency!!!!
+struct Vertex{
+   glm::vec3 position; 
+   glm::vec3 normal; 
+   glm::vec2 texCoords; 
+};
 
 class Mesh {
     public:

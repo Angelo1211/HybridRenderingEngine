@@ -11,6 +11,7 @@
 #include "model.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "camera.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -66,7 +67,7 @@ void Engine::shutDown(){
     // gSceneManager.shutDown();
     // printf("Closed Scene manager.\n");
     
-     gDisplayManager.shutDown();
+    gDisplayManager.shutDown();
     printf("Closed display manager.\n");
 }
 
@@ -83,15 +84,15 @@ void Engine::run(){
 
     //Temp stuff ignore for now
     //---------------------------------------------------------------------------------------
-    
-    SDL_Event event;
-
+   
     //Init Shader
     Shader basicShader("basicShader.vert", "basicShader.frag");
     
     //Loading model
     Model testModel("../scenes/teapot_mesh.obj");
     
+    Camera testCamera;
+    gInputManager.setCamera(&testCamera);
     //---------------------------------------------------------------------------------------
     printf("Entered Main Loop!\n");
     while(!done){
@@ -99,11 +100,7 @@ void Engine::run(){
         start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
         
         //TEMP input processing
-        while( SDL_PollEvent(&event) ){
-            if(event.type == SDL_QUIT){
-                done = true;
-            }
-        }
+        gInputManager.processInput(done, deltaT);
 
         //TEMP Rendering
         glClearColor(0.0f, 0.5f , 1.0f, 1.0f);
@@ -116,17 +113,14 @@ void Engine::run(){
 
         //Model matrix assembly 
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, (float)start/5000.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+        // model = glm::rotate(model, (float)start/5000.0f, glm::vec3(1.0f, 1.0f, 1.0f));
         model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
         //View matrix assembly
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        
-        //Projection matrix assembly
-        projection = glm::perspective(glm::radians(45.0f), gDisplayManager.SCREEN_ASPECT_RATIO, 0.1f, 100.0f);
+        testCamera.update(deltaT);        
 
 
-        MVP = projection * view * model;
+        MVP = testCamera.projectionMatrix * testCamera.viewMatrix * model;
 
         basicShader.use();
         basicShader.setMat4("MVP", MVP);
@@ -151,7 +145,6 @@ void Engine::run(){
  // //Handle all user input
         // //Any changes to the scene are directly sent to the respective objects in
         // //the scene class. Also sets exit flag based on user input.
-        // gInputManager.processInput(done, deltaT);
         
         // //Update all models, camera and lighting in the current scene
         // //Also performs view frustrum culling to determine which objects aare visible
