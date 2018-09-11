@@ -8,9 +8,8 @@
 #include "SDL.h"
 #include "glad/glad.h"
 #include "shader.h"
-#include "glm/glm.hpp"
+#include "model.h"
 
-#include <assimp/Importer.hpp>
 #include <math.h>
 #include <stdio.h>
 //Dummy constructors and destructors
@@ -88,53 +87,14 @@ void Engine::run(){
     //Init Shader
     Shader basicShader("basicShader.vert", "basicShader.frag");
     
-    //Vertex data 
-    float vertices[] = {
-    // positions         // colors
-     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
-    };
-
-    //Init VBO, VAO
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    
-    //Bind vertex array object first
-    glBindVertexArray(VAO);
-
-    //Bind and set vertex buffers
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    //Bind and set element buffers
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    //Set the pointers to the beginning of the vertex attribute 
-    //Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    //Color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    //Unbinding VBO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    //Unbinding vertex array
-    glBindVertexArray(0);
+    //Loading model
+    Model testModel("../scenes/teapot_mesh.obj");
     
     //---------------------------------------------------------------------------------------
     printf("Entered Main Loop!\n");
     while(!done){
         ++count;
         start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
-        
-
-
         
         //TEMP input processing
         while( SDL_PollEvent(&event) ){
@@ -143,23 +103,15 @@ void Engine::run(){
             }
         }
 
-
-
         //TEMP Rendering
-        basicShader.use();
         glClearColor(0.0f, 0.5f , 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        basicShader.use();
+        testModel.draw(basicShader);
 
-        //float greenVal = (sin(start/1000.0f)+1.0f) * 2.0f;
-        //int vertexColorLocation = glGetUniformLocation(shaderProgram, "uniformColor");
-       
-        //glUniform4f(vertexColorLocation, 0.0f, greenVal, 0.0f, 1.0f);
 
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-       
+        //Swap buffers 
         gDisplayManager.swapDisplayBuffer();
-
 
         //Monitoring time taken per frame to gauge engine performance
         deltaT = SDL_GetTicks() - start;
