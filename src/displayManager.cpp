@@ -108,8 +108,8 @@ bool DisplayManager::createGLContext(){
             printf("Version:  %s\n", glGetString(GL_VERSION));
 
             //TODO: move this somewhere else
-            glDisable(GL_DEPTH_TEST);
-            glDisable(GL_CULL_FACE);
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_CULL_FACE);
             int w, h;
             SDL_GetWindowSize(mWindow, &w, &h);
             glViewport(0, 0, w, h);

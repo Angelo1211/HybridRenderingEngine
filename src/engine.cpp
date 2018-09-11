@@ -9,6 +9,8 @@
 #include "glad/glad.h"
 #include "shader.h"
 #include "model.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 #include <math.h>
 #include <stdio.h>
@@ -105,8 +107,30 @@ void Engine::run(){
 
         //TEMP Rendering
         glClearColor(0.0f, 0.5f , 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glm::mat4 model  = glm::mat4(1.0);
+        glm::mat4 view   = glm::mat4(1.0);
+        glm::mat4 projection = glm::mat4(1.0);
+        glm::mat4 MVP    = glm::mat4(1.0);
+
+        //Model matrix assembly 
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, (float)start/5000.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+
+        //View matrix assembly
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        
+        //Projection matrix assembly
+        projection = glm::perspective(glm::radians(45.0f), gDisplayManager.SCREEN_ASPECT_RATIO, 0.1f, 100.0f);
+
+
+        MVP = projection * view * model;
+
         basicShader.use();
+        basicShader.setMat4("MVP", MVP);
+
         testModel.draw(basicShader);
 
 
