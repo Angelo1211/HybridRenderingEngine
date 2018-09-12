@@ -204,9 +204,9 @@ void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int delta
 
             //Updating the front and side vectors to allow wasd movement and 
             //free camera movement.
-            sceneCamera->front.x = cos( sceneCamera->pitch * M_PI / 180.0f ) * cos( sceneCamera->yaw * M_PI / 180.0f );
-            sceneCamera->front.y = sin( sceneCamera->pitch * M_PI / 180.0f );
-            sceneCamera->front.z = cos( sceneCamera->pitch * M_PI / 180.0f ) * sin( sceneCamera->yaw * M_PI / 180.0f );
+            sceneCamera->front.x = cos( glm::radians(sceneCamera->pitch) ) * cos( glm::radians(sceneCamera->yaw) );
+            sceneCamera->front.y = sin( glm::radians(sceneCamera->pitch) );
+            sceneCamera->front.z = cos( glm::radians(sceneCamera->pitch) ) * sin( glm::radians(sceneCamera->yaw) );
             sceneCamera->front   = glm::normalize(sceneCamera->front);
             sceneCamera->side    = glm::cross(sceneCamera->front, sceneCamera->up);
         }

@@ -89,7 +89,7 @@ void Engine::run(){
     Shader basicShader("basicShader.vert", "basicShader.frag");
     
     //Loading model
-    Model testModel("../scenes/teapot_mesh.obj");
+    Model testModel("../scenes/firehydrant_mesh.obj");
     
     Camera testCamera;
     gInputManager.setCamera(&testCamera);

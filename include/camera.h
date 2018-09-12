@@ -44,7 +44,7 @@ struct Camera{
     bool orbiting = true;
 
     //Momentary fixed camera speed (FPS dependent)
-    float camSpeed = 0.1f;
+    float camSpeed = 0.05f;
     float pitch    = 0;
     float yaw      = -90;
 };
