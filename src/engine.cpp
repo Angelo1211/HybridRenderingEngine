@@ -22,17 +22,17 @@ Engine::~Engine(){}
 
 bool Engine::startUp(){
     bool success = true;
-    //Start up of all SDL Display related content
+    //Start up of all SDL and opengl Display related content
     if( !gDisplayManager.startUp() ){
         success = false;
         printf("Failed to initialize window display manager.\n");
     }
     else{
-        //Initis scene manager and loads default scene
-        // if( !gSceneManager.startUp() ){
-        //     success = false;
-        //     printf("Failed to initialize scene manager.\n");
-        // }
+        // Initis scene manager and loads default scene
+        if( !gSceneManager.startUp() ){
+            success = false;
+            printf("Failed to initialize scene manager.\n");
+        }
         // else{
         //     //Initializes rendererer manager, which is in charge of high level
         //     //rendering tasks (render queue, locating render scene etc)
@@ -64,8 +64,8 @@ void Engine::shutDown(){
     // gRenderManager.shutDown();
     // printf("Closed renderer manager.\n");
     
-    // gSceneManager.shutDown();
-    // printf("Closed Scene manager.\n");
+    gSceneManager.shutDown();
+    printf("Closed Scene manager.\n");
     
     gDisplayManager.shutDown();
     printf("Closed display manager.\n");
@@ -89,7 +89,7 @@ void Engine::run(){
     Shader basicShader("basicShader.vert", "basicShader.frag");
     
     //Loading model
-    Model testModel("../scenes/firehydrant_mesh.obj");
+    Model testModel("../assets/meshes/firehydrant_mesh.obj");
     
     Camera testCamera;
     gInputManager.setCamera(&testCamera);

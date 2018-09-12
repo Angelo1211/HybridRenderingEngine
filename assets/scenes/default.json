@@ -1,0 +1,10 @@
+{
+    "sceneID": "default",
+    "models": [{
+        "mesh": "firehydrant",
+        "material": "firehydrant",
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [90.0, 0.0, 0.0],
+        "scaling" : [0.5, 0.5, 0.5]
+    }]
+}

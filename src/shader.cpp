@@ -16,7 +16,7 @@ it crashed and burned
 
 Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
     //Getting the vertex shader code from the text file at file path
-    std::string shaderFolderPath = "../shaders/";
+    std::string shaderFolderPath = "../assets/shaders/";
     std::string vertexCode, fragmentCode;
     std::ifstream vShaderFile(shaderFolderPath + vertexPath), fShaderFile(shaderFolderPath + fragmentPath);
     std::stringstream vShaderStream, fShaderStream;

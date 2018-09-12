@@ -11,6 +11,8 @@
 //Includes 
 #include "stb_image.h"
 
+class Texture{
 
+};
 
 #endif 
