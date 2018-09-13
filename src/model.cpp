@@ -15,7 +15,6 @@ void Model::loadModel(std::string path){
     directory = path.substr(0, path.find_last_of('/'));
 
     processNode(scene->mRootNode, scene);
-    printf("Here!\n");
 }
 
 void Model::draw(Shader shader){
@@ -26,6 +25,15 @@ void Model::draw(Shader shader){
 
 void Model::update(const unsigned int deltaT){
 
+}
+
+glm::mat4 Model::getModelMatrix(){
+    //Model matrix assembly
+    modelMatrix = glm::mat4(1.0);
+    modelMatrix = glm::translate(modelMatrix, modelParameters.translation);
+    // modelMatrix = glm::rotate(modelMatrix, (float)start/5000.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+    modelMatrix = glm::scale(modelMatrix, modelParameters.scaling);
+    return modelMatrix; 
 }
 
 void Model::processNode(aiNode *node, const aiScene *scene){
@@ -45,6 +53,7 @@ void Model::processNode(aiNode *node, const aiScene *scene){
 Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
     std::vector<Vertex> vertices;
     std::vector<unsigned int > indices;
+    std::vector<Texture> textures;
     //Process vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; ++i){
         //Process vertex positions, normals and texture coordinates
@@ -63,8 +72,15 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         vector.z = mesh->mNormals[i].z;
         vertex.normal = vector;
 
-        //TODO Process texture coords
-        vertex.texCoords = glm::vec2(0.0f, 0.0f);
+        //Process texture coords
+        if( mesh->HasTextureCoords(0) ){ 
+            glm::vec2 vec;
+            vec.x = mesh->mTextureCoords[0][i].x;
+            vec.y = mesh->mTextureCoords[0][i].y;
+        }
+        else{
+            vertex.texCoords = glm::vec2(0.0f, 0.0f);
+        }
 
         vertices.push_back(vertex);
     }
@@ -77,5 +93,5 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
     }
     //TODO Process material and texture info
 
-    return Mesh(vertices, indices);
+    return Mesh(vertices, indices, textures);
 }

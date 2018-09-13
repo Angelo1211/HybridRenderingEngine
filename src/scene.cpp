@@ -43,7 +43,7 @@ void Scene::update(unsigned int deltaT){
     for(Model *model : modelsInScene){
         model->update(deltaT);
     }
-    // frustrumCulling();
+    frustrumCulling();
 }
 //-----------------------------GETTERS----------------------------------------------
 std::queue<Model*>* Scene::getVisiblemodels(){
@@ -101,7 +101,7 @@ void Scene::loadSceneModels(const json sceneConfigJson ){
     //model setup
     std::string modelMesh, modelMaterial;
     TransformParameters initParameters;
-    unsigned int modelCount = sceneConfigJson["models"].size();
+    unsigned int modelCount = (unsigned int)sceneConfigJson["models"].size();
     for (unsigned int i = 0; i < modelCount; ++i)
     {
         //get model mesh and material info
@@ -111,16 +111,16 @@ void Scene::loadSceneModels(const json sceneConfigJson ){
 
         //position
         json position = currentModel["position"];
-        initParameters.translation = glm::vec3(position[0], position[1], position[2]);
+        initParameters.translation = glm::vec3((float)position[0], (float)position[1], (float)position[2]);
 
         //rotation
         json rotation = currentModel["rotation"];
-        initParameters.rotation = glm::vec3(glm::radians(rotation[0]),
-                                            glm::radians(rotation[1]),
-                                            glm::radians(rotation[2]));
+        initParameters.rotation = glm::vec3(glm::radians((float)rotation[0]),
+                                            glm::radians((float)rotation[1]),
+                                            glm::radians((float)rotation[2]));
         //scaling
         json scaling = currentModel["scaling"];
-        initParameters.scaling = glm::vec3(scaling[0], scaling[1], scaling[2]);
+        initParameters.scaling = glm::vec3((float)scaling[0], (float)scaling[1], (float)scaling[2]);
 
         //attempts to load model with the initparameters it has read
         modelMesh = "../assets/meshes/" + modelMesh;
@@ -159,15 +159,15 @@ bool Scene::checkFileValidity(const std::string &filePath){
 
 
 //-------------------------------------------------------------
-
-// void Scene::frustrumCulling(){
-//     for(Model *model : modelsInScene){
-//         bool visible = mainCamera.checkVisibility(model->getBounds());
-//         if (visible) {
-//             visibleModels.push(model);
-//         }
-//     }
-// }
+//TODO TODO TODO TODO TODO TODO TODO
+void Scene::frustrumCulling(){
+    for(Model *model : modelsInScene){
+        visibleModels.push(model);
+        // bool visible = mainCamera.checkVisibility(model->getBounds());
+        // if (visible) {
+        // }
+    }
+}
 
 
 

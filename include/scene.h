@@ -58,7 +58,7 @@ class Scene{
         void loadSceneModels(const json sceneConfigJson);
         
         //Finds objects that the camera can see
-        // void frustrumCulling();
+        void frustrumCulling();
 };
 
 #endif

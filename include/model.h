@@ -36,6 +36,8 @@ class Model {
         void draw(Shader shader);
         
         void update( const unsigned int deltaT);
+
+        glm::mat4 getModelMatrix();
     private:
         TransformParameters modelParameters;
         glm::mat4 modelMatrix;

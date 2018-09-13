@@ -83,7 +83,7 @@ void Plane::setNormalAndPoint(const glm::vec3 &n, const glm::vec3 &p0){
 //-------------------------------FRUSTRUM------------------------------------//
 
 void Frustrum::setCamInternals(){
-    float tanHalfFOV  =  tan( (fov/2) * (M_PI / 180) );
+    float tanHalfFOV  =  (float)tan( glm::radians(fov/2.0f) );
     nearH = nearPlane * tanHalfFOV; //Half of the frustrum near plane height
     nearW = nearH * AR;
 }

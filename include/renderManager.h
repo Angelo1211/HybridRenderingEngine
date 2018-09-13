@@ -12,6 +12,8 @@
 //Includes
 #include "displayManager.h"
 #include "sceneManager.h"
+#include "shader.h"
+#include "camera.h"
 // #include "softwareRenderer.h"
 #include "model.h"
 #include <queue>
@@ -37,7 +39,9 @@ class RenderManager{
         bool initSoftwareRenderer();
         
         //This is a pointer to a pointer to allow for scene switching
+        Shader *currentShader;
         SceneManager   * sceneLocator;
+        Camera *sceneCamera;
         DisplayManager * screen;
 
         // SoftwareRenderer renderInstance;

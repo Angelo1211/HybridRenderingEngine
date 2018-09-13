@@ -6,19 +6,12 @@
 //Headers
 #include "engine.h"
 #include "SDL.h"
-#include "glad/glad.h"
-#include "shader.h"
-#include "model.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "camera.h"
-
 #include <math.h>
 #include <stdio.h>
+
 //Dummy constructors and destructors
 Engine::Engine(){}
 Engine::~Engine(){}
-
 
 bool Engine::startUp(){
     bool success = true;
@@ -40,7 +33,7 @@ bool Engine::startUp(){
             //on setup of the render queue.
             if( !gRenderManager.startUp(gDisplayManager, gSceneManager) ){
                 success = false;
-                printf("Failed to initialize render manager.\n");
+                printf("Failed to initialize Render manager.\n");
             }
             else{
                 //Initializing input manager that manages all mouse, keyboard and
@@ -65,7 +58,7 @@ void Engine::shutDown(){
     printf("Closed renderer manager.\n");
     
     gSceneManager.shutDown();
-    printf("Closed Scene manager.\n");
+    printf("Closed scene manager.\n");
     
     gDisplayManager.shutDown();
     printf("Closed display manager.\n");
@@ -81,15 +74,8 @@ void Engine::run(){
     unsigned int deltaT = 0;
     unsigned int start = 0;;
     unsigned int total = 0;
-
-    //Temp stuff ignore for now
-    //---------------------------------------------------------------------------------------
-   
-    //Init Shader
-    Shader basicShader("basicShader.vert", "basicShader.frag");
-    
-    //---------------------------------------------------------------------------------------
     printf("Entered Main Loop!\n");
+
     while(!done){
         ++count;
         start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
@@ -100,35 +86,9 @@ void Engine::run(){
         gInputManager.processInput(done, deltaT);
 
         //Update all models, camera and lighting in the current scene
-        //Also performs view frustrum culling to determine which objects aare visible
         gSceneManager.update(deltaT);
 
-        //TEMP Rendering
-        glClearColor(0.0f, 0.5f , 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glm::mat4 model  = glm::mat4(1.0);
-        glm::mat4 view   = glm::mat4(1.0);
-        glm::mat4 projection = glm::mat4(1.0);
-        glm::mat4 MVP    = glm::mat4(1.0);
-
-        //Model matrix assembly 
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        // model = glm::rotate(model, (float)start/5000.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
-
-        //View matrix assembly
-
-        MVP = testCamera.projectionMatrix * testCamera.viewMatrix * model;
-
-        basicShader.use();
-        basicShader.setMat4("MVP", MVP);
-
-        testModel.draw(basicShader);
-
-
-        //Swap buffers 
-        gDisplayManager.swapDisplayBuffer();
+        gRenderManager.render();
 
         //Monitoring time taken per frame to gauge engine performance
         deltaT = SDL_GetTicks() - start;
@@ -143,5 +103,3 @@ void Engine::run(){
 
         
 
-        // //Contains the render setup and actual software rendering loop
-        // gRenderManager.render();
