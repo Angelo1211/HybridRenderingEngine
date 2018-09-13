@@ -1,7 +1,7 @@
 {
     "sceneID": "default",
     "models": [{
-        "mesh": "firehydrant",
+        "mesh": "firehydrant_mesh.obj",
         "material": "firehydrant",
         "position": [0.0, 0.0, 0.0],
         "rotation": [90.0, 0.0, 0.0],

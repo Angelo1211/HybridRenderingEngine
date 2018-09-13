@@ -10,7 +10,7 @@
 // ===============================
 
 //Headers
-// #include "sceneManager.h"
+#include "sceneManager.h"
 #include "camera.h"
 #include "SDL.h"
 
@@ -21,14 +21,14 @@ class InputManager{
         InputManager();
         ~InputManager();
 
-        bool startUp();
+        bool startUp(SceneManager sceneManager);
         void shutDown();
 
         //Processes all the SDL events that have ocurred in the past frame
         void processInput(bool &done, unsigned int deltaT);
         void setCamera(Camera *testCamera);
     private:
-        // SceneManager *sceneController;
+        SceneManager *sceneController;
         Camera *sceneCamera;
         
         //Where specific events are handled

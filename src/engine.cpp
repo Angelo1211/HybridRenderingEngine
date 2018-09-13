@@ -33,36 +33,36 @@ bool Engine::startUp(){
             success = false;
             printf("Failed to initialize scene manager.\n");
         }
-        // else{
-        //     //Initializes rendererer manager, which is in charge of high level
-        //     //rendering tasks (render queue, locating render scene etc)
-        //     //It gets passed references to the other major subsystems for use later
-        //     //on setup of the render queue.
-        //     if( !gRenderManager.startUp(gDisplayManager, gSceneManager) ){
-        //         success = false;
-        //         printf("Failed to initialize render manager.\n");
-        //     }
-        //     else{
-        //         //Initializing input manager that manages all mouse, keyboard and
-        //         //mousewheel input. It needs access to the scene manager to apply the
-        //         //changes on the scene caused by user input. 
-        //         if ( !gInputManager.startUp(gSceneManager) ){
-        //             success = false;
-        //             printf("Failed to initialize input manager.\n");
-        //         }
-        //     }
-        // }
+        else{
+            //Initializes rendererer manager, which is in charge of high level
+            //rendering tasks (render queue, locating render scene etc)
+            //It gets passed references to the other major subsystems for use later
+            //on setup of the render queue.
+            if( !gRenderManager.startUp(gDisplayManager, gSceneManager) ){
+                success = false;
+                printf("Failed to initialize render manager.\n");
+            }
+            else{
+                //Initializing input manager that manages all mouse, keyboard and
+                //mousewheel input. It needs access to the scene manager to apply the
+                //changes on the scene caused by user input. 
+                if ( !gInputManager.startUp(gSceneManager) ){
+                    success = false;
+                    printf("Failed to initialize input manager.\n");
+                }
+            }
+        }
     }
     return success;
 }
 
 //Closing in opposite order to avoid dangling pointers
 void Engine::shutDown(){
-    // gInputManager.shutDown();
-    // printf("Closed input manager.\n");
+    gInputManager.shutDown();
+    printf("Closed input manager.\n");
 
-    // gRenderManager.shutDown();
-    // printf("Closed renderer manager.\n");
+    gRenderManager.shutDown();
+    printf("Closed renderer manager.\n");
     
     gSceneManager.shutDown();
     printf("Closed Scene manager.\n");
@@ -88,19 +88,20 @@ void Engine::run(){
     //Init Shader
     Shader basicShader("basicShader.vert", "basicShader.frag");
     
-    //Loading model
-    Model testModel("../assets/meshes/firehydrant_mesh.obj");
-    
-    Camera testCamera;
-    gInputManager.setCamera(&testCamera);
     //---------------------------------------------------------------------------------------
     printf("Entered Main Loop!\n");
     while(!done){
         ++count;
         start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
         
-        //TEMP input processing
+        //Handle all user input
+        //Any changes to the scene are directly sent to the respective objects in
+        //the scene class. Also sets exit flag based on user input.
         gInputManager.processInput(done, deltaT);
+
+        //Update all models, camera and lighting in the current scene
+        //Also performs view frustrum culling to determine which objects aare visible
+        gSceneManager.update(deltaT);
 
         //TEMP Rendering
         glClearColor(0.0f, 0.5f , 1.0f, 1.0f);
@@ -117,8 +118,6 @@ void Engine::run(){
         model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
         //View matrix assembly
-        testCamera.update(deltaT);        
-
 
         MVP = testCamera.projectionMatrix * testCamera.viewMatrix * model;
 
@@ -142,13 +141,7 @@ void Engine::run(){
 }
 
 
- // //Handle all user input
-        // //Any changes to the scene are directly sent to the respective objects in
-        // //the scene class. Also sets exit flag based on user input.
         
-        // //Update all models, camera and lighting in the current scene
-        // //Also performs view frustrum culling to determine which objects aare visible
-        // gSceneManager.update(deltaT);
 
         // //Contains the render setup and actual software rendering loop
         // gRenderManager.render();

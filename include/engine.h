@@ -13,7 +13,7 @@
 #include "displayManager.h"
 #include "inputManager.h"
 #include "sceneManager.h"
-// #include "renderManager.h"
+#include "renderManager.h"
 
 
 class Engine
@@ -36,7 +36,7 @@ class Engine
     DisplayManager gDisplayManager;
     InputManager gInputManager;
     SceneManager gSceneManager;
-    // RenderManager gRenderManager;
+    RenderManager gRenderManager;
 };
 
 #endif

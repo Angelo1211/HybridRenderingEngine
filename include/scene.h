@@ -3,16 +3,10 @@
 
 // ===============================
 // AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-07-10
-// PURPOSE      : Contains all of the world information. The objects that you want to 
-//                render, the camera that represents the viewer and the lights within
-//                a scene. It also performs the view frustrum culling check to see which
-//                objects should be visible by the camera at any given time and keeps
-//                that list updated.
+// CREATE DATE  : 2018-09-12
+// PURPOSE      : TODO
 // ===============================
-// SPECIAL NOTES: I use vectors here instead of arrays. Which I though would be necessary
-// given that I would not know how many items would be loaded. It probably should be 
-// changed in any future update to the engine.
+// SPECIAL NOTES: TODO update comments
 // ===============================
 
 //Headers
@@ -20,7 +14,11 @@
 #include <queue>
 #include "model.h"
 #include "camera.h"
+#include "glm/glm.hpp"
+#include "nlohmann/json.hpp"
 // #include "light.h"
+
+using json = nlohmann::json;
 
 class Scene{
     public:
@@ -55,9 +53,9 @@ class Scene{
         std::vector<Model*> modelsInScene;
 
         //TODO 
-        bool findSceneFile(const std::string &scenePath);
+        bool checkFileValidity(const std::string &filePath);
         bool loadContent();
-        // void loadSceneModel(const std::string &baseFilePath, const TransformParameters &init ,const std::string modelMeshID, const std::string modelMaterialID);
+        void loadSceneModels(const json sceneConfigJson);
         
         //Finds objects that the camera can see
         // void frustrumCulling();

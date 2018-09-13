@@ -12,9 +12,9 @@
 InputManager::InputManager(){}
 InputManager::~InputManager(){}
 
-bool InputManager::startUp(){
-    // sceneController = &sceneManager;
-    // sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
+bool InputManager::startUp(SceneManager sceneManager){
+    sceneController = &sceneManager;
+    sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
     
     //Only really care about relative mouse motion because we're building a free camera
     bool success = !SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -23,10 +23,6 @@ bool InputManager::startUp(){
 
 void InputManager::shutDown(){
     //Nothing to do yet
-}
-
-void InputManager::setCamera(Camera *testCamera){
-    sceneCamera = testCamera;
 }
 
 //Goes through the list of every event that has occurred since the last call

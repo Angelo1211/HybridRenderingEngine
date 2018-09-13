@@ -24,6 +24,10 @@ void Model::draw(Shader shader){
     }
 }
 
+void Model::update(const unsigned int deltaT){
+
+}
+
 void Model::processNode(aiNode *node, const aiScene *scene){
     //Process all the node meshes
     printf("%d\n",node->mNumMeshes);
