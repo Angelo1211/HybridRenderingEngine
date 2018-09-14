@@ -38,7 +38,6 @@ glm::mat4 Model::getModelMatrix(){
 
 void Model::processNode(aiNode *node, const aiScene *scene){
     //Process all the node meshes
-    printf("%d\n",node->mNumMeshes);
     for(unsigned int i = 0; i < node->mNumMeshes; i++){
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
         meshes.push_back(processMesh(mesh,scene));
@@ -92,6 +91,11 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         }
     }
     //TODO Process material and texture info
+    printf("Material index: %u \n", mesh->mMaterialIndex);
+    aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+    aiString name;
+    material->Get(AI_MATKEY_NAME, name);
+    printf("Material name: %s \n", name.C_Str());
 
     return Mesh(vertices, indices, textures);
 }

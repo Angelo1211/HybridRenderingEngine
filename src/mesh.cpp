@@ -8,6 +8,7 @@
 
 void Mesh::draw(Shader shader){
     //TODO: texture managing 
+    // glBindTexture(GL_TEXTURE_2D, texture);
 
     //Mesh Drawing
     glBindVertexArray(VAO);
@@ -35,9 +36,11 @@ void Mesh::setupMesh(){
     //Vertex position pointer init
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+
     //Vertex normal pointer init
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+
     //Vertex texture coord
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
