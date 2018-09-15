@@ -12,6 +12,7 @@
 //Headers
 #include "glm/glm.hpp"
 #include "shader.h"
+#include "texture.h"
 #include <vector>
 
 //Beware the tale of the circular dependency!!!!
@@ -19,12 +20,6 @@ struct Vertex{
    glm::vec3 position; 
    glm::vec3 normal; 
    glm::vec2 texCoords; 
-};
-
-struct Texture {
-    unsigned int ID;
-    std::string type;
-    std::string path;
 };
 
 class Mesh {

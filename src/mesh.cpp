@@ -8,7 +8,7 @@
 
 void Mesh::draw(Shader shader){
     //TODO: texture managing 
-    // glBindTexture(GL_TEXTURE_2D, texture);
+    glBindTexture(GL_TEXTURE_2D, textures[0].textureID);
 
     //Mesh Drawing
     glBindVertexArray(VAO);
@@ -43,7 +43,7 @@ void Mesh::setupMesh(){
 
     //Vertex texture coord
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
 
     //Unbinding VAO
     glBindVertexArray(0);

@@ -76,6 +76,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
             glm::vec2 vec;
             vec.x = mesh->mTextureCoords[0][i].x;
             vec.y = mesh->mTextureCoords[0][i].y;
+            vertex.texCoords = vec; 
         }
         else{
             vertex.texCoords = glm::vec2(0.0f, 0.0f);
@@ -91,11 +92,15 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         }
     }
     //TODO Process material and texture info
-    printf("Material index: %u \n", mesh->mMaterialIndex);
-    aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-    aiString name;
-    material->Get(AI_MATKEY_NAME, name);
-    printf("Material name: %s \n", name.C_Str());
+    // printf("Material index: %u \n", mesh->mMaterialIndex);
+    // aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+    // aiString name;
+    // material->Get(AI_MATKEY_NAME, name);
+    // printf("Material name: %s \n", name.C_Str());
+
+    Texture texture("../assets/materials/firehydrant/firehydrant_albedo.png");
+    textures.push_back(texture);
+
 
     return Mesh(vertices, indices, textures);
 }
