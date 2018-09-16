@@ -18,6 +18,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include <vector>
+#include <unordered_set>
 #include <string>
 
 struct TransformParameters{
@@ -43,6 +44,7 @@ class Model {
         glm::mat4 modelMatrix;
 
         std::vector<Mesh> meshes;        
+        std::unordered_set<std::string> texture_atlas; 
         std::string directory;
 
         void loadModel(std::string path);

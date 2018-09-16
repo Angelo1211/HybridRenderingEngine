@@ -13,6 +13,7 @@ void Model::loadModel(std::string path){
     const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 
     directory = path.substr(0, path.find_last_of('/'));
+    directory += "/";
 
     processNode(scene->mRootNode, scene);
 }
@@ -92,14 +93,23 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         }
     }
     //TODO Process material and texture info
-    printf("Material index: %u \n", mesh->mMaterialIndex);
+    //TODO ALSO CHECK PBR HERE LATER
+    // printf("Material index: %u \n", mesh->mMaterialIndex);
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
     aiString name;
     material->Get(AI_MATKEY_NAME, name);
-    printf("Material name: %s \n", name.C_Str());
+    // printf("Material name: %s \n", name.C_Str());
 
-    // Texture texture("../assets/materials/firehydrant/firehydrant_albedo.png");
-    // textures.push_back(texture);
+    aiString texturePath;
+    std::string fullTexturePath = "";
+    fullTexturePath.append(directory);
+
+    material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath); 
+
+    // printf("Texture Path: %s \n", fullTexturePath.append(texturePath.C_Str()).c_str());
+    Texture texture;
+    texture.setupTexture(fullTexturePath.append(texturePath.C_Str()));
+    textures.push_back(texture);
 
 
     return Mesh(vertices, indices, textures);

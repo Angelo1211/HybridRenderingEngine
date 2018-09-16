@@ -1,0 +1,11 @@
+{
+    "sceneID": "nanosuit",
+    "models": [{
+        "mesh": "nanosuit.obj",
+        "pbr": false,
+        "material": "",
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scaling" : [1.0, 1.0, 1.0]
+    }]
+}

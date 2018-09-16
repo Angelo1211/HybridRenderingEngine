@@ -13,7 +13,7 @@
 #include <string>
 
 struct Texture{
-    Texture(std::string filePath);
+    void setupTexture(std::string filePath);
     unsigned int textureID;
     std::string type;
     std::string path;

@@ -123,7 +123,7 @@ void Scene::loadSceneModels(const json sceneConfigJson ){
         initParameters.scaling = glm::vec3((float)scaling[0], (float)scaling[1], (float)scaling[2]);
 
         //attempts to load model with the initparameters it has read
-        modelMesh = "../assets/meshes/" + modelMesh;
+        modelMesh = "../assets/models/" + sceneID + "/" + modelMesh;
         if (!checkFileValidity(modelMesh))
         {
             //If the mesh deos not exist it's very likely nothing else does, quit early
@@ -131,7 +131,7 @@ void Scene::loadSceneModels(const json sceneConfigJson ){
         }
         else
         {
-            modelMaterial = "../assets/materials/" + modelMaterial;
+            modelMaterial = "../assets/models/" + modelMaterial;
             modelsInScene.push_back(new Model(modelMesh, modelMaterial, initParameters));
         }
     }
@@ -141,17 +141,17 @@ bool Scene::checkFileValidity(const std::string &filePath){
     struct stat info;
     //file is blocking access
     if( stat( filePath.c_str(), &info ) != 0 ){
-        printf( "cannot access %s\n", filePath.c_str() );
+        printf( "Cannot access %s\n", filePath.c_str() );
          return false;
     }
     else if( info.st_mode & S_IFMT ){
         //file is accessible
-        printf( "%s is a valid scene\n", filePath.c_str() );
+        printf( "%s is a valid file\n", filePath.c_str() );
         return true;
     }
     else{
         //File does not exist
-        printf("Error! Scene: %s does not exist.\n", filePath.c_str());
+        printf("Error! File: %s does not exist.\n", filePath.c_str());
         return false;
     }
 }

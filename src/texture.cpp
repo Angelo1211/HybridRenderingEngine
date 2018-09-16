@@ -8,11 +8,11 @@
 #include "texture.h"
 #include <glad/glad.h>
 
-Texture::Texture(std::string filePath){
+void Texture::setupTexture(std::string filePath){
     path = filePath;
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
+    unsigned int ID;
+    glGenTextures(1, &ID);
+    // printf("ID: %u\n", ID);
     int width, height, nComponents;
     // stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load(filePath.c_str(), &width, &height, &nComponents, 0);
@@ -28,7 +28,7 @@ Texture::Texture(std::string filePath){
             format = GL_RGBA;
         }
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
+        glBindTexture(GL_TEXTURE_2D, ID);
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -40,7 +40,10 @@ Texture::Texture(std::string filePath){
         stbi_image_free(data);
     }
     else{
-        printf("Texture failed to load at path: %s",filePath.c_str() );
+        printf("Texture failed to load at path: %s \n"  ,filePath.c_str() );
         stbi_image_free(data);
     }
+
+    textureID = ID;
+    // printf("ID: %u\n", textureID);
 }

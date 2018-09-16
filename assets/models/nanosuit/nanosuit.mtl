@@ -8,8 +8,8 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd arm_dif.png
-map_Bump arm_showroom_ddn.png
+map_Kd textures/arm_dif.png
+map_Bump textures/arm_showroom_ddn.png
 map_Ks arm_showroom_spec.png
 
 
@@ -21,7 +21,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd body_dif.png
+map_Kd textures/body_dif.png
 map_Bump body_showroom_ddn.png
 map_Ks body_showroom_spec.png
 
@@ -34,7 +34,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd glass_dif.png
+map_Kd textures/glass_dif.png
 map_Bump glass_ddn.png
 
 
@@ -46,7 +46,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd hand_dif.png
+map_Kd textures/hand_dif.png
 map_Bump hand_showroom_ddn.png
 map_Ks hand_showroom_spec.png
 
@@ -59,7 +59,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd helmet_diff.png
+map_Kd textures/helmet_diff.png
 map_Bump helmet_showroom_ddn.png
 map_Ks helmet_showroom_spec.png
 
@@ -72,7 +72,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd leg_dif.png
+map_Kd textures/leg_dif.png
 map_Bump leg_showroom_ddn.png
 map_Ks leg_showroom_spec.png
 
