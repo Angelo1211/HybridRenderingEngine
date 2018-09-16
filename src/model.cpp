@@ -92,14 +92,14 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         }
     }
     //TODO Process material and texture info
-    // printf("Material index: %u \n", mesh->mMaterialIndex);
-    // aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-    // aiString name;
-    // material->Get(AI_MATKEY_NAME, name);
-    // printf("Material name: %s \n", name.C_Str());
+    printf("Material index: %u \n", mesh->mMaterialIndex);
+    aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+    aiString name;
+    material->Get(AI_MATKEY_NAME, name);
+    printf("Material name: %s \n", name.C_Str());
 
-    Texture texture("../assets/materials/firehydrant/firehydrant_albedo.png");
-    textures.push_back(texture);
+    // Texture texture("../assets/materials/firehydrant/firehydrant_albedo.png");
+    // textures.push_back(texture);
 
 
     return Mesh(vertices, indices, textures);

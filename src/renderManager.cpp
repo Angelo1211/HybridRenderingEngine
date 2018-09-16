@@ -57,7 +57,7 @@ void RenderManager::render(){
         currentShader->setMat4("MVP", MVP);
 
         //Draw object
-        renderObjectQueue->front()->draw(*currentShader);
+        currentModel->draw(*currentShader);
         renderObjectQueue->pop();
     }
 

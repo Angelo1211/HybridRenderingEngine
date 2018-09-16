@@ -32,19 +32,19 @@ struct Camera{
     void resetCamera(); 
 
     //Position and direction of camera, used to build view matrix
-    glm::vec3 position{0,0,8};
+    glm::vec3 position{0,0,5};
     glm::vec3 target{0,0,0};
     glm::vec3 up{0,1,0};
     glm::vec3 front{0, 0, -1};
     glm::vec3 side;
 
     //Values related to orbiting mode
-    float radius  = 2;
+    float radius  = 1;
     float period  = 30; //in seconds
     bool orbiting = true;
 
     //Momentary fixed camera speed (FPS dependent)
-    float camSpeed = 0.05f;
+    float camSpeed = 1.0f;
     float pitch    = 0;
     float yaw      = -90;
 };

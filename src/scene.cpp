@@ -131,7 +131,6 @@ void Scene::loadSceneModels(const json sceneConfigJson ){
         }
         else
         {
-            printf("%s is a valid mesh\n", modelMesh.c_str());
             modelMaterial = "../assets/materials/" + modelMaterial;
             modelsInScene.push_back(new Model(modelMesh, modelMaterial, initParameters));
         }

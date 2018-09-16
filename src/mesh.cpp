@@ -8,7 +8,7 @@
 
 void Mesh::draw(Shader shader){
     //TODO: texture managing 
-    glBindTexture(GL_TEXTURE_2D, textures[0].textureID);
+    // glBindTexture(GL_TEXTURE_2D, textures[0].textureID);
 
     //Mesh Drawing
     glBindVertexArray(VAO);

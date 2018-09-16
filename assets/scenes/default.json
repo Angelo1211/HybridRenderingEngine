@@ -1,10 +1,10 @@
 {
     "sceneID": "default",
     "models": [{
-        "mesh": "firehydrant_mesh.obj",
-        "material": "firehydrant",
+        "mesh": "sponza.obj",
+        "material": "",
         "position": [0.0, 0.0, 0.0],
-        "rotation": [90.0, 0.0, 0.0],
-        "scaling" : [0.5, 0.5, 0.5]
+        "rotation": [0.0, 0.0, 0.0],
+        "scaling" : [1.0, 1.0, 1.0]
     }]
 }
