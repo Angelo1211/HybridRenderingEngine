@@ -45,16 +45,21 @@ void RenderManager::render(){
 
     //Temp matrix init TODO TODO TODO
     glm::mat4 MVP = glm::mat4(1.0);
+    glm::mat4 MV  = glm::mat4(1.0);
 
     while( !renderObjectQueue->empty() ){
         Model * currentModel = renderObjectQueue->front();
 
         //Matrix setup
-        MVP = sceneCamera->projectionMatrix * sceneCamera->viewMatrix * currentModel->getModelMatrix();
+        MV  =   sceneCamera->viewMatrix * currentModel->getModelMatrix();
+        MVP = sceneCamera->projectionMatrix * MV;
 
         //Shader setup
         currentShader->use();
         currentShader->setMat4("MVP", MVP);
+        currentShader->setMat4("MV", MV);
+        currentShader->setMat4("V", sceneCamera->viewMatrix);
+        // currentShader->setVec3("viewPos", sceneCamera->position);
 
         //Draw object
         currentModel->draw(*currentShader);

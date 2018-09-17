@@ -14,6 +14,8 @@
 #include "shader.h"
 #include "texture.h"
 #include <vector>
+#include <string>
+#include <unordered_map>
 
 //Beware the tale of the circular dependency!!!!
 struct Vertex{
@@ -26,8 +28,10 @@ class Mesh {
     public:
         std::vector<Vertex> vertices;
         std::vector<unsigned int > indices;
-        std::vector<Texture> textures;
-        Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, std::vector<Texture> &textures){
+        std::vector<std::string> textures;
+        Mesh(const std::vector<Vertex> &vertices, 
+             const std::vector<unsigned int> &indices,
+             const std::vector<std::string> &textures){
             this->vertices = vertices;
             this->indices  = indices;
             this->textures = textures;
@@ -35,7 +39,7 @@ class Mesh {
             setupMesh();
         }
 
-        void draw(Shader shader);
+        void draw(const Shader &shader, const std::unordered_map<std::string, Texture> &textureAtlas);
     private:
         unsigned int VAO, VBO, EBO;
 

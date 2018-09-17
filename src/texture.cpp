@@ -12,7 +12,7 @@ void Texture::setupTexture(std::string filePath){
     path = filePath;
     unsigned int ID;
     glGenTextures(1, &ID);
-    // printf("ID: %u\n", ID);
+
     int width, height, nComponents;
     // stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load(filePath.c_str(), &width, &height, &nComponents, 0);
@@ -45,5 +45,4 @@ void Texture::setupTexture(std::string filePath){
     }
 
     textureID = ID;
-    // printf("ID: %u\n", textureID);
 }

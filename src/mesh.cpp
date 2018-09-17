@@ -6,10 +6,13 @@
 //Includes
 #include "mesh.h"
 
-void Mesh::draw(Shader shader){
+void Mesh::draw(const Shader &shader, const std::unordered_map<std::string, Texture> &textureAtlas){
     //TODO: texture managing 
-    // printf("Texture id: %u\n", textures[0].textureID);
-    glBindTexture(GL_TEXTURE_2D, textures[0].textureID);
+    for(unsigned int i = 0; i < textures.size(); ++i){
+        Texture currentTex = textureAtlas.at(textures[i]);
+        glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
+
+    }
 
     //Mesh Drawing
     glBindVertexArray(VAO);

@@ -20,7 +20,7 @@ void Model::loadModel(std::string path){
 
 void Model::draw(Shader shader){
     for(int i = 0; i < meshes.size(); ++i){
-        meshes[i].draw(shader);
+        meshes[i].draw(shader, textureAtlas);
     }
 }
 
@@ -53,7 +53,7 @@ void Model::processNode(aiNode *node, const aiScene *scene){
 Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
     std::vector<Vertex> vertices;
     std::vector<unsigned int > indices;
-    std::vector<Texture> textures;
+    std::vector<std::string> textures;
     //Process vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; ++i){
         //Process vertex positions, normals and texture coordinates
@@ -94,23 +94,24 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
     }
     //TODO Process material and texture info
     //TODO ALSO CHECK PBR HERE LATER
-    // printf("Material index: %u \n", mesh->mMaterialIndex);
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-    aiString name;
-    material->Get(AI_MATKEY_NAME, name);
-    // printf("Material name: %s \n", name.C_Str());
 
+    //Finding current texture directory
     aiString texturePath;
-    std::string fullTexturePath = "";
-    fullTexturePath.append(directory);
-
+    std::string fullTexturePath = directory;
     material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath); 
+    fullTexturePath = fullTexturePath.append(texturePath.C_Str());
 
-    // printf("Texture Path: %s \n", fullTexturePath.append(texturePath.C_Str()).c_str());
-    Texture texture;
-    texture.setupTexture(fullTexturePath.append(texturePath.C_Str()));
-    textures.push_back(texture);
-
+    //Checking if the texture has already been loaded
+    if( textureAtlas.count(fullTexturePath) == 1 ){
+        //Texture already exists in the Atlas 16//16//16
+    }
+    else{
+        Texture texture;
+        texture.setupTexture(fullTexturePath);
+        textureAtlas.insert({fullTexturePath, texture});
+    }
+    textures.push_back(fullTexturePath);
 
     return Mesh(vertices, indices, textures);
 }
