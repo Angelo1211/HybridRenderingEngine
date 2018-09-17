@@ -23,7 +23,7 @@ void main(){
     vs_out.viewDir_vSpace  = -vertexPos_vSpace;
 
     //LightDirection in view space
-    vec3 lightPosition_vSpace = vec3(V * vec4(1.0, 1.0, 1.0, 1.0));
+    vec3 lightPosition_vSpace = vec3(V * vec4(0.0, 0.0, 9.0, 1.0));
     vs_out.lightDir_vSpace    = lightPosition_vSpace - vertexPos_vSpace;
 
     //Normal in view space

@@ -11,8 +11,8 @@ in VS_OUT{
 uniform sampler2D ourTexure;
 
 //Lighting consts
-const float kD = 0.5;
-const float kS = 1-kD;
+const float kD = 0.9;
+const float kS = 0.4;
 
 void main(){
     vec3 color =  texture(ourTexure, fs_in.texCoord).rgb;
@@ -29,9 +29,12 @@ void main(){
     //specular
     vec3 viewDir  = normalize(fs_in.viewDir_vSpace);
     vec3 halfway  = normalize(lightDir + viewDir);
-    float spec    = pow(max(dot(norm, halfway), 0.0), 32.0);
+    float spec    = pow(max(dot(norm, halfway), 0.0), 128.0);
     vec3 specular = vec3(kS) * spec;
 
     FragColor = vec4(specular + diffuse + ambient, 1.0);
+    // FragColor = vec4(specular, 1.0);
+    // FragColor = vec4(diffuse, 1.0);
+    // FragColor = vec4( ambient, 1.0);
 
 }
