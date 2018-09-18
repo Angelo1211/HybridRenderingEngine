@@ -33,6 +33,12 @@ void Mesh::draw(const Shader &shader, const std::unordered_map<std::string, Text
         //Actually binding the texture now
         glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
     }
+    if(nSpecular == 0){
+        shader.setInt("specularFlag", 0);
+    }
+    else{
+        shader.setFloat("specularFlag", 1.0);
+    }
     glActiveTexture(GL_TEXTURE0);
 
 

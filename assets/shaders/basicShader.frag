@@ -10,11 +10,12 @@ in VS_OUT{
 
 uniform sampler2D diffuse1;
 uniform sampler2D specular1;
+uniform float specularFlag;
 // uniform sampler2D albedoTexture;
 
 //Lighting consts
 const float kD = 0.9;
-const float kS = 0.4;
+const float kS = 0.6;
 
 void main(){
     //comment comment
@@ -34,10 +35,10 @@ void main(){
     vec3 viewDir  = normalize(fs_in.viewDir_vSpace);
     vec3 halfway  = normalize(lightDir + viewDir);
     float spec    = pow(max(dot(norm, halfway), 0.0), 128.0);
-    vec3 specular = vec3(kS) * spec * specularIntensity;
+    vec3 specular = vec3(kS) * spec * specularIntensity * specularFlag;
 
-    FragColor = vec4(specular + diffuse + ambient, 1.0);
-    // FragColor = vec4(specular, 1.0);
+    // FragColor = vec4(specular + diffuse + ambient, 1.0);
+    FragColor = vec4(specular, 1.0);
     // FragColor = vec4(diffuse, 1.0);
     // FragColor = vec4( ambient, 1.0);
 }
