@@ -7,6 +7,7 @@
 #include "model.h"
 #include "geometry.h"
 #include "glm/glm.hpp"
+#include <string>
 
 void Model::loadModel(std::string path){
     Assimp::Importer importer;
@@ -92,26 +93,82 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
             indices.push_back(face.mIndices[j]);
         }
     }
-    //TODO Process material and texture info
+    //Process material and texture info
     //TODO ALSO CHECK PBR HERE LATER
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
-    //Finding current texture directory
-    aiString texturePath;
-    std::string fullTexturePath = directory;
-    material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath); 
-    fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-
-    //Checking if the texture has already been loaded
-    if( textureAtlas.count(fullTexturePath) == 1 ){
-        //Texture already exists in the Atlas 16//16//16
-    }
-    else{
-        Texture texture;
-        texture.setupTexture(fullTexturePath);
-        textureAtlas.insert({fullTexturePath, texture});
-    }
-    textures.push_back(fullTexturePath);
+    textures = processTextures(material);
 
     return Mesh(vertices, indices, textures);
+}
+
+std::vector<std::string> Model::processTextures(const aiMaterial *material){
+    std::vector<std::string> textures;
+    //Finding current texture directory
+    aiString texturePath;
+
+    //Loading textures one type at a time
+    //Diffuse textures 
+    aiTextureType type = aiTextureType_DIFFUSE;
+    std::string fullTexturePath = directory;
+    for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
+        material->GetTexture(type, 0, &texturePath);
+        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+        //Checking if the texture has already been loaded
+        if (textureAtlas.count(fullTexturePath) == 1)
+        {
+            //Texture already exists in the Atlas 16//16//16
+        }
+        else
+        {
+            Texture texture;
+            texture.type = "diffuse";
+            texture.setupTexture(fullTexturePath);
+            textureAtlas.insert({fullTexturePath, texture});
+        }
+        textures.push_back(fullTexturePath);
+    }
+
+
+    //Specular textures 
+    type = aiTextureType_SPECULAR;
+    fullTexturePath = directory;
+    for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
+        material->GetTexture(type, 0, &texturePath);
+        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+        //Checking if the texture has already been loaded
+        if (textureAtlas.count(fullTexturePath) == 1){
+            //Texture already exists in the Atlas 16//16//16
+        }
+        else{
+            Texture texture;
+            texture.type = "specular";
+            texture.setupTexture(fullTexturePath);
+            textureAtlas.insert({fullTexturePath, texture});
+        }
+        textures.push_back(fullTexturePath);
+    }
+
+
+    //normal textures TODO DO DO 
+    // aiTextureType type = aiTextureType_DISPLACEMENT;
+    // std::string fullTexturePath = directory;
+    // for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
+    //     material->GetTexture(type, 0, &texturePath);
+    //     fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+    //     //Checking if the texture has already been loaded
+    //     if (textureAtlas.count(fullTexturePath) == 1)
+    //     {
+    //         //Texture already exists in the Atlas 16//16//16
+    //     }
+    //     else
+    //     {
+    //         Texture texture;
+    //         texture.type = "normal" + std::to_string(i);
+    //         texture.setupTexture(fullTexturePath);
+    //         textureAtlas.insert({fullTexturePath, texture});
+    //     }
+    //     textures.push_back(fullTexturePath);
+    // }
+    return textures;
 }

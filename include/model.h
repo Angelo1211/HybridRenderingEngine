@@ -51,6 +51,7 @@ class Model {
         void loadModel(std::string path);
         void processNode(aiNode *node, const aiScene *scene);
         Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+        std::vector<std::string> processTextures(const aiMaterial *material);
 };
 
 #endif 

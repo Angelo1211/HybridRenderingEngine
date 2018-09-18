@@ -5,14 +5,36 @@
 
 //Includes
 #include "mesh.h"
+#include <string>
 
 void Mesh::draw(const Shader &shader, const std::unordered_map<std::string, Texture> &textureAtlas){
     //TODO: texture managing 
-    for(unsigned int i = 0; i < textures.size(); ++i){
-        Texture currentTex = textureAtlas.at(textures[i]);
-        glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
+    unsigned int nDiffuse  = 0;
+    unsigned int nSpecular = 0;
 
+    for(unsigned int i = 0; i < textures.size(); ++i){
+        //Activate next texture unit
+        glActiveTexture(GL_TEXTURE0 + i);
+        Texture currentTex = textureAtlas.at(textures[i]);
+
+        //Check the type of hte texture to increment counter accordingly
+        std::string name  = currentTex.type; 
+        std::string number;
+        if(name == "diffuse"){
+            ++nDiffuse;
+            number = std::to_string(nDiffuse);
+        }
+        else if (name == "specular"){
+            ++nSpecular;
+            number = std::to_string(nSpecular);
+        }
+        shader.setInt((name + number).c_str(), i);
+
+        //Actually binding the texture now
+        glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
     }
+    glActiveTexture(GL_TEXTURE0);
+
 
     //Mesh Drawing
     glBindVertexArray(VAO);
