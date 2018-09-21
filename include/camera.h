@@ -15,6 +15,7 @@
 #include "displayManager.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include <set>
 
 struct Camera{
     Camera();
@@ -31,6 +32,9 @@ struct Camera{
     void update(unsigned int deltaT);
     void resetCamera(); 
 
+    //Test test test test
+    std::set< char > set;
+
     //Position and direction of camera, used to build view matrix
     glm::vec3 position{0,0,5};
     glm::vec3 target{0,0,0};
@@ -44,7 +48,7 @@ struct Camera{
     bool orbiting = false;
 
     //Momentary fixed camera speed (FPS dependent)
-    float camSpeed = 1.25f;
+    float camSpeed = 0.5f;
     float pitch    = 0;
     float yaw      = -90;
 };

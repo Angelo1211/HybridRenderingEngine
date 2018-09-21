@@ -108,7 +108,7 @@ bool DisplayManager::createGLContext(){
             printf("Version:  %s\n", glGetString(GL_VERSION));
 
             //TODO: move this somewhere else
-            SDL_GL_SetSwapInterval(1);
+            // SDL_GL_SetSwapInterval(1);
             glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
             int w, h;

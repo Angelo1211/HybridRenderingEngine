@@ -92,7 +92,7 @@ void Engine::run(){
 
         //Monitoring time taken per frame to gauge engine performance
         deltaT = SDL_GetTicks() - start;
-        printf("%2.1d: Frame elapsed time (ms):%d\n",count, deltaT);
+        // printf("%2.1d: Frame elapsed time (ms):%d\n",count, deltaT);
         total += deltaT;
         // break;
     }

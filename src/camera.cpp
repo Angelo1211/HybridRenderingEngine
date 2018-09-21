@@ -18,17 +18,35 @@ Camera::Camera(){
 //Updates target and position based on camera movement mode.
 ///Also updates view matrix and projection matrix for rendering
 void Camera::update(unsigned int deltaT){
-    if(orbiting){
-        float ang    = 2 * M_PI * static_cast<float>(SDL_GetTicks()) / (period*1000);
-        float camX   = std::sin(ang) * radius; 
-        float camZ   = std::cos(ang) * radius;
-        position.x   = camX;
-        position.y   = camX;
-        position.z   = camZ;
+    float speed = camSpeed * deltaT;
+    for(char x : set){
+        switch (x){
+            case 'w':
+                position += front * speed;
+            break;
+
+            case 's':
+                position -= front * speed;
+            break;
+
+            case 'a':
+                position -= side * speed;
+            break;
+
+            case 'd':
+                position += side * speed;
+            break;
+
+            case 'q':
+                position += up * speed;
+            break;
+
+            case 'e':
+                position -= up * speed;
+            break;
+        }
     }
-    else{
-        target = position + front;
-    }
+    target = position + front;
     viewMatrix = glm::lookAt(position, target, up);
     cameraFrustrum.updatePlanes(viewMatrix, position);
     projectionMatrix = glm::perspective(glm::radians(cameraFrustrum.fov), cameraFrustrum.AR, cameraFrustrum.nearPlane, cameraFrustrum.farPlane);

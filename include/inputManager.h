@@ -9,6 +9,9 @@
 // SPECIAL NOTES: TODO update comments
 // ===============================
 
+// BIG REFACTOR HERE SOOON PLS TODO
+
+
 //Headers
 #include "sceneManager.h"
 #include "camera.h"
@@ -26,13 +29,16 @@ class InputManager{
 
         //Processes all the SDL events that have ocurred in the past frame
         void processInput(bool &done, unsigned int deltaT);
-        void setCamera(Camera *testCamera);
+        // void setCamera(Camera *testCamera);
+
     private:
         SceneManager *sceneController;
         Camera *sceneCamera;
         
         //Where specific events are handled
         void handleEvent(SDL_Event * event, bool &done, unsigned int deltaT);
+        void handleKeyboardEvent(SDL_Event * event, bool &done, unsigned int deltaT);
+        // void handleKeyboardEvent()
 };
 
 

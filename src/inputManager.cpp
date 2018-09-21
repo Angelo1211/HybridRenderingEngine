@@ -42,189 +42,118 @@ void InputManager::processInput(bool &done, unsigned int deltaT){
         }
     }
 }
-
-//Handles all the current valid user events:
-//1. User requested quits
-//2. Keyboard presses
-//3. Mouse movement
-//4. Mouse clicks
-//5. Mouse wheel movement
+// TODO IMPORTANT REFACTOR THIS UGLY FUNCTION
 void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int deltaT){
-    //Normally would be multiplied by deltaT but caused issues with large fps 
-    //differences
-    float speed = sceneCamera->camSpeed *  deltaT;
+    bool isDown  = event->type == SDL_KEYDOWN;
+    bool wasDown = event->type == SDL_KEYUP;
 
-    //Handling keyboard input
-    if( event->type == SDL_KEYDOWN ){
-
-        //Keys 1-6 handle scenes switching
-        //Key ESC handles exit
-        //Keys wasdqe handle strafing and moving up and down
-        //Key r handles resetting camera
-        //Key tab handles toggleing orbit mode
-        std::string sceneID = "0";
-        switch( event->key.keysym.sym )
-        {   
-            //SCENE CODE
-            // case SDLK_1:
-            // sceneID = "teapotSingle";
-            // break;
-
-            // case SDLK_2:
-            // sceneID = "teapotMultiMaterial";
-            // break;
-
-            // case SDLK_3:
-            // sceneID = "chest";
-            // break;
-
-            // case SDLK_4:
-            // sceneID = "firehydrant";
-            // break;
-
-            // case SDLK_5:
-            // sceneID = "cerberus";
-            // break;
-
-            // case SDLK_6:
-            // sceneID = "statue";
-            // break;
-
-            // case SDLK_7:
-            // sceneID = "multipleMesh";
-            // break;
-
-            //WINDOW CONTROL OPTIONS
-            case SDLK_ESCAPE:
-            done = true;
-            return; 
-
-            //MOVEMENT CONTROLS (STRAFING)
-            case SDLK_w:
-            if(sceneCamera->orbiting){
-                sceneCamera->radius += sceneCamera->radius * speed;
-            }
-            else{
-                sceneCamera->position += sceneCamera->front * speed;
-            }
+    switch (event->key.keysym.sym){
+        case SDLK_ESCAPE:
+            if (isDown)
+                done = true;
+            return;
+        
+        case SDLK_w:
+            if (isDown)
+                sceneCamera->set.insert('w');
+            if (wasDown)
+                sceneCamera->set.erase('w');
             break;
 
-            case SDLK_s:
-            if(sceneCamera->orbiting){
-                sceneCamera->radius -= sceneCamera->radius * speed;
-            }
-            else{
-                sceneCamera->position -= sceneCamera->front * speed;
-            }
+        case SDLK_s:
+            if (isDown)
+                sceneCamera->set.insert('s');
+            if (wasDown)
+                sceneCamera->set.erase('s');
             break;
 
-            case SDLK_a:
-            sceneCamera->position -= sceneCamera->side * speed;
+        case SDLK_a:
+            if (isDown)
+                sceneCamera->set.insert('a');
+            if (wasDown)
+                sceneCamera->set.erase('a');
             break;
 
-            case SDLK_d:
-            sceneCamera->position += sceneCamera->side * speed;
+        case SDLK_d:
+            if (isDown)
+                sceneCamera->set.insert('d');
+            if (wasDown)
+                sceneCamera->set.erase('d');
             break;
 
-            case SDLK_q:
-            sceneCamera->position += sceneCamera->up * speed;
+        case SDLK_q:
+            if (isDown)
+                sceneCamera->set.insert('q');
+            if (wasDown)
+                sceneCamera->set.erase('q');
             break;
 
-            case SDLK_e:
-            sceneCamera->position -= sceneCamera->up * speed;
+        case SDLK_e:
+            if (isDown)
+                sceneCamera->set.insert('e');
+            if (wasDown)
+                sceneCamera->set.erase('e');
             break;
 
-            //CAMERA CONTROLS (RESET AND ORBITING)
-            case SDLK_r:
-            sceneCamera->resetCamera(); 
+        default:
             break;
-
-            case SDLK_TAB:
-            sceneCamera->orbiting = !sceneCamera->orbiting;
-            sceneCamera->resetCamera();   
-            break;
-
-            case SDLK_UP:
-            sceneCamera->period -= 2;
-            if (sceneCamera->period  < 4){
-                sceneCamera->period = 4;
-            }
-            break;
-
-            case SDLK_DOWN:
-            sceneCamera->period += 2;
-            if (sceneCamera->period  > 60){
-                sceneCamera->period = 60;
-            }
-            break;
-
-            default:
-            break;
-
-        }
-
-        //Only switch scene if a scene-key (1-5) was pressed
-        //Exit if the scene could not be loaded for some reason
-        // if ( sceneID != "0" ){
-        //     if( !sceneController->switchScene(sceneID) ){
-        //         printf("Failed to switch scene! Quitting.\n");
-        //         done = true;
-        //         return;
-        //     }
-        //     else{
-        //         printf("Loaded %s Scene.\n", sceneID.c_str());
-        //         sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
-        //         sceneCamera->resetCamera(); 
-        //     }
-
-        // }
     }
-    //Handling Mouse Motion
-    else if( event->type == SDL_MOUSEMOTION){
+    // Handling Mouse Motison
+    if (event->type == SDL_MOUSEMOTION)
+    {
         //Only move camera if the right button is pressed
-        if( event->motion.state & SDL_BUTTON_LMASK ) {
+        if (event->motion.state & SDL_BUTTON_LMASK)
+        {
+            printf("Moving mouse!\n");
             float sens = 0.05f;
             float xOffset = (float)event->motion.xrel * sens;
             float yOffset = -(float)event->motion.yrel * sens;
 
-            sceneCamera->yaw   += xOffset;
+            sceneCamera->yaw += xOffset;
             sceneCamera->pitch += yOffset;
 
             //Limiting the range of the pitch to avoid flips
-            if(sceneCamera->pitch > 89.0f){
-                sceneCamera->pitch =  89.0f;
+            if (sceneCamera->pitch > 89.0f)
+            {
+                sceneCamera->pitch = 89.0f;
             }
-            else if(sceneCamera->pitch < -89.0f){
+            else if (sceneCamera->pitch < -89.0f)
+            {
                 sceneCamera->pitch = -89.0f;
             }
 
-            //Updating the front and side vectors to allow wasd movement and 
+            //Updating the front and side vectors to allow wasd movement and
             //free camera movement.
-            sceneCamera->front.x = cos( glm::radians(sceneCamera->pitch) ) * cos( glm::radians(sceneCamera->yaw) );
-            sceneCamera->front.y = sin( glm::radians(sceneCamera->pitch) );
-            sceneCamera->front.z = cos( glm::radians(sceneCamera->pitch) ) * sin( glm::radians(sceneCamera->yaw) );
-            sceneCamera->front   = glm::normalize(sceneCamera->front);
-            sceneCamera->side    = glm::cross(sceneCamera->front, sceneCamera->up);
+            sceneCamera->front.x = cos(glm::radians(sceneCamera->pitch)) * cos(glm::radians(sceneCamera->yaw));
+            sceneCamera->front.y = sin(glm::radians(sceneCamera->pitch));
+            sceneCamera->front.z = cos(glm::radians(sceneCamera->pitch)) * sin(glm::radians(sceneCamera->yaw));
+            sceneCamera->front = glm::normalize(sceneCamera->front);
+            sceneCamera->side = glm::cross(sceneCamera->front, sceneCamera->up);
         }
     }
-    //Handling mouse wheel movement
-    //Changes zoom levels in increments of 5 degrees (2.5 really cause FOV is half angle)
-    else if( event->type == SDL_MOUSEWHEEL){
+    // Handling mouse wheel movement
+    // Changes zoom levels in increments of 5 degrees (2.5 really cause FOV is half angle)
+    if (event->type == SDL_MOUSEWHEEL)
+    {
 
         float zoom = 5.0f;
-        float fov  = sceneCamera->cameraFrustrum.fov; 
-        if(event->wheel.y > 0){ // scroll up
+        float fov = sceneCamera->cameraFrustrum.fov;
+        if (event->wheel.y > 0)
+        { // scroll up
             fov -= zoom;
         }
-        else if(event->wheel.y < 0) {// scroll down
+        else if (event->wheel.y < 0)
+        { // scroll down
             fov += zoom;
         }
 
         //Limiting the FOV range to avoid low FPS values or weird distortion
-        if(fov < 20){
+        if (fov < 20)
+        {
             fov = 20;
         }
-        else if (fov > 120){
+        else if (fov > 120)
+        {
             fov = 120;
         }
 
@@ -232,3 +161,81 @@ void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int delta
         sceneCamera->cameraFrustrum.fov = fov;
     }
 }
+        //1. User requested quits
+        //2. Keyboard presses
+        //3. Mouse movement
+        //4. Mouse clicks
+        //5. Mouse wheel movement
+        // void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int deltaT){
+        //     float speed = sceneCamera->camSpeed *  deltaT;
+
+        //     //Handling keyboard input
+        //     if( event->type == SDL_KEYDOWN ){
+        //         std::string sceneID = "0";
+        //         switch( event->key.keysym.sym )
+        //         {
+        //             //SCENE CODE
+        //             // case SDLK_1:
+        //             // sceneID = "teapotSingle";
+        //             // break;
+
+        //             //MOVEMENT CONTROLS (STRAFING)
+        //             //WINDOW CONTROL OPTIONS
+        //             case SDLK_ESCAPE:
+        //             done = true;
+        //             return;
+        //             case SDLK_w:
+        //             printf("Moving Forward!\n");
+        //             sceneCamera->position += sceneCamera->front * speed;
+        //             break;
+
+        //             case SDLK_s:
+        //             sceneCamera->position -= sceneCamera->front * speed;
+        //             break;
+
+
+
+        //             //CAMERA CONTROLS (RESET AND ORBITING)
+        //             // case SDLK_r:
+        //             // sceneCamera->resetCamera();
+        //             // break;
+
+        //             // case SDLK_TAB:
+        //             // sceneCamera->orbiting = !sceneCamera->orbiting;
+        //             // sceneCamera->resetCamera();
+        //             // break;
+
+        //             // case SDLK_UP:
+        //             // sceneCamera->period -= 2;
+        //             // if (sceneCamera->period  < 4){
+        //             //     sceneCamera->period = 4;
+        //             // }
+        //             // break;
+
+        //             // case SDLK_DOWN:
+        //             // sceneCamera->period += 2;
+        //             // if (sceneCamera->period  > 60){
+        //             //     sceneCamera->period = 60;
+        //             // }
+        //             // break;
+
+        //             default:
+        //             break;
+
+        //         }
+
+        //         //Only switch scene if a scene-key (1-5) was pressed
+        //         //Exit if the scene could not be loaded for some reason
+        //         // if ( sceneID != "0" ){
+        //         //     if( !sceneController->switchScene(sceneID) ){
+        //         //         printf("Failed to switch scene! Quitting.\n");
+        //         //         done = true;
+        //         //         return;
+        //         //     }
+        //         //     else{
+        //         //         printf("Loaded %s Scene.\n", sceneID.c_str());
+        //         //         sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
+        //         //         sceneCamera->resetCamera();
+        //         // }
+        //     }
+        // }
