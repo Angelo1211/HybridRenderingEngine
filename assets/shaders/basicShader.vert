@@ -1,33 +1,31 @@
 #version 450 core
-layout (location = 0) in vec3 vertexPos_mSpace; // the position variable has attribute position 0
-layout (location = 1) in vec3 normal_mSpace;
+
+//Naming scheme clarification
+// mS = model Space
+// vS = view Space
+// wS = world Space
+
+layout (location = 0) in vec3 vertexPos_mS; // the position variable has attribute position 0
+layout (location = 1) in vec3 normal_mS;
 layout (location = 2) in vec2 aTexCoord;
 
 out VS_OUT{
-    vec3 viewDir_vSpace;
-    vec3 lightDir_vSpace;
-    vec3 normal_vSpace;
+    vec3 fragPos_wS;
+    vec3 normal_wS;
     vec2 texCoord;
 } vs_out;
 
+//Matrices
 uniform mat4 MVP;
-uniform mat4 MV;
-uniform mat4 V;
+uniform mat4 M;
 
 void main(){
     //Position in clip space
-    gl_Position = MVP*vec4(vertexPos_mSpace, 1.0); 
+    gl_Position = MVP*vec4(vertexPos_mS, 1.0); 
     
-    //ViewDirection in view space
-    vec3 vertexPos_vSpace  =  vec3(MV * vec4(vertexPos_mSpace, 1.0));
-    vs_out.viewDir_vSpace  = -vertexPos_vSpace;
+    vs_out.fragPos_wS  =  vec3(M * vec4(vertexPos_mS, 1.0));
 
-    //LightDirection in view space
-    vec3 lightPosition_vSpace = vec3(V * vec4(0.0, 0.0, 9.0, 1.0));
-    vs_out.lightDir_vSpace    = lightPosition_vSpace - vertexPos_vSpace;
-
-    //Normal in view space
-    vs_out.normal_vSpace   = vec3( MV * vec4(normal_mSpace, 0.0));
+    vs_out.normal_wS   = mat3(M) * normal_mS ;
 
     //Passing texture coords
     vs_out.texCoord = aTexCoord;

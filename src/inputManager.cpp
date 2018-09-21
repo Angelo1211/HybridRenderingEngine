@@ -104,7 +104,6 @@ void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int delta
         //Only move camera if the right button is pressed
         if (event->motion.state & SDL_BUTTON_LMASK)
         {
-            printf("Moving mouse!\n");
             float sens = 0.05f;
             float xOffset = (float)event->motion.xrel * sens;
             float yOffset = -(float)event->motion.yrel * sens;

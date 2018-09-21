@@ -48,18 +48,57 @@ void RenderManager::render(){
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 MV  = glm::mat4(1.0);
 
+    //Activating shader and setting up uniforms that are constant
+    currentShader->use();
+    
+    //Directional light
+    currentShader->setVec3("dirLight.direction", glm::vec3(1.0f, -1.0f, 0.0f));
+    currentShader->setVec3("dirLight.ambient",   glm::vec3(0.01f));
+    currentShader->setVec3("dirLight.diffuse",   glm::vec3(0.1f));
+    currentShader->setVec3("dirLight.specular",  glm::vec3(0.1f));
+
+    //All the point lights
+    glm::vec3 pointLightPositions[] = {
+        glm::vec3(400.0f, 100.0f, 0.0f),
+        glm::vec3(-400.0f, 100.0f, 0.0f),
+        glm::vec3(400.0f, 400.0f, 200.0f),
+        glm::vec3(-400.0f, 300.0f, -200.0f),
+    };
+    for(unsigned int i = 0; i < 4; ++i){
+        std::string number = std::to_string(i);
+
+        currentShader->setVec3(("pointLights[" + number + "].position").c_str(), pointLightPositions[i]);
+        currentShader->setVec3(("pointLights[" + number + "].ambient").c_str(), glm::vec3(0.1f));
+        currentShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), glm::vec3(1.0f, 0.6f, 0.6f));
+        currentShader->setVec3(("pointLights[" + number + "].specular").c_str(), glm::vec3(0.6f));
+        currentShader->setFloat(("pointLights[" + number + "].constant").c_str(), 0.5f);
+        currentShader->setFloat(("pointLights[" + number + "].linear").c_str(), 0.045f);
+        currentShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), 0.0007f);
+    }
+
     while( !renderObjectQueue->empty() ){
         Model * currentModel = renderObjectQueue->front();
+
+        //Light movement
+        // float ang = 2.0f* M_PI * static_cast<float>(SDL_GetTicks()) / (16000.0f);
+        // float radius = 1000.0f;
+        // float X = std::sin(ang) * radius;
+        // float Z = std::cos(ang) * radius;
+        // glm::vec3 lightPos = glm::vec3(X, 100.0f , 0.0f);
 
         //Matrix setup
         MV  =   sceneCamera->viewMatrix * currentModel->getModelMatrix();
         MVP = sceneCamera->projectionMatrix * MV;
 
-        //Shader setup
-        currentShader->use();
+        //Shader setup stuff that changes every frame
         currentShader->setMat4("MVP", MVP);
-        currentShader->setMat4("MV", MV);
-        currentShader->setMat4("V", sceneCamera->viewMatrix);
+        currentShader->setMat4("M", currentModel->getModelMatrix() );
+        currentShader->setVec3("cameraPos_wS", sceneCamera->position);
+        
+        // currentShader->setMat4("MV", MV);
+        // currentShader->setFloat("light.constant", 1.0f);
+        // currentShader->setFloat("light.linear", 0.0014f);
+        // currentShader->setFloat("light.quadratic", 0.000007f);
         // currentShader->setVec3("viewPos", sceneCamera->position);
 
         //Draw object
