@@ -14,7 +14,6 @@
 #include "sceneManager.h"
 #include "shader.h"
 #include "camera.h"
-// #include "softwareRenderer.h"
 #include "model.h"
 #include <queue>
 
@@ -36,16 +35,24 @@ class RenderManager{
 
     private:
         void buildRenderQueue();
-        bool initSoftwareRenderer();
-        
-        //This is a pointer to a pointer to allow for scene switching
-        Shader *currentShader;
+
+        bool buildFrameBuffer();
+        bool loadShaders();
+
+        void drawScene();
+        void postProcess();
+
+        Shader *shaderAtlas[2]; //The number is kind of arbitrary for now
         SceneManager   * sceneLocator;
         Camera *sceneCamera;
         DisplayManager * screen;
 
-        // SoftwareRenderer renderInstance;
         std::queue<Model*> *renderObjectQueue;        
+
+        //OPENGL STUFF TODO TODO TODO
+        unsigned int frameBuffer;
+        unsigned int texColorBuffer;
+        unsigned int renderBufferObject;
 };
 
 

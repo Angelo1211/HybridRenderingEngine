@@ -15,27 +15,40 @@ RenderManager::~RenderManager(){}
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
 bool RenderManager::startUp(DisplayManager &displayManager,SceneManager &sceneManager ){
-    currentShader = new Shader("basicShader.vert", "basicShader.frag");
     screen = &displayManager;
     sceneLocator = &sceneManager;
-    // if( !initSoftwareRenderer() ){
-    //     printf("Failed to initialize software Renderer!\n");
-    //     return false;
-    // }
+    //I know this is uneccessary but it might be useful if I add more startup functions
+    //in the future
+    if( !buildFrameBuffer() ){
+        return false;
+    }
+    else{
+        if (!loadShaders()){
+            printf("All ")
+            return false;
+        }
+    }
     return true;
 }
 
 void RenderManager::shutDown(){
-    delete currentShader;
+    delete shaderAtlas[0];
+    delete shaderAtlas[1];
     sceneCamera = nullptr;
     sceneLocator = nullptr;
     screen = nullptr;
-    // renderInstance.shutDown();
 }
 
-void RenderManager::render(){
-    //Clearing screen for rendering
-    // glClearColor(0.0f, 0.5f, 1.0f, 1.0f);
+bool RenderManager::loadShaders(){
+    shaderAtlas[0] = &Shader("basicShader.vert", "basicShader.frag");
+    shaderAtlas[1] = &Shader("screenShader.vert", "screenShader.frag");
+
+    return ( shaderAtlas[0] != nullptr ) and ( shaderAtlas[1] != nullptr );
+}
+
+//Here we do the offscreen rendering for hte whole scene
+void RenderManager::drawScene(){
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
     glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -49,13 +62,13 @@ void RenderManager::render(){
     glm::mat4 MV  = glm::mat4(1.0);
 
     //Activating shader and setting up uniforms that are constant
-    currentShader->use();
+    shaderAtlas[0]->use();
     
     //Directional light
-    currentShader->setVec3("dirLight.direction", glm::vec3(1.0f, -1.0f, 0.0f));
-    currentShader->setVec3("dirLight.ambient",   glm::vec3(0.01f));
-    currentShader->setVec3("dirLight.diffuse",   glm::vec3(0.1f));
-    currentShader->setVec3("dirLight.specular",  glm::vec3(0.1f));
+    shaderAtlas[0]->setVec3("dirLight.direction", glm::vec3(1.0f, -1.0f, 0.0f));
+    shaderAtlas[0]->setVec3("dirLight.ambient",   glm::vec3(0.05f));
+    shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(0.4f));
+    shaderAtlas[0]->setVec3("dirLight.specular",  glm::vec3(0.4f));
 
     //All the point lights
     glm::vec3 pointLightPositions[] = {
@@ -67,13 +80,13 @@ void RenderManager::render(){
     for(unsigned int i = 0; i < 4; ++i){
         std::string number = std::to_string(i);
 
-        currentShader->setVec3(("pointLights[" + number + "].position").c_str(), pointLightPositions[i]);
-        currentShader->setVec3(("pointLights[" + number + "].ambient").c_str(), glm::vec3(0.1f));
-        currentShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), glm::vec3(1.0f, 0.6f, 0.6f));
-        currentShader->setVec3(("pointLights[" + number + "].specular").c_str(), glm::vec3(0.6f));
-        currentShader->setFloat(("pointLights[" + number + "].constant").c_str(), 0.5f);
-        currentShader->setFloat(("pointLights[" + number + "].linear").c_str(), 0.045f);
-        currentShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), 0.0007f);
+        shaderAtlas[0]->setVec3(("pointLights[" + number + "].position").c_str(), pointLightPositions[i]);
+        shaderAtlas[0]->setVec3(("pointLights[" + number + "].ambient").c_str(), glm::vec3(0.1f));
+        shaderAtlas[0]->setVec3(("pointLights[" + number + "].diffuse").c_str(), glm::vec3(1.0f, 0.6f, 0.6f));
+        shaderAtlas[0]->setVec3(("pointLights[" + number + "].specular").c_str(), glm::vec3(0.6f));
+        shaderAtlas[0]->setFloat(("pointLights[" + number + "].constant").c_str(), 1.0f);
+        shaderAtlas[0]->setFloat(("pointLights[" + number + "].linear").c_str(), 0.0014f);
+        shaderAtlas[0]->setFloat(("pointLights[" + number + "].quadratic").c_str(), 0.000007f);
     }
 
     while( !renderObjectQueue->empty() ){
@@ -91,20 +104,20 @@ void RenderManager::render(){
         MVP = sceneCamera->projectionMatrix * MV;
 
         //Shader setup stuff that changes every frame
-        currentShader->setMat4("MVP", MVP);
-        currentShader->setMat4("M", currentModel->getModelMatrix() );
-        currentShader->setVec3("cameraPos_wS", sceneCamera->position);
+        shaderAtlas[0]->setMat4("MVP", MVP);
+        shaderAtlas[0]->setMat4("M", currentModel->getModelMatrix() );
+        shaderAtlas[0]->setVec3("cameraPos_wS", sceneCamera->position);
         
-        // currentShader->setMat4("MV", MV);
-        // currentShader->setFloat("light.constant", 1.0f);
-        // currentShader->setFloat("light.linear", 0.0014f);
-        // currentShader->setFloat("light.quadratic", 0.000007f);
-        // currentShader->setVec3("viewPos", sceneCamera->position);
 
         //Draw object
-        currentModel->draw(*currentShader);
+        currentModel->draw(*shaderAtlas[0]);
         renderObjectQueue->pop();
     }
+}
+
+void RenderManager::render(){
+
+
 
     //Drawing to the screen by swapping the window's surface with the
     //final buffer containing all rendering information
@@ -131,11 +144,40 @@ void RenderManager::buildRenderQueue(){
     renderObjectQueue = currentScene->getVisiblemodels();
 }
 
-bool RenderManager::initSoftwareRenderer(){
+bool RenderManager::buildFrameBuffer(){
     int w = DisplayManager::SCREEN_WIDTH;
     int h = DisplayManager::SCREEN_HEIGHT;
+    glGenFramebuffers(1, &frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+    //We generate and attach a texture to the frame buffer that acts as our color buffer
+    glGenTextures(1, &texColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR  );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    //We now add the attachment to the framebuffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
+
+    //We generate a render buffer object for the stencil and depth buffer
+    glGenRenderbuffers(1, &renderBufferObject);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderBufferObject);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    //Actually attaching to the frame buffer
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferObject);
+
+    //Check if frame buffer is complete or not
+    if( glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
+        printf(" Failed to initialize the frame buffer!\n");
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return false;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return true;
-    // return renderInstance.startUp(w,h);
 }
 
 

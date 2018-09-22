@@ -9,6 +9,8 @@
 #include <math.h>
 #include <stdio.h>
 
+Engine Engine::instance_;
+
 //Dummy constructors and destructors
 Engine::Engine(){}
 Engine::~Engine(){}

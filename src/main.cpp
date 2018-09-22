@@ -7,16 +7,16 @@
 #include "engine.h"
 #include <stdio.h>
 
+//Hybrid Rendering Engine
 int main( int argc, char* args[] ){
 
-    Engine HRE; //Hybrid Rendering Engine
-    if(HRE.startUp()){
-        HRE.run();
+    if(Engine::instance().startUp()){
+        Engine::instance().run();
     }
     else{
         printf("HRE could not initialize successfully. Shutting down.\n");
     }
-    HRE.shutDown();
+    Engine::instance().shutDown();
 
     return 0;
 }

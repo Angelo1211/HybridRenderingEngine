@@ -15,10 +15,10 @@
 #include "sceneManager.h"
 #include "renderManager.h"
 
-
 class Engine
 {
   public:
+    static Engine &instance(){return instance_;}
     //Dummy constructors / Destructors
     Engine();
     ~Engine();
@@ -33,6 +33,8 @@ class Engine
     void run();
 
   private:
+    static Engine instance_;
+
     DisplayManager gDisplayManager;
     InputManager gInputManager;
     SceneManager gSceneManager;

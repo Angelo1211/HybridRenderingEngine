@@ -43,7 +43,11 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 
 void main(){
     //Texture Reads
-    vec3 color =  texture(diffuse1, fs_in.texCoord).rgb;
+    vec4 albedo =  texture(diffuse1, fs_in.texCoord);
+    if(albedo.a < 0.5){
+        discard;
+    }
+    vec3 color = albedo.rgb; 
     vec3 specularIntensity =  vec3(texture(specular1, fs_in.texCoord).r);
 
     //Components common to all light types

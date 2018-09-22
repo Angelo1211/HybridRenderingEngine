@@ -4,7 +4,6 @@
 // ===============================
 
 #include "shader.h"
-#include "SDL.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -23,12 +22,10 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
     //Check if shader files exist
     if(!vShaderFile.good()){
         printf("Couldn't find vertex shader file: %s in shaders folder.\n ", vertexPath.c_str());
-        SDL_Delay(3000);
     }
     else{ //Vertex shader file exists
         if(!fShaderFile.good()){
             printf("Couldn't find fragment shader file: %s in shaders folder.\n ", vertexPath.c_str());
-            SDL_Delay(3000);
         }
         else{ //Frgment shader file exists
             vShaderStream << vShaderFile.rdbuf();    
