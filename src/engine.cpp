@@ -90,7 +90,7 @@ void Engine::run(){
         //Update all models, camera and lighting in the current scene
         gSceneManager.update(deltaT);
 
-        gRenderManager.render();
+        gRenderManager.render(start);
 
         //Monitoring time taken per frame to gauge engine performance
         deltaT = SDL_GetTicks() - start;

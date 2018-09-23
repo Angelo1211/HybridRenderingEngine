@@ -31,16 +31,18 @@ class RenderManager{
 
         //Performs all high level prep operations that the graphics library
         //Needs to do before beginning to draw each model in the scene.
-        void render();
+        void render(const unsigned int start);
 
     private:
-        void buildRenderQueue();
-
+        //Setup
         bool buildFrameBuffer();
         bool loadShaders();
+        bool setupQuad();
 
+        //Internal Rendering
         void drawScene();
-        void postProcess();
+        void postProcess(const unsigned int start);
+        void buildRenderQueue();
 
         Shader *shaderAtlas[2]; //The number is kind of arbitrary for now
         SceneManager   * sceneLocator;
@@ -50,6 +52,8 @@ class RenderManager{
         std::queue<Model*> *renderObjectQueue;        
 
         //OPENGL STUFF TODO TODO TODO
+        unsigned int quadVAO;
+        unsigned int quadVBO;
         unsigned int frameBuffer;
         unsigned int texColorBuffer;
         unsigned int renderBufferObject;

@@ -81,7 +81,7 @@ vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec
 
     //Specular component
     vec3 halfway  = normalize(lightDir + viewDir);
-    float nDotHBP = pow(max(dot(normal, halfway), 0.0), 128.0); //N dot H using blinn phong
+    float nDotHBP = pow(max(dot(normal, halfway), 0.0), 32.0); //N dot H using blinn phong
     vec3 specular = light.specular * nDotHBP * spec;
     
     //Total contribution

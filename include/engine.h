@@ -39,6 +39,7 @@ class Engine
     InputManager gInputManager;
     SceneManager gSceneManager;
     RenderManager gRenderManager;
+
 };
 
 #endif

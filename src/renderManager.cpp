@@ -14,9 +14,10 @@ RenderManager::~RenderManager(){}
 
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
-bool RenderManager::startUp(DisplayManager &displayManager,SceneManager &sceneManager ){
+bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneManager ){
     screen = &displayManager;
     sceneLocator = &sceneManager;
+
     //I know this is uneccessary but it might be useful if I add more startup functions
     //in the future
     if( !buildFrameBuffer() ){
@@ -24,8 +25,13 @@ bool RenderManager::startUp(DisplayManager &displayManager,SceneManager &sceneMa
     }
     else{
         if (!loadShaders()){
-            printf("All ")
+            printf("All shaders failed to compile! \n");
             return false;
+        }
+        else{
+            if( !setupQuad()){
+                return false;
+            }
         }
     }
     return true;
@@ -34,21 +40,61 @@ bool RenderManager::startUp(DisplayManager &displayManager,SceneManager &sceneMa
 void RenderManager::shutDown(){
     delete shaderAtlas[0];
     delete shaderAtlas[1];
-    sceneCamera = nullptr;
+    delete [] shaderAtlas;
+    sceneCamera  = nullptr;
     sceneLocator = nullptr;
     screen = nullptr;
 }
 
-bool RenderManager::loadShaders(){
-    shaderAtlas[0] = &Shader("basicShader.vert", "basicShader.frag");
-    shaderAtlas[1] = &Shader("screenShader.vert", "screenShader.frag");
+bool RenderManager::setupQuad(){
+    const float quadVertices[] = {
+        //positions //texCoordinates
+        -1.0f, 1.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f,
+        1.0f, -1.0f, 1.0f, 0.0f,
 
-    return ( shaderAtlas[0] != nullptr ) and ( shaderAtlas[1] != nullptr );
+        -1.0f, 1.0f, 0.0f, 1.0f,
+        1.0f, -1.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 1.0f
+    };
+
+    //OpenGL postprocessing quad setup
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+
+    //Bind Vertex Array Object and VBO in correct order
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+
+    //VBO initialization
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+    //Quad position pointer initialization in attribute array
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+    //Quad texcoords pointer initialization in attribute array
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    glBindVertexArray(0);
+
+
+    //TODO add error checking
+    return true;
+}
+
+bool RenderManager::loadShaders(){
+    shaderAtlas[0] = new Shader("basicShader.vert", "basicShader.frag");
+    shaderAtlas[1] = new Shader("screenShader.vert", "screenShader.frag");
+
+    return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr );
 }
 
 //Here we do the offscreen rendering for hte whole scene
 void RenderManager::drawScene(){
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    glEnable(GL_DEPTH_TEST);
     glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -100,7 +146,7 @@ void RenderManager::drawScene(){
         // glm::vec3 lightPos = glm::vec3(X, 100.0f , 0.0f);
 
         //Matrix setup
-        MV  =   sceneCamera->viewMatrix * currentModel->getModelMatrix();
+        MV  = sceneCamera->viewMatrix * currentModel->getModelMatrix();
         MVP = sceneCamera->projectionMatrix * MV;
 
         //Shader setup stuff that changes every frame
@@ -108,16 +154,41 @@ void RenderManager::drawScene(){
         shaderAtlas[0]->setMat4("M", currentModel->getModelMatrix() );
         shaderAtlas[0]->setVec3("cameraPos_wS", sceneCamera->position);
         
-
         //Draw object
         currentModel->draw(*shaderAtlas[0]);
         renderObjectQueue->pop();
     }
+
 }
 
-void RenderManager::render(){
+void RenderManager::postProcess(const unsigned int start){
+    //Setting back to default framebuffer (screen) and clearing
+    //No need for depth testing cause we're drawing to a flat quad
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
+    //Shader setup for postprocessing
+    shaderAtlas[1]->use();
+    shaderAtlas[1]->setInt("offset", start);
 
+    //Switching to the VAO of the quad and binding the texture buffer with
+    // frame drawn off-screen
+    glBindVertexArray(quadVAO);
+    glDisable(GL_DEPTH_TEST);
+    glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0);
+}
+
+void RenderManager::render(const unsigned int start){
+
+    //First we draw the scene as normal but on the offscreen buffer
+    drawScene();
+
+    //Render to quad and apply postprocessing effects
+    postProcess(start);
 
     //Drawing to the screen by swapping the window's surface with the
     //final buffer containing all rendering information
@@ -172,7 +243,7 @@ bool RenderManager::buildFrameBuffer(){
 
     //Check if frame buffer is complete or not
     if( glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
-        printf(" Failed to initialize the frame buffer!\n");
+        printf(" Failed to initialize the offscreen frame buffer!\n");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return false;
     }

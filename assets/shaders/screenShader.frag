@@ -4,7 +4,13 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
+uniform int offset; 
 
 void main(){
-    FragColor = vec4(texture(screenTexture, TexCoords).r, 0.0, 0.0, 1.0);
+    float frequency = 100;
+    float amplitude = 0.003;
+    float speed = 0.03;
+    float distortion = sin(TexCoords.y * frequency + offset*speed)* amplitude;
+    vec2 offSetCoords = vec2(TexCoords.x + distortion, TexCoords.y);
+    FragColor = texture(screenTexture, offSetCoords);
 }
