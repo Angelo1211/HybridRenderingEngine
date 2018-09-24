@@ -36,8 +36,8 @@ struct Camera{
     std::set< char > set;
 
     //Position and direction of camera, used to build view matrix
-    glm::vec3 position{0,0,5};
-    glm::vec3 target{0,0,0};
+    glm::vec3 position{0,0,1};
+    glm::vec3 target{0,0,1};
     glm::vec3 up{0,1,0};
     glm::vec3 front{0, 0, -1};
     glm::vec3 side;

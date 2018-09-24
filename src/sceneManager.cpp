@@ -14,7 +14,7 @@ SceneManager::~SceneManager(){}
 //If for whatever reason the scene could not load any model, or there are none defined
 //It just quits early.
 bool SceneManager::startUp(){
-    currentSceneID = "sponza";
+    currentSceneID = "nanosuit";
     if (!loadScene(currentSceneID)){
         printf("Could not load default scene. No models succesfully loaded!\n");
         return false;

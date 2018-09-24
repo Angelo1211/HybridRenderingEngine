@@ -12,6 +12,7 @@
 //Includes
 #include "displayManager.h"
 #include "sceneManager.h"
+#include "skybox.h"
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
@@ -41,13 +42,15 @@ class RenderManager{
 
         //Internal Rendering
         void drawScene();
+        void drawSkybox(const glm::mat4 &VP);
         void postProcess(const unsigned int start);
         void buildRenderQueue();
 
-        Shader *shaderAtlas[2]; //The number is kind of arbitrary for now
+        Shader *shaderAtlas[3]; //The number is kind of arbitrary for now
         SceneManager   * sceneLocator;
         Camera *sceneCamera;
         DisplayManager * screen;
+        Skybox *skybox;
 
         std::queue<Model*> *renderObjectQueue;        
 

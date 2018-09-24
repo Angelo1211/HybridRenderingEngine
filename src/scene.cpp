@@ -30,6 +30,7 @@ Scene::~Scene(){
         for(Model *models : modelsInScene){
             delete models;
         }
+        delete mainSkyBox;
         // delete [] lights;
     }
 }
@@ -64,6 +65,10 @@ bool Scene::checkIfEmpty(){
     return missingScene;
 }
 
+Skybox *Scene::getCurrentSkybox(){
+    return mainSkyBox;
+}
+
 //-----------------------------SCENE LOADING-----------------------------------
 
 //Config file parsing, gets all the important 
@@ -88,8 +93,11 @@ bool Scene::loadContent(){
         }
         //now we can parse the rest of the file "safely"
         else{
-            printf("loading models...\n");
+            printf("Loading models...\n");
             loadSceneModels(configJson);
+
+            printf("Generating skybox...\n");
+            loadSkyBox(configJson);
 
             //lastly we check if the scene is empty and return
             return !modelsInScene.empty();
@@ -97,7 +105,16 @@ bool Scene::loadContent(){
     }
 }
 
-void Scene::loadSceneModels(const json sceneConfigJson ){
+void Scene::loadSkyBox(const json &sceneConfigJson){
+    std::string skyBoxName = sceneConfigJson["skybox"];
+    std::string skyBoxFolderPath = "../assets/skyboxes/";
+    skyBoxFolderPath += skyBoxName;
+
+    mainSkyBox = new Skybox(skyBoxFolderPath);
+    // mainSkyBox->loadCubeMap(skyBoxFolderPath);
+}
+
+void Scene::loadSceneModels(const json &sceneConfigJson ){
     //model setup
     std::string modelMesh, modelMaterial;
     TransformParameters initParameters;

@@ -40,6 +40,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 void RenderManager::shutDown(){
     delete shaderAtlas[0];
     delete shaderAtlas[1];
+    delete shaderAtlas[2];
     delete [] shaderAtlas;
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
@@ -87,8 +88,18 @@ bool RenderManager::setupQuad(){
 bool RenderManager::loadShaders(){
     shaderAtlas[0] = new Shader("basicShader.vert", "basicShader.frag");
     shaderAtlas[1] = new Shader("screenShader.vert", "screenShader.frag");
+    shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
+    shaderAtlas[2]->use();
+    shaderAtlas[2]->setInt("skybox", 0);
 
-    return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr );
+    return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
+}
+
+void RenderManager::drawSkybox(const glm::mat4  &VP){
+    shaderAtlas[2]->use();
+    shaderAtlas[2]->setMat4("VP", VP);
+
+    skybox->draw();
 }
 
 //Here we do the offscreen rendering for hte whole scene
@@ -105,7 +116,15 @@ void RenderManager::drawScene(){
 
     //Temp matrix init TODO TODO TODO
     glm::mat4 MVP = glm::mat4(1.0);
-    glm::mat4 MV  = glm::mat4(1.0);
+    glm::mat4 M   = glm::mat4(1.0);
+    glm::mat4 VP  = sceneCamera->projectionMatrix * sceneCamera->viewMatrix;
+    glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(sceneCamera->viewMatrix));
+    glm::mat4 VPCubeMap = sceneCamera->projectionMatrix * viewNoTranslation;
+
+    // glm::mat4 VPCubeMap = sceneCamera->projectionMatrix *glm::mat4(glm::mat3(sceneCamera->viewMatrix));
+
+    //Drawing skybox
+    drawSkybox(VPCubeMap);;
 
     //Activating shader and setting up uniforms that are constant
     shaderAtlas[0]->use();
@@ -146,12 +165,12 @@ void RenderManager::drawScene(){
         // glm::vec3 lightPos = glm::vec3(X, 100.0f , 0.0f);
 
         //Matrix setup
-        MV  = sceneCamera->viewMatrix * currentModel->getModelMatrix();
-        MVP = sceneCamera->projectionMatrix * MV;
+        M  = currentModel->getModelMatrix();
+        MVP = VP * M;
 
         //Shader setup stuff that changes every frame
         shaderAtlas[0]->setMat4("MVP", MVP);
-        shaderAtlas[0]->setMat4("M", currentModel->getModelMatrix() );
+        shaderAtlas[0]->setMat4("M", M);
         shaderAtlas[0]->setVec3("cameraPos_wS", sceneCamera->position);
         
         //Draw object
@@ -207,6 +226,8 @@ void RenderManager::buildRenderQueue(){
     
     //Set renderer camera
     sceneCamera = currentScene->getCurrentCamera();
+    
+    skybox = currentScene->getCurrentSkybox();
 
     //Update the pointer to the list of lights in the scene
     // renderInstance.setSceneLights(currentScene->getCurrentLights(), currentScene->getLightCount() );

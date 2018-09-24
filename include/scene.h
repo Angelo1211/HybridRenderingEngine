@@ -14,6 +14,8 @@
 #include <queue>
 #include "model.h"
 #include "camera.h"
+#include "texture.h"
+#include "skybox.h"
 #include "glm/glm.hpp"
 #include "nlohmann/json.hpp"
 // #include "light.h"
@@ -34,6 +36,8 @@ class Scene{
         Camera * getCurrentCamera();
         // BaseLight * getCurrentLights();
         int getLightCount();
+
+        Skybox * getCurrentSkybox();
         
         //Signals issues to scene Manager
         bool checkIfEmpty();  
@@ -46,6 +50,7 @@ class Scene{
         bool missingScene;
         int lightCount;
         Camera mainCamera;
+        Skybox *mainSkyBox;
         // BaseLight *lights; //Array of lights in scene
 
         //Contains the models that remain after frustrum culling
@@ -55,7 +60,8 @@ class Scene{
         //TODO 
         bool checkFileValidity(const std::string &filePath);
         bool loadContent();
-        void loadSceneModels(const json sceneConfigJson);
+        void loadSceneModels(const json &sceneConfigJson);
+        void loadSkyBox(const json &sceneConfigJson);
         
         //Finds objects that the camera can see
         void frustrumCulling();

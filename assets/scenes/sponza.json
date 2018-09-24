@@ -1,5 +1,6 @@
 {
     "sceneID": "sponza",
+    "skybox": "default",
     "models": [{
         "mesh": "sponza.obj",
         "pbr": false,

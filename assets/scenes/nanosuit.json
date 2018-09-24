@@ -1,5 +1,6 @@
 {
     "sceneID": "nanosuit",
+    "skybox": "default",
     "models": [{
         "mesh": "nanosuit.obj",
         "pbr": false,
