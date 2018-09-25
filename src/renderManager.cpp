@@ -96,10 +96,14 @@ bool RenderManager::loadShaders(){
 }
 
 void RenderManager::drawSkybox(const glm::mat4  &VP){
+    //We change the depth function because we set the skybox to always have
+    // a clipspace value of one so if it isn't changed to less than or equal it will fail
+    glDepthFunc(GL_LEQUAL);
     shaderAtlas[2]->use();
     shaderAtlas[2]->setMat4("VP", VP);
 
     skybox->draw();
+    glDepthFunc(GL_LESS);
 }
 
 //Here we do the offscreen rendering for hte whole scene
@@ -118,13 +122,8 @@ void RenderManager::drawScene(){
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 M   = glm::mat4(1.0);
     glm::mat4 VP  = sceneCamera->projectionMatrix * sceneCamera->viewMatrix;
-    glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(sceneCamera->viewMatrix));
-    glm::mat4 VPCubeMap = sceneCamera->projectionMatrix * viewNoTranslation;
+    glm::mat4 VPCubeMap = sceneCamera->projectionMatrix *glm::mat4(glm::mat3(sceneCamera->viewMatrix));
 
-    // glm::mat4 VPCubeMap = sceneCamera->projectionMatrix *glm::mat4(glm::mat3(sceneCamera->viewMatrix));
-
-    //Drawing skybox
-    drawSkybox(VPCubeMap);;
 
     //Activating shader and setting up uniforms that are constant
     shaderAtlas[0]->use();
@@ -178,6 +177,8 @@ void RenderManager::drawScene(){
         renderObjectQueue->pop();
     }
 
+    //Drawing skybox
+    drawSkybox(VPCubeMap);
 }
 
 void RenderManager::postProcess(const unsigned int start){
