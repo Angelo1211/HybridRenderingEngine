@@ -20,12 +20,14 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
     //I know this is uneccessary but it might be useful if I add more startup functions
     //in the future
-    if( !buildFrameBuffer() ){
+    bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
+    bool initFBOFlag2 = simpleFBO.setupFrameBuffer(false);
+    if( !initFBOFlag1 && !initFBOFlag2 ){
         return false;
     }
     else{
         if (!loadShaders()){
-            printf("All shaders failed to compile! \n");
+            printf("A Shader failed to compile! \n");
             return false;
         }
         else{
@@ -41,10 +43,44 @@ void RenderManager::shutDown(){
     delete shaderAtlas[0];
     delete shaderAtlas[1];
     delete shaderAtlas[2];
-    delete [] shaderAtlas;
+    // delete [] shaderAtlas;
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
     screen = nullptr;
+}
+
+void RenderManager::render(const unsigned int start){
+    //Frame buffer stuff
+    multiSampledFBO.bind();
+
+    //Preps all the items that will be drawn in the scene
+    buildRenderQueue();
+
+    //First we draw the scene as normal but on the offscreen buffer
+    drawScene();
+
+    //Resolving the multisambled call 
+    int w = DisplayManager::SCREEN_WIDTH;
+    int h = DisplayManager::SCREEN_HEIGHT;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, multiSampledFBO.frameBufferID);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, simpleFBO.frameBufferID);
+    glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+
+    //Setting back to default framebuffer (screen) and clearing
+    //No need for depth testing cause we're drawing to a flat quad
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    //Render to quad and apply postprocessing effects
+    postProcess(start);
+
+    //Drawing to the screen by swapping the window's surface with the
+    //final buffer containing all rendering information
+    screen->swapDisplayBuffer();
+
+    //Set camera pointer to null just in case a scene change occurs
+    sceneCamera = nullptr;
 }
 
 bool RenderManager::setupQuad(){
@@ -95,28 +131,10 @@ bool RenderManager::loadShaders(){
     return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
 }
 
-void RenderManager::drawSkybox(const glm::mat4  &VP){
-    //We change the depth function because we set the skybox to always have
-    // a clipspace value of one so if it isn't changed to less than or equal it will fail
-    glDepthFunc(GL_LEQUAL);
-    shaderAtlas[2]->use();
-    shaderAtlas[2]->setMat4("VP", VP);
-
-    skybox->draw();
-    glDepthFunc(GL_LESS);
-}
 
 //Here we do the offscreen rendering for hte whole scene
 void RenderManager::drawScene(){
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //Build a render Queue for drawing multiple models
-    //Also assigns the current camera to the software renderer
-    //And gets info on the number of lights in the scene
-    buildRenderQueue();
 
     //Temp matrix init TODO TODO TODO
     glm::mat4 MVP = glm::mat4(1.0);
@@ -181,13 +199,18 @@ void RenderManager::drawScene(){
     drawSkybox(VPCubeMap);
 }
 
-void RenderManager::postProcess(const unsigned int start){
-    //Setting back to default framebuffer (screen) and clearing
-    //No need for depth testing cause we're drawing to a flat quad
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+void RenderManager::drawSkybox(const glm::mat4  &VP){
+    //We change the depth function because we set the skybox to always have
+    // a clipspace value of one so if it isn't changed to less than or equal it will fail
+    glDepthFunc(GL_LEQUAL);
+    shaderAtlas[2]->use();
+    shaderAtlas[2]->setMat4("VP", VP);
 
+    skybox->draw();
+    glDepthFunc(GL_LESS);
+}
+
+void RenderManager::postProcess(const unsigned int start){
     //Shader setup for postprocessing
     shaderAtlas[1]->use();
     shaderAtlas[1]->setInt("offset", start);
@@ -196,27 +219,12 @@ void RenderManager::postProcess(const unsigned int start){
     // frame drawn off-screen
     glBindVertexArray(quadVAO);
     glDisable(GL_DEPTH_TEST);
-    glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, simpleFBO.texColorBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindVertexArray(0);
 }
 
-void RenderManager::render(const unsigned int start){
-
-    //First we draw the scene as normal but on the offscreen buffer
-    drawScene();
-
-    //Render to quad and apply postprocessing effects
-    postProcess(start);
-
-    //Drawing to the screen by swapping the window's surface with the
-    //final buffer containing all rendering information
-    screen->swapDisplayBuffer();
-
-    //Set camera pointer to null just in case a scene change occurs
-    sceneCamera = nullptr;
-}
 
 //Gets the list of visible models from the current scene
 //Done every frame in case scene changes
@@ -236,49 +244,3 @@ void RenderManager::buildRenderQueue(){
     //Get pointers to the visible model queue
     renderObjectQueue = currentScene->getVisiblemodels();
 }
-
-bool RenderManager::buildFrameBuffer(){
-    int w = DisplayManager::SCREEN_WIDTH;
-    int h = DisplayManager::SCREEN_HEIGHT;
-    glGenFramebuffers(1, &frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-
-    //We generate and attach a texture to the frame buffer that acts as our color buffer
-    glGenTextures(1, &texColorBuffer);
-    glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR  );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    //We now add the attachment to the framebuffer object
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
-
-    //We generate a render buffer object for the stencil and depth buffer
-    glGenRenderbuffers(1, &renderBufferObject);
-    glBindRenderbuffer(GL_RENDERBUFFER, renderBufferObject);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-    //Actually attaching to the frame buffer
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferObject);
-
-    //Check if frame buffer is complete or not
-    if( glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
-        printf(" Failed to initialize the offscreen frame buffer!\n");
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        return false;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    return true;
-}
-
-
-
-
-
-
-
-
-
-

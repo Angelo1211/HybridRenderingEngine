@@ -12,6 +12,7 @@
 //Includes
 #include "displayManager.h"
 #include "sceneManager.h"
+#include "frameBuffer.h"
 #include "skybox.h"
 #include "shader.h"
 #include "camera.h"
@@ -36,7 +37,6 @@ class RenderManager{
 
     private:
         //Setup
-        bool buildFrameBuffer();
         bool loadShaders();
         bool setupQuad();
 
@@ -55,11 +55,9 @@ class RenderManager{
         std::queue<Model*> *renderObjectQueue;        
 
         //OPENGL STUFF TODO TODO TODO
+        FrameBuffer simpleFBO, multiSampledFBO;
         unsigned int quadVAO;
         unsigned int quadVBO;
-        unsigned int frameBuffer;
-        unsigned int texColorBuffer;
-        unsigned int renderBufferObject;
 };
 
 
