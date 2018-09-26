@@ -50,7 +50,7 @@ void RenderManager::shutDown(){
 }
 
 void RenderManager::render(const unsigned int start){
-    //Frame buffer stuff
+    //Set the multisampled FBO as the first render target
     multiSampledFBO.bind();
 
     //Preps all the items that will be drawn in the scene
@@ -59,12 +59,8 @@ void RenderManager::render(const unsigned int start){
     //First we draw the scene as normal but on the offscreen buffer
     drawScene();
 
-    //Resolving the multisambled call 
-    int w = DisplayManager::SCREEN_WIDTH;
-    int h = DisplayManager::SCREEN_HEIGHT;
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, multiSampledFBO.frameBufferID);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, simpleFBO.frameBufferID);
-    glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+    //Resolving the multisampled buffer into a regular one for postprocessing
+    multiSampledFBO.blitTo(simpleFBO);
 
     //Setting back to default framebuffer (screen) and clearing
     //No need for depth testing cause we're drawing to a flat quad
@@ -147,9 +143,9 @@ void RenderManager::drawScene(){
     shaderAtlas[0]->use();
     
     //Directional light
-    shaderAtlas[0]->setVec3("dirLight.direction", glm::vec3(1.0f, -1.0f, 0.0f));
-    shaderAtlas[0]->setVec3("dirLight.ambient",   glm::vec3(0.05f));
-    shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(0.4f));
+    shaderAtlas[0]->setVec3("dirLight.direction", glm::vec3(0.0f,  -1.0f, 0.0f));
+    shaderAtlas[0]->setVec3("dirLight.ambient",   glm::vec3(0.00f));
+    shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(0.6f));
     shaderAtlas[0]->setVec3("dirLight.specular",  glm::vec3(0.4f));
 
     //All the point lights
@@ -162,13 +158,13 @@ void RenderManager::drawScene(){
     for(unsigned int i = 0; i < 4; ++i){
         std::string number = std::to_string(i);
 
-        shaderAtlas[0]->setVec3(("pointLights[" + number + "].position").c_str(), pointLightPositions[i]);
-        shaderAtlas[0]->setVec3(("pointLights[" + number + "].ambient").c_str(), glm::vec3(0.1f));
-        shaderAtlas[0]->setVec3(("pointLights[" + number + "].diffuse").c_str(), glm::vec3(1.0f, 0.6f, 0.6f));
-        shaderAtlas[0]->setVec3(("pointLights[" + number + "].specular").c_str(), glm::vec3(0.6f));
+        shaderAtlas[0]->setVec3(("pointLights["  + number + "].position").c_str(), pointLightPositions[i]);
+        shaderAtlas[0]->setVec3(("pointLights["  + number + "].ambient").c_str(), glm::vec3(0.0f));
+        shaderAtlas[0]->setVec3(("pointLights["  + number + "].diffuse").c_str(), glm::vec3(0.0f));
+        shaderAtlas[0]->setVec3(("pointLights["  + number + "].specular").c_str(), glm::vec3(0.0f));
         shaderAtlas[0]->setFloat(("pointLights[" + number + "].constant").c_str(), 1.0f);
-        shaderAtlas[0]->setFloat(("pointLights[" + number + "].linear").c_str(), 0.0014f);
-        shaderAtlas[0]->setFloat(("pointLights[" + number + "].quadratic").c_str(), 0.000007f);
+        shaderAtlas[0]->setFloat(("pointLights[" + number + "].linear").c_str(), 0.007f);
+        shaderAtlas[0]->setFloat(("pointLights[" + number + "].quadratic").c_str(), 0.0002f);
     }
 
     while( !renderObjectQueue->empty() ){
@@ -221,6 +217,7 @@ void RenderManager::postProcess(const unsigned int start){
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_2D, simpleFBO.texColorBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    // glDisable(GL_FRAMEBUFFER_SRGB);
 
     glBindVertexArray(0);
 }

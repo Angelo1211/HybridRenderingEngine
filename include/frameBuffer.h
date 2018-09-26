@@ -4,11 +4,12 @@
 
 struct FrameBuffer{
     void bind();
+    void blitTo(const FrameBuffer &FBO);
     bool setupFrameBuffer(bool isMultiSampled);
+
     bool multiSampled;
-    unsigned int frameBufferID;
-    unsigned int texColorBuffer;
-    unsigned int renderBufferObject;
+    unsigned int frameBufferID, texColorBuffer, renderBufferObject;
+    int width, height;
 };
 
 #endif

@@ -47,6 +47,11 @@ void DisplayManager::shutDown(){
 
 //Swaps the finished drawn buffer with the window bufffer.
 void DisplayManager::swapDisplayBuffer(){
+    // int value;
+    // SDL_GL_GetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, &value);
+    // if(value == 1){
+    //     printf("here!\n");
+    // }
     SDL_GL_SwapWindow(mWindow);
 }
 
@@ -64,6 +69,10 @@ bool DisplayManager::startOpenGL(){
 
         // Also request a depth buffer
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+        //Also set the default buffer to be sRGB 
+        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
     }
     return true;
 }
@@ -111,6 +120,7 @@ bool DisplayManager::createGLContext(){
             // SDL_GL_SetSwapInterval(1);
             glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
+            glEnable(GL_FRAMEBUFFER_SRGB);
             int w, h;
             SDL_GetWindowSize(mWindow, &w, &h);
             glViewport(0, 0, w, h);

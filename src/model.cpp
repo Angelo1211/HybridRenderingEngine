@@ -115,15 +115,14 @@ std::vector<std::string> Model::processTextures(const aiMaterial *material){
         material->GetTexture(type, 0, &texturePath);
         fullTexturePath = fullTexturePath.append(texturePath.C_Str());
         //Checking if the texture has already been loaded
-        if (textureAtlas.count(fullTexturePath) == 1)
-        {
+        if (textureAtlas.count(fullTexturePath) == 1){
             //Texture already exists in the Atlas 16//16//16
         }
         else
         {
             Texture texture;
             texture.type = "diffuse";
-            texture.setupTexture(fullTexturePath);
+            texture.setupTexture(fullTexturePath, true);
             textureAtlas.insert({fullTexturePath, texture});
         }
         textures.push_back(fullTexturePath);
@@ -143,7 +142,7 @@ std::vector<std::string> Model::processTextures(const aiMaterial *material){
         else{
             Texture texture;
             texture.type = "specular";
-            texture.setupTexture(fullTexturePath);
+            texture.setupTexture(fullTexturePath, false);
             textureAtlas.insert({fullTexturePath, texture});
         }
         textures.push_back(fullTexturePath);

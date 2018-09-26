@@ -8,7 +8,7 @@
 #include "texture.h"
 #include <glad/glad.h>
 
-void Texture::setupTexture(std::string filePath){
+void Texture::setupTexture(const std::string &filePath, bool sRGB){
     path = filePath;
     unsigned int ID;
     glGenTextures(1, &ID);
@@ -18,18 +18,32 @@ void Texture::setupTexture(std::string filePath){
     unsigned char *data = stbi_load(filePath.c_str(), &width, &height, &nComponents, 0);
     if(data){
         GLenum format;
+        GLenum internalFormat;
         if(nComponents ==  1){
             format = GL_RED;
+            internalFormat = GL_RED;
         }
         else if(nComponents == 3){
             format = GL_RGB;
+            if(sRGB){
+                internalFormat = GL_SRGB;
+            }
+            else{
+                internalFormat = GL_RGB;
+            }
         }
         else if(nComponents == 4){
             format = GL_RGBA;
+            if(sRGB){
+                internalFormat = GL_SRGB_ALPHA;
+            }
+            else{
+                internalFormat = GL_RGBA;
+            }
         }
 
         glBindTexture(GL_TEXTURE_2D, ID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
