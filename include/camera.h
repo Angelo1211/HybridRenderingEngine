@@ -36,10 +36,10 @@ struct Camera{
     std::set< char > set;
 
     //Position and direction of camera, used to build view matrix
-    glm::vec3 position{0,0,1};
-    glm::vec3 target{0,0,1};
+    glm::vec3 position{1,1,1};
+    glm::vec3 target{0,0,0};
     glm::vec3 up{0,1,0};
-    glm::vec3 front{0, 0, -1};
+    glm::vec3 front;
     glm::vec3 side;
 
     //Values related to orbiting mode
@@ -50,7 +50,7 @@ struct Camera{
     //Momentary fixed camera speed (FPS dependent)
     float camSpeed = 0.5f;
     float pitch    = 0;
-    float yaw      = -90;
+    float yaw      = 0;
 };
 
 #endif

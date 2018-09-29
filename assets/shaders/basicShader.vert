@@ -13,11 +13,13 @@ out VS_OUT{
     vec3 fragPos_wS;
     vec3 normal_wS;
     vec2 texCoord;
+    vec4 fragPos_lS;
 } vs_out;
 
 //Matrices
 uniform mat4 MVP;
 uniform mat4 M;
+uniform mat4 lightSpaceMatrix;
 
 void main(){
     //Position in clip space
@@ -27,6 +29,7 @@ void main(){
 
     vs_out.normal_wS   = mat3(M) * normal_mS ;
 
+    vs_out.fragPos_lS  = lightSpaceMatrix * vec4(vs_out.fragPos_wS, 1.0);
     //Passing texture coords
     vs_out.texCoord = aTexCoord;
 }

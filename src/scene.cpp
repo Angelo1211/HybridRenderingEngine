@@ -37,6 +37,7 @@ Scene::~Scene(){
 
 //Update Order is critical for correct culling
 void Scene::update(unsigned int deltaT){
+    visibleModels.clear();
     mainCamera.update(deltaT);
     // for(int i=0; i < lightCount; ++i){
     //     lights[i].update(deltaT);
@@ -47,7 +48,7 @@ void Scene::update(unsigned int deltaT){
     frustrumCulling();
 }
 //-----------------------------GETTERS----------------------------------------------
-std::queue<Model*>* Scene::getVisiblemodels(){
+std::vector<Model*>* Scene::getVisiblemodels(){
     return &visibleModels;
 }
 Camera* Scene::getCurrentCamera(){
@@ -178,7 +179,7 @@ bool Scene::checkFileValidity(const std::string &filePath){
 //TODO TODO TODO TODO TODO TODO TODO
 void Scene::frustrumCulling(){
     for(Model *model : modelsInScene){
-        visibleModels.push(model);
+        visibleModels.push_back(model);
         // bool visible = mainCamera.checkVisibility(model->getBounds());
         // if (visible) {
         // }

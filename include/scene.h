@@ -11,7 +11,6 @@
 
 //Headers
 #include <vector>
-#include <queue>
 #include "model.h"
 #include "camera.h"
 #include "texture.h"
@@ -32,7 +31,7 @@ class Scene{
         void update(unsigned int deltaT);
 
         //Getters used in the setup of the render queue
-        std::queue<Model*>* getVisiblemodels();
+        std::vector<Model*>* getVisiblemodels();
         Camera * getCurrentCamera();
         // BaseLight * getCurrentLights();
         int getLightCount();
@@ -54,7 +53,7 @@ class Scene{
         // BaseLight *lights; //Array of lights in scene
 
         //Contains the models that remain after frustrum culling
-        std::queue<Model*> visibleModels;
+        std::vector<Model*> visibleModels;
         std::vector<Model*> modelsInScene;
 
         //TODO 

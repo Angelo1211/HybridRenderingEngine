@@ -68,7 +68,9 @@ bool DisplayManager::startOpenGL(){
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
 
         // Also request a depth buffer
-        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        // No point in having a deplth buffer if your pipeline includes
+        // post processing
+        // SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
         //Also set the default buffer to be sRGB 
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
@@ -118,7 +120,7 @@ bool DisplayManager::createGLContext(){
 
             //TODO: move this somewhere else
             // SDL_GL_SetSwapInterval(1);
-            glEnable(GL_DEPTH_TEST);
+            // glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
             glEnable(GL_FRAMEBUFFER_SRGB);
             int w, h;

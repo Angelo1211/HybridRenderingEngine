@@ -20,9 +20,11 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
     //I know this is uneccessary but it might be useful if I add more startup functions
     //in the future
+    int scale =  1;
     bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
-    bool initFBOFlag2 = simpleFBO.setupFrameBuffer(false);
-    if( !initFBOFlag1 && !initFBOFlag2 ){
+    bool initFBOFlag2 = simpleFBO.setupFrameBuffer();
+    bool initFBOFLag3 = shadowFBO.setupFrameBuffer(1024, 1024);
+    if( !(initFBOFlag1 && initFBOFlag2 && initFBOFLag3) ){
         return false;
     }
     else{
@@ -43,6 +45,7 @@ void RenderManager::shutDown(){
     delete shaderAtlas[0];
     delete shaderAtlas[1];
     delete shaderAtlas[2];
+    delete shaderAtlas[3];
     // delete [] shaderAtlas;
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
@@ -50,11 +53,22 @@ void RenderManager::shutDown(){
 }
 
 void RenderManager::render(const unsigned int start){
+    //Set shadow fbo to draw all our shadow stuff to the depth buffer
+    shadowFBO.bind();
+
+    //Drawing to the depth buffer
+    //TO DO FIX FIX FIX FIX FIX FIX FIX
+    //You are making the renderQueue twice, which is wasteful and bad. 
+    //But I think it works for now.
+    buildRenderQueue();
+
+    drawSceneFromLightPOV();
+
     //Set the multisampled FBO as the first render target
     multiSampledFBO.bind();
 
     //Preps all the items that will be drawn in the scene
-    buildRenderQueue();
+    // buildRenderQueue();
 
     //First we draw the scene as normal but on the offscreen buffer
     drawScene();
@@ -65,6 +79,7 @@ void RenderManager::render(const unsigned int start){
     //Setting back to default framebuffer (screen) and clearing
     //No need for depth testing cause we're drawing to a flat quad
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glViewport(0,0,DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -121,12 +136,48 @@ bool RenderManager::loadShaders(){
     shaderAtlas[0] = new Shader("basicShader.vert", "basicShader.frag");
     shaderAtlas[1] = new Shader("screenShader.vert", "screenShader.frag");
     shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
-    shaderAtlas[2]->use();
-    shaderAtlas[2]->setInt("skybox", 0);
+    shaderAtlas[3] = new Shader("shadowShader.vert", "shadowShader.frag");
+
+
+    // shaderAtlas[2]->use();
+    // shaderAtlas[2]->setInt("skybox", 0);
 
     return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
 }
 
+void RenderManager::drawSceneFromLightPOV(){
+    glEnable(GL_DEPTH_TEST);
+    float left   = 3000.0f;
+    float right  = -left;
+    float top    = left;
+    float bottom = -top;
+    float zNear  = 1.0f;
+    float zFar   = 7000.0f;
+    glm::mat4 lightProjection = glm::ortho(left, right, bottom, top, zNear, zFar);
+    
+    glm::mat4 lightView = glm::lookAt(1500.0f * dirLightPosition,
+                                      glm::vec3(0.0f, 0.0f, 0.0f),
+                                      glm::vec3(0.0f, 1.0f, 0.0f));
+
+    lightSpaceMatrix = lightProjection * lightView;
+    glm::mat4 ModelLS = glm::mat4(1.0);
+
+
+    for(unsigned int i = 0; i < renderObjectQueue->size(); ++i){
+        Model * currentModel = (*renderObjectQueue)[i];
+
+        //Matrix setup
+        ModelLS = lightSpaceMatrix * currentModel->getModelMatrix();
+
+        //Shader setup stuff that changes every frame
+        shaderAtlas[3]->use();
+        shaderAtlas[3]->setMat4("lightSpaceMatrix", ModelLS);
+        
+        //Draw object
+        currentModel->draw(*shaderAtlas[3]);
+    }
+
+}
 
 //Here we do the offscreen rendering for hte whole scene
 void RenderManager::drawScene(){
@@ -143,32 +194,33 @@ void RenderManager::drawScene(){
     shaderAtlas[0]->use();
     
     //Directional light
-    shaderAtlas[0]->setVec3("dirLight.direction", glm::vec3(0.0f,  -1.0f, 0.0f));
-    shaderAtlas[0]->setVec3("dirLight.ambient",   glm::vec3(0.00f));
-    shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(0.6f));
-    shaderAtlas[0]->setVec3("dirLight.specular",  glm::vec3(0.4f));
+    shaderAtlas[0]->setVec3("dirLight.direction", -dirLightPosition);
+    shaderAtlas[0]->setVec3("dirLight.ambient",   glm::vec3(0.02f));
+    shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(0.9f));
+    shaderAtlas[0]->setVec3("dirLight.specular",  glm::vec3(0.5f));
 
-    //All the point lights
-    glm::vec3 pointLightPositions[] = {
-        glm::vec3(400.0f, 100.0f, 0.0f),
-        glm::vec3(-400.0f, 100.0f, 0.0f),
-        glm::vec3(400.0f, 400.0f, 200.0f),
-        glm::vec3(-400.0f, 300.0f, -200.0f),
+
+    glm::vec3 pointLightColor[] = {
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f),
+        glm::vec3(0.0f, 1.0f, 1.0f)
     };
     for(unsigned int i = 0; i < 4; ++i){
         std::string number = std::to_string(i);
 
         shaderAtlas[0]->setVec3(("pointLights["  + number + "].position").c_str(), pointLightPositions[i]);
-        shaderAtlas[0]->setVec3(("pointLights["  + number + "].ambient").c_str(), glm::vec3(0.0f));
-        shaderAtlas[0]->setVec3(("pointLights["  + number + "].diffuse").c_str(), glm::vec3(0.0f));
-        shaderAtlas[0]->setVec3(("pointLights["  + number + "].specular").c_str(), glm::vec3(0.0f));
+        shaderAtlas[0]->setVec3(("pointLights["  + number + "].ambient").c_str(), glm::vec3(0.05f));
+        shaderAtlas[0]->setVec3(("pointLights["  + number + "].diffuse").c_str(), pointLightColor[i]);
+        shaderAtlas[0]->setVec3(("pointLights["  + number + "].specular").c_str(), glm::vec3(0.4f));
         shaderAtlas[0]->setFloat(("pointLights[" + number + "].constant").c_str(), 1.0f);
         shaderAtlas[0]->setFloat(("pointLights[" + number + "].linear").c_str(), 0.007f);
         shaderAtlas[0]->setFloat(("pointLights[" + number + "].quadratic").c_str(), 0.0002f);
     }
 
-    while( !renderObjectQueue->empty() ){
-        Model * currentModel = renderObjectQueue->front();
+    // while( !renderObjectQueue->empty() ){
+    for(unsigned int i = 0; i < renderObjectQueue->size(); ++i){
+        Model * currentModel = (*renderObjectQueue)[i];
 
         //Light movement
         // float ang = 2.0f* M_PI * static_cast<float>(SDL_GetTicks()) / (16000.0f);
@@ -184,11 +236,16 @@ void RenderManager::drawScene(){
         //Shader setup stuff that changes every frame
         shaderAtlas[0]->setMat4("MVP", MVP);
         shaderAtlas[0]->setMat4("M", M);
+        shaderAtlas[0]->setMat4("lightSpaceMatrix", lightSpaceMatrix);
         shaderAtlas[0]->setVec3("cameraPos_wS", sceneCamera->position);
+
+        glActiveTexture(GL_TEXTURE2);
+        shaderAtlas[0]->setInt("shadowMap", 2);
+        glBindTexture(GL_TEXTURE_2D, shadowFBO.depthMap);
         
         //Draw object
         currentModel->draw(*shaderAtlas[0]);
-        renderObjectQueue->pop();
+        // renderObjectQueue->pop_back();
     }
 
     //Drawing skybox
@@ -215,6 +272,7 @@ void RenderManager::postProcess(const unsigned int start){
     // frame drawn off-screen
     glBindVertexArray(quadVAO);
     glDisable(GL_DEPTH_TEST);
+    // glBindTexture(GL_TEXTURE_2D, shadowFBO.depthMap);
     glBindTexture(GL_TEXTURE_2D, simpleFBO.texColorBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     // glDisable(GL_FRAMEBUFFER_SRGB);

@@ -17,7 +17,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
-#include <queue>
+#include <vector>
 
 //High level render operations that shouldn't be done by the
 //basic graphics lib.
@@ -42,22 +42,36 @@ class RenderManager{
 
         //Internal Rendering
         void drawScene();
+        void drawSceneFromLightPOV();
         void drawSkybox(const glm::mat4 &VP);
         void postProcess(const unsigned int start);
         void buildRenderQueue();
 
-        Shader *shaderAtlas[3]; //The number is kind of arbitrary for now
+        Shader *shaderAtlas[4]; //The number is kind of arbitrary for now
         SceneManager   * sceneLocator;
         Camera *sceneCamera;
         DisplayManager * screen;
         Skybox *skybox;
 
-        std::queue<Model*> *renderObjectQueue;        
-
+        std::vector<Model*> *renderObjectQueue;        
+        glm::mat4 lightSpaceMatrix;
         //OPENGL STUFF TODO TODO TODO
-        FrameBuffer simpleFBO, multiSampledFBO;
+
+        FrameBuffer multiSampledFBO;
+        ResolveBuffer simpleFBO;
+        DepthBuffer  shadowFBO;
         unsigned int quadVAO;
         unsigned int quadVBO;
+
+        //All the point lights
+        const glm::vec3 pointLightPositions[4] = {
+            glm::vec3(1100.0f, 150.0f, -400.0f),
+            glm::vec3(1100.0f, 150.0f, 400.0f),
+            glm::vec3(-1100.0f, 150.0f, 400.0f),
+            glm::vec3(-1100.0f, 150.0f, -400.0f)
+        };
+
+        const glm::vec3 dirLightPosition = glm::vec3(1.0f, 4.0f, 1.0f);
 };
 
 
