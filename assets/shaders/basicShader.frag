@@ -35,7 +35,7 @@ uniform PointLight pointLights[POINT_LIGHTS];
 uniform vec3 cameraPos_wS;
 
 //Textures to sample from
-uniform sampler2D shadowMap;
+uniform sampler2DShadow shadowMap;
 uniform sampler2D diffuse1;
 uniform sampler2D specular1;
 
@@ -94,7 +94,7 @@ vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec
     float nDotHBP = pow(max(dot(normal, halfway), 0.0), 32.0); //N dot H using blinn phong
     vec3 specular = light.specular * nDotHBP * spec;
 
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
+    vec3 lighting = (ambient + (shadow) * (diffuse + specular)) * col;
     
     //Total contribution
     return lighting;
@@ -128,11 +128,11 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 float calcShadows(vec4 fragPosLightSpace){
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float shadow = texture(shadowMap, projCoords.xyz);
 
-    float currentDepth = projCoords.z;
+    // float currentDepth = projCoords.z;
 
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    // float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
 
     return shadow;
 }

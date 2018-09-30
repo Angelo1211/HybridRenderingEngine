@@ -20,10 +20,10 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
     //I know this is uneccessary but it might be useful if I add more startup functions
     //in the future
-    int scale =  1;
+    int scale =   2 * 1024;
     bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
     bool initFBOFlag2 = simpleFBO.setupFrameBuffer();
-    bool initFBOFLag3 = shadowFBO.setupFrameBuffer(1024, 1024);
+    bool initFBOFLag3 = shadowFBO.setupFrameBuffer(scale, scale);
     if( !(initFBOFlag1 && initFBOFlag2 && initFBOFLag3) ){
         return false;
     }
