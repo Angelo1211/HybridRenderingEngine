@@ -18,13 +18,8 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
     screen = &displayManager;
     sceneLocator = &sceneManager;
 
-    //I know this is uneccessary but it might be useful if I add more startup functions
-    //in the future
-    int scale =   2 * 1024;
-    bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
-    bool initFBOFlag2 = simpleFBO.setupFrameBuffer();
-    bool initFBOFLag3 = shadowFBO.setupFrameBuffer(scale, scale);
-    if( !(initFBOFlag1 && initFBOFlag2 && initFBOFLag3) ){
+    if( !initFBOs() ){
+        printf("One of the FBO's failed to be initialized correctly.\n");
         return false;
     }
     else{
@@ -34,6 +29,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
         }
         else{
             if( !setupQuad()){
+                printf("Final drawing quad failed to instantiate! \n");
                 return false;
             }
         }
@@ -52,15 +48,48 @@ void RenderManager::shutDown(){
     screen = nullptr;
 }
 
-void RenderManager::render(const unsigned int start){
-    //Set shadow fbo to draw all our shadow stuff to the depth buffer
-    shadowFBO.bind();
+bool RenderManager::initFBOs(){
+    bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
+    bool initFBOFlag2 = simpleFBO.setupFrameBuffer();
+    bool initFBOFLag3 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
+    
+    bool initFBOFlagPointLights = true;
+    for(unsigned int i = 0; i < 4; ++i ){
+        initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution, true);
+    }
 
-    //Drawing to the depth buffer
-    //TO DO FIX FIX FIX FIX FIX FIX FIX
-    //You are making the renderQueue twice, which is wasteful and bad. 
-    //But I think it works for now.
+    return initFBOFlag1 && initFBOFlag2 && initFBOFLag3 && initFBOFlagPointLights;
+}
+void RenderManager::render(const unsigned int start){
+    glEnable(GL_DEPTH_TEST);
+
     buildRenderQueue();
+
+    for(unsigned int i = 0; i < 4; ++i){
+        pointLightShadowFBOs[i].bind();
+
+        //Setup matrices and shader
+        float aspect = (float)pointLightShadowFBOs[i].width / (float)pointLightShadowFBOs[i].height;
+        float zNear = 1.0f;
+        float zFar  = 100.0f;
+        float const ang = glm::radians(90.0f);
+        glm::mat4 shadowProj = glm::perspective(ang, aspect, zNear, zFar );
+
+        //look at matrix setup
+        glm::mat4 lookAtPerFace[6];
+        glm::vec3 lightPos = pointLightPositions[i];
+        lookAtPerFace[0] = glm::lookAt(lightPos, lightPos + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0));
+        lookAtPerFace[1] = glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0));
+        lookAtPerFace[2] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+        lookAtPerFace[3] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0));
+        lookAtPerFace[4] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0));
+        lookAtPerFace[5] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0));
+
+        
+    }
+
+    //Set shadow fbo to draw all our shadow stuff to the depth buffer
+    dirShadowFBO.bind();
 
     drawSceneFromLightPOV();
 
@@ -79,7 +108,6 @@ void RenderManager::render(const unsigned int start){
     //Setting back to default framebuffer (screen) and clearing
     //No need for depth testing cause we're drawing to a flat quad
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // glViewport(0,0,DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -146,7 +174,6 @@ bool RenderManager::loadShaders(){
 }
 
 void RenderManager::drawSceneFromLightPOV(){
-    glEnable(GL_DEPTH_TEST);
     float left   = 3000.0f;
     float right  = -left;
     float top    = left;
@@ -199,13 +226,6 @@ void RenderManager::drawScene(){
     shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(0.9f));
     shaderAtlas[0]->setVec3("dirLight.specular",  glm::vec3(0.5f));
 
-
-    glm::vec3 pointLightColor[] = {
-        glm::vec3(1.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f),
-        glm::vec3(0.0f, 1.0f, 1.0f)
-    };
     for(unsigned int i = 0; i < 4; ++i){
         std::string number = std::to_string(i);
 
@@ -241,11 +261,10 @@ void RenderManager::drawScene(){
 
         glActiveTexture(GL_TEXTURE2);
         shaderAtlas[0]->setInt("shadowMap", 2);
-        glBindTexture(GL_TEXTURE_2D, shadowFBO.depthMap);
+        glBindTexture(GL_TEXTURE_2D, dirShadowFBO.depthMap);
         
         //Draw object
         currentModel->draw(*shaderAtlas[0]);
-        // renderObjectQueue->pop_back();
     }
 
     //Drawing skybox

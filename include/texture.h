@@ -21,6 +21,7 @@ struct Texture{
 
 struct CubeMap : Texture{
     void loadCubeMap(const std::string &filePath);
+    void loadCubeMap(const int shadow_width, const int shadow_height);
     const unsigned int numSidesInCube = 6;
 
     //Order for this comes from the Opengl cubemap enums
