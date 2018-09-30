@@ -42,7 +42,9 @@ void RenderManager::shutDown(){
     delete shaderAtlas[1];
     delete shaderAtlas[2];
     delete shaderAtlas[3];
-    // delete [] shaderAtlas;
+    delete shaderAtlas[4];
+
+
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
     screen = nullptr;
@@ -71,7 +73,7 @@ void RenderManager::render(const unsigned int start){
         //Setup matrices and shader
         float aspect = (float)pointLightShadowFBOs[i].width / (float)pointLightShadowFBOs[i].height;
         float zNear = 1.0f;
-        float zFar  = 100.0f;
+        float zFar  = 2000.0f;
         float const ang = glm::radians(90.0f);
         glm::mat4 shadowProj = glm::perspective(ang, aspect, zNear, zFar );
 
@@ -85,7 +87,29 @@ void RenderManager::render(const unsigned int start){
         lookAtPerFace[4] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0));
         lookAtPerFace[5] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0));
 
-        
+        //Shader setup
+        shaderAtlas[4]->use();
+        shaderAtlas[4]->setVec3("lightPos", lightPos);
+        shaderAtlas[4]->setFloat("far_plane", zFar);
+
+        for(unsigned int i = 0; i < 6; ++i){
+            std::string number = std::to_string(i);
+            lookAtPerFace[i] = shadowProj * lookAtPerFace[i];
+            shaderAtlas[4]->setMat4(("shadowMatrices["  + number + "]").c_str(), lookAtPerFace[i]);
+        }
+
+        glm::mat4 M = glm::mat4(1.0);
+        for(unsigned int i = 0; i < renderObjectQueue->size(); ++i){
+            Model * currentModel = (*renderObjectQueue)[i];
+
+            M = currentModel->getModelMatrix();
+
+            //Shader setup stuff that changes every frame
+            shaderAtlas[4]->setMat4("M", M );
+            
+            //Draw object
+            currentModel->draw(*shaderAtlas[4]);
+        }
     }
 
     //Set shadow fbo to draw all our shadow stuff to the depth buffer
@@ -165,6 +189,7 @@ bool RenderManager::loadShaders(){
     shaderAtlas[1] = new Shader("screenShader.vert", "screenShader.frag");
     shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
     shaderAtlas[3] = new Shader("shadowShader.vert", "shadowShader.frag");
+    shaderAtlas[4] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
 
 
     // shaderAtlas[2]->use();
@@ -236,6 +261,10 @@ void RenderManager::drawScene(){
         shaderAtlas[0]->setFloat(("pointLights[" + number + "].constant").c_str(), 1.0f);
         shaderAtlas[0]->setFloat(("pointLights[" + number + "].linear").c_str(), 0.007f);
         shaderAtlas[0]->setFloat(("pointLights[" + number + "].quadratic").c_str(), 0.0002f);
+
+        glActiveTexture(GL_TEXTURE2 + i);
+        shaderAtlas[0]->setInt(("pointLights[" + number + "].depthMap").c_str(), 2 + i);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightShadowFBOs[i].depthMap);
     }
 
     // while( !renderObjectQueue->empty() ){
@@ -259,8 +288,8 @@ void RenderManager::drawScene(){
         shaderAtlas[0]->setMat4("lightSpaceMatrix", lightSpaceMatrix);
         shaderAtlas[0]->setVec3("cameraPos_wS", sceneCamera->position);
 
-        glActiveTexture(GL_TEXTURE2);
-        shaderAtlas[0]->setInt("shadowMap", 2);
+        glActiveTexture(GL_TEXTURE6);
+        shaderAtlas[0]->setInt("shadowMap", 6);
         glBindTexture(GL_TEXTURE_2D, dirShadowFBO.depthMap);
         
         //Draw object

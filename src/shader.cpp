@@ -13,27 +13,32 @@ TODO Make this a fully error checked class and return to the above levels info o
 it crashed and burned  
 */
 
-Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
+Shader::Shader(const std::string vertexPath, const std::string fragmentPath, const std::string geometryPath){
     //Getting the vertex shader code from the text file at file path
+    bool gShaderOn = geometryPath != "";
     std::string shaderFolderPath = "../assets/shaders/";
-    std::string vertexCode, fragmentCode;
+    std::string vertexCode, fragmentCode, geometryCode;
     std::ifstream vShaderFile(shaderFolderPath + vertexPath), fShaderFile(shaderFolderPath + fragmentPath);
-    std::stringstream vShaderStream, fShaderStream;
+    std::stringstream vShaderStream, fShaderStream, gShaderStream;
+    std::ifstream gShaderFile(shaderFolderPath + geometryPath);
     //Check if shader files exist
     if(!vShaderFile.good()){
         printf("Couldn't find vertex shader file: %s in shaders folder.\n ", vertexPath.c_str());
     }
     else{ //Vertex shader file exists
         if(!fShaderFile.good()){
-            printf("Couldn't find fragment shader file: %s in shaders folder.\n ", vertexPath.c_str());
+            printf("Couldn't find fragment shader file: %s in shaders folder.\n ", fragmentPath.c_str());
         }
-        else{ //Frgment shader file exists
+        else{
+            //Frgment shader file exists
             vShaderStream << vShaderFile.rdbuf();    
             fShaderStream << fShaderFile.rdbuf();    
+            if( gShaderOn ) {gShaderStream << gShaderFile.rdbuf();}
             
             //Close Files
             vShaderFile.close();
             fShaderFile.close();
+            gShaderFile.close();
 
             //Passing code from string stream to string
             vertexCode = vShaderStream.str();
@@ -41,6 +46,12 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
 
             const char* vShaderCode = vertexCode.c_str();
             const char* fShaderCode = fragmentCode.c_str();
+            const char* gShaderCode;
+
+            if( gShaderOn ){
+                geometryCode = gShaderStream.str();
+                gShaderCode = geometryCode.c_str();
+            }
 
             //Vertex shader stuff
             int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -64,10 +75,25 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
                 printf("Fragment shader compilation failed %s\n", infoLog );
             }
 
+
+            //Geometry shader stuff
+            int geometryShader;
+            if (gShaderOn){
+                geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+                glShaderSource(geometryShader, 1, &gShaderCode, NULL);
+                glCompileShader(geometryShader);
+                glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+                if(!success){
+                    glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+                    printf("Geometry shader compilation failed %s\n", infoLog );
+                }
+            }
+
             //Linking shaders
             ID = glCreateProgram();
             glAttachShader(ID, vertexShader);
             glAttachShader(ID, fragmentShader);
+            if (gShaderOn) {glAttachShader(ID, geometryShader);}
             glLinkProgram(ID);
 
             glGetProgramiv(ID, GL_LINK_STATUS, &success);
@@ -79,6 +105,7 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath){
             //Deleting shaders
             glDeleteShader(vertexShader);
             glDeleteShader(fragmentShader);
+            if (gShaderOn) {glDeleteShader(geometryShader);}
         }
     } 
 } 

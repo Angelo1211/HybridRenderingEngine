@@ -18,7 +18,7 @@ struct Shader{
     unsigned int ID;
 
     //Constructor using vertex and fragment shader paths
-    Shader(const std::string vertexPath, const std::string fragmentPath);
+    Shader(const std::string vertexPath, const std::string fragmentPath, const std::string geometryPath = "");
 
     void use();
 
