@@ -16,6 +16,7 @@ Engine::Engine(){}
 Engine::~Engine(){}
 
 bool Engine::startUp(){
+    unsigned int start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
     bool success = true;
     //Start up of all SDL and opengl Display related content
     if( !gDisplayManager.startUp() ){
@@ -48,6 +49,8 @@ bool Engine::startUp(){
             }
         }
     }
+    unsigned int deltaT = SDL_GetTicks() - start;
+    printf("Load time: %ums\n",deltaT);
     return success;
 }
 
@@ -96,6 +99,7 @@ void Engine::run(){
         deltaT = SDL_GetTicks() - start;
         // printf("%2.1d: Frame elapsed time (ms):%d\n",count, deltaT);
         total += deltaT;
+        // if(count == 500) break;
         // break;
     }
     printf("\nPerformance Stats:\n------------------\n");

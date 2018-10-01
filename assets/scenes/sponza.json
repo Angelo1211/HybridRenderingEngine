@@ -2,7 +2,7 @@
     "sceneID": "sponza",
     "skybox": "default",
     "models": [{
-        "mesh": "sponza.obj",
+        "mesh": "sponza.fbx",
         "pbr": false,
         "material": "",
         "position": [0.0, 0.0, 0.0],
