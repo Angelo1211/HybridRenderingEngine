@@ -7,6 +7,9 @@
 #include "displayManager.h"
 #include <cstdio>
 #include "glad/glad.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 //Dummy constructors/destructors
 DisplayManager::DisplayManager(){}
@@ -31,6 +34,13 @@ bool DisplayManager::startUp(){
                 if( !createGLContext()){
                     success = false;
                 }
+                else{
+                    ImGui::CreateContext();
+                    ImGuiIO &io = ImGui::GetIO();
+                    ImGui_ImplSDL2_InitForOpenGL(mWindow, mContext);
+                    ImGui_ImplOpenGL3_Init(glsl_version);
+                    ImGui::StyleColorsDark();
+                }
             }
         }
     }
@@ -39,6 +49,9 @@ bool DisplayManager::startUp(){
 
 //Closes down the opengl context and sdl, also destroys window.
 void DisplayManager::shutDown(){
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
     SDL_GL_DeleteContext(mContext); 
     SDL_DestroyWindow(mWindow);
     mWindow = nullptr;
@@ -124,4 +137,8 @@ bool DisplayManager::createGLContext(){
             return true;
         }
     }
+}
+
+SDL_Window* DisplayManager::getWindow(){
+    return mWindow;
 }

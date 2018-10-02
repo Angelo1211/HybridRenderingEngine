@@ -3,10 +3,10 @@
 // CREATE DATE  : 2018-09-15
 // ===============================
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include "texture.h"
 #include <glad/glad.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 void Texture::setupTexture(const std::string &filePath, bool sRGB){
     path = filePath;

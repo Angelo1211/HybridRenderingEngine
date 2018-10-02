@@ -19,6 +19,7 @@ class DisplayManager{
         const static int SCREEN_HEIGHT = 720; //480 720
         const static int SCREEN_PITCH  = SCREEN_HEIGHT*sizeof(Uint32);
         constexpr static float SCREEN_ASPECT_RATIO = SCREEN_WIDTH /(float)SCREEN_HEIGHT;
+        const char* glsl_version ="#version 450";
 
         //Dummy Constructor / Destructor
         DisplayManager();
@@ -31,6 +32,7 @@ class DisplayManager{
 
         //TODO
         void swapDisplayBuffer();
+        SDL_Window * getWindow();
 
     private:
         //Init functions

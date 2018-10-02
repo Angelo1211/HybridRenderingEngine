@@ -27,7 +27,7 @@ include_directories(${ASSIMP_INCLUDE_DIR} )
 #-fopt-info-vec-all -xCORE-AVX2 -no-prec-sqrt -g -ffast-math -static -static-libgcc -static-libstdc++ 
 
 file(GLOB source_files "*.h" "*.cpp" "src/*.cpp" "include/*.h" "libs/*.h" "libs/*.c")
-file(GLOB_RECURSE lib_files "libs/*.h" "libs/*.c")
+file(GLOB_RECURSE lib_files "libs/*.h" "libs/*.c" "libs/*.cpp")
 set(ALL_SRC_FILES ${source_files} ${lib_files})
 add_executable(hybridRenderer ${ALL_SRC_FILES})
 

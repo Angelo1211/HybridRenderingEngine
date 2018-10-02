@@ -7,6 +7,9 @@
 #include "renderManager.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 //Temporarily here
 GLenum RenderManager::glCheckError_(const char *file, int line){
@@ -83,15 +86,63 @@ bool RenderManager::initFBOs(){
     return initFBOFlag1 && initFBOFlag2 && initFBOFLag3 && initFBOFlagPointLights;
 }
 void RenderManager::render(const unsigned int start){
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(screen->getWindow());
+    ImGui::NewFrame();
+
     glEnable(GL_DEPTH_TEST);
     
+    //Preps all the items that will be drawn in the scene
     buildRenderQueue();
 
     if(hasMoved){
         hasMoved = false;
-        for (unsigned int i = 0; i < 4; ++i)
-        {
+
+        //Populating depth cube maps for the point lights
+        for (unsigned int i = 0; i < 4; ++i){
             pointLightShadowFBOs[i].bind();
+            drawPointShadow(i);
+        }
+
+        // Directional shadows
+        dirShadowFBO.bind();
+        drawDirShadow();
+    }
+    // glCheckError();
+    //Set the multisampled FBO as the first render target
+    multiSampledFBO.bind();
+
+    //First we draw the scene as normal but on the offscreen buffer
+    drawScene();
+
+    // glCheckError();
+    //Resolving the multisampled buffer into a regular one for postprocessing
+    multiSampledFBO.blitTo(simpleFBO);
+
+    //Setting back to default framebuffer (screen) and clearing
+    //No need for depth testing cause we're drawing to a flat quad
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    //Render to quad and apply postprocessing effects
+    postProcess(start);
+
+    ImGui::ShowDemoWindow();
+
+    ImGui::EndFrame();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    // glCheckError();
+    //Drawing to the screen by swapping the window's surface with the
+    //final buffer containing all rendering information
+    screen->swapDisplayBuffer();
+
+    // glCheckError();
+    //Set camera pointer to null just in case a scene change occurs
+    sceneCamera = nullptr;
+}
+
+void RenderManager::drawPointShadow(int i){
 
             //Setup matrices and shader
             float aspect = (float)pointLightShadowFBOs[i].width / (float)pointLightShadowFBOs[i].height;
@@ -135,44 +186,6 @@ void RenderManager::render(const unsigned int start){
                 //Draw object
                 currentModel->draw(*shaderAtlas[4], false);
             }
-        }
-
-        // Set shadow fbo to draw all our shadow stuff to the depth buffer
-        dirShadowFBO.bind();
-
-        drawSceneFromLightPOV();
-    }
-    // glCheckError();
-    //Set the multisampled FBO as the first render target
-    multiSampledFBO.bind();
-
-    //Preps all the items that will be drawn in the scene
-    // buildRenderQueue();
-
-    //First we draw the scene as normal but on the offscreen buffer
-    drawScene();
-
-    // glCheckError();
-    //Resolving the multisampled buffer into a regular one for postprocessing
-    multiSampledFBO.blitTo(simpleFBO);
-
-    //Setting back to default framebuffer (screen) and clearing
-    //No need for depth testing cause we're drawing to a flat quad
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    //Render to quad and apply postprocessing effects
-    postProcess(start);
-
-    // glCheckError();
-    //Drawing to the screen by swapping the window's surface with the
-    //final buffer containing all rendering information
-    screen->swapDisplayBuffer();
-
-    // glCheckError();
-    //Set camera pointer to null just in case a scene change occurs
-    sceneCamera = nullptr;
 }
 
 bool RenderManager::setupQuad(){
@@ -227,7 +240,7 @@ bool RenderManager::loadShaders(){
     return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
 }
 
-void RenderManager::drawSceneFromLightPOV(){
+void RenderManager::drawDirShadow(){
     float left   = 3000.0f;
     float right  = -left;
     float top    = left;

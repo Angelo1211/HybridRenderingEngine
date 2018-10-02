@@ -43,7 +43,8 @@ class RenderManager{
 
         //Internal Rendering
         void drawScene();
-        void drawSceneFromLightPOV();
+        void drawPointShadow(int i );
+        void drawDirShadow();
         void drawSkybox(const glm::mat4 &VP);
         void postProcess(const unsigned int start);
         void buildRenderQueue();
