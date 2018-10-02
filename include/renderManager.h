@@ -71,10 +71,10 @@ class RenderManager{
         const int shadowMapResolution = 2 * 1024;
 
         const glm::vec3 pointLightPositions[4] = {
-            glm::vec3(1100.0f, 150.0f, -400.0f),
-            glm::vec3(1100.0f, 150.0f, 400.0f),
-            glm::vec3(-1100.0f, 150.0f, 400.0f),
-            glm::vec3(-1100.0f, 150.0f, -400.0f)
+            glm::vec3(1100.0f, 200.0f, -400.0f),
+            glm::vec3(1100.0f, 200.0f, 400.0f),
+            glm::vec3(-1150.0f, 200.0f, 400.0f),
+            glm::vec3(-1150.0f, 200.0f, -400.0f)
         };
 
         const glm::vec3 pointLightColor[4] = {

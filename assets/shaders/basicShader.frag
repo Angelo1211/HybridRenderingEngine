@@ -44,9 +44,18 @@ uniform sampler2D specular1;
 
 //Function prototypes
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec, float shadow);
-vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, vec3 spec);
+vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, vec3 spec, float viewDistance);
 float calcShadows(vec4 fragPosLightSpace);
-// float calcPointLightShadows(vec4 fragPosLightSpace);
+float calcPointLightShadows(samplerCube depthMap, vec3 fragPos, float viewDistance);
+
+vec3 sampleOffsetDirections[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
 
 void main(){
     //Texture Reads
@@ -64,13 +73,14 @@ void main(){
 
     // shadow calcs
     float shadow = calcShadows(fs_in.fragPos_lS);
+    float viewDistance = length(cameraPos_wS - fs_in.fragPos_wS);
 
     //Directional light 
     result = calcDirLight(dirLight, norm, viewDir, color, specularIntensity, shadow) ;
 
     // Point lights
     for(int i = 0; i < POINT_LIGHTS; i++){
-        result += calcPointLight(pointLights[i], norm, fs_in.fragPos_wS, viewDir, color, specularIntensity);
+        result += calcPointLight(pointLights[i], norm, fs_in.fragPos_wS, viewDir, color, specularIntensity, viewDistance);
     }
 
     FragColor = clamp(vec4(result, 1.0), 0.0, 1.0);
@@ -100,7 +110,7 @@ vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec
     return lighting;
 }
 
-vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, vec3 spec){
+vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, vec3 spec, float viewDistance){
 
     //Attenuation calculation that is applied to all
     float distance = length(light.position - fragPos);
@@ -123,18 +133,45 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 
     //shadow stuff
     vec3 fragToLight = fragPos - light.position;
-    float closestDepth = texture(light.depthMap, fragToLight).r;
 
-    closestDepth *= far_plane;
-
-    float currentDepth = length(fragToLight);
-
-    float bias = 0.05;
-
-    float shadow = currentDepth - bias > closestDepth ? 1.0 :0.0;
+    float shadow = calcPointLightShadows(light.depthMap, fragToLight, viewDistance);
+    
 
     //total contibution 
     return  attenuation * (ambient + (1.0 - shadow) * (diffuse + specular));
+}
+
+float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDistance){
+    float shadow      = 0.0;
+    float bias        = 0.17;
+    int   samples     = 20;
+    float diskRadius  = (1.0 + (viewDistance / far_plane)) / 25.0;
+    float currentDepth = length(fragToLight);
+
+    for(int i = 0; i < samples; ++i){
+        float closestDepth = texture(depthMap, fragToLight + sampleOffsetDirections[i], diskRadius).r;
+        closestDepth *= far_plane;
+        if(currentDepth - bias > closestDepth){
+            shadow += 1;
+        }
+    }
+    shadow /= float(samples);
+
+    // float denom       = 1.0 / (samples * 0.5);
+    // for(float x = -offset; x < offset; x += offset * denom ){
+    //     for(float y = -offset; y < offset; y += offset * denom ){
+    //         for(float z = -offset; z < offset; z += offset * denom ){ 
+    //             float closestDepth = texture(depthMap, fragToLight + vec3(x,y,z)).r;
+    //             closestDepth *= far_plane;
+    //             if(currentDepth - bias  > closestDepth){
+    //                 shadow += 1.0 ;
+    //             }
+    //         }
+    //     }
+    // }
+    // shadow /= (samples * samples * samples);
+
+    return shadow;
 }
 
 float calcShadows(vec4 fragPosLightSpace){

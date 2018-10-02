@@ -170,7 +170,7 @@ void RenderManager::render(const unsigned int start){
     //final buffer containing all rendering information
     screen->swapDisplayBuffer();
 
-    glCheckError();
+    // glCheckError();
     //Set camera pointer to null just in case a scene change occurs
     sceneCamera = nullptr;
 }

@@ -121,6 +121,9 @@ bool DepthBuffer::setupFrameBuffer(unsigned int w, unsigned int h, bool omnidire
         drawingTexture.loadCubeMap(width, height);
         depthMap = drawingTexture.textureID;
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthMap, 0);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
     else{
         //We generate and attach a texture to the frame buffer that acts as our depth buffer
