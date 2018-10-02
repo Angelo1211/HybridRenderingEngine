@@ -58,6 +58,8 @@ class RenderManager{
         glm::mat4 lightSpaceMatrix;
 
         //OPENGL STUFF TODO TODO TODO
+        GLenum glCheckError_(const char *file, int line);
+        bool hasMoved = true;
         FrameBuffer multiSampledFBO;
         ResolveBuffer simpleFBO;
         DepthBuffer  dirShadowFBO;

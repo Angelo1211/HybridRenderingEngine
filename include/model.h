@@ -35,7 +35,7 @@ class Model {
             loadModel(meshPath);
             modelParameters = initParameters;
         }
-        void draw(Shader shader);
+        void draw(const Shader &shader, const bool textured);
         
         void update( const unsigned int deltaT);
 

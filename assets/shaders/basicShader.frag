@@ -62,7 +62,7 @@ void main(){
     vec3 viewDir  = normalize(cameraPos_wS - fs_in.fragPos_wS);
     vec3 result   = vec3(0.0);
 
-    //shadow calcs
+    // shadow calcs
     float shadow = calcShadows(fs_in.fragPos_lS);
 
     //Directional light 
@@ -125,7 +125,7 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
     vec3 fragToLight = fragPos - light.position;
     float closestDepth = texture(light.depthMap, fragToLight).r;
 
-    closestDepth *= 2000.0;
+    closestDepth *= far_plane;
 
     float currentDepth = length(fragToLight);
 

@@ -8,6 +8,26 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+//Temporarily here
+GLenum RenderManager::glCheckError_(const char *file, int line){
+    GLenum errorCode;
+    while((errorCode = glGetError()) != GL_NO_ERROR){
+        std::string error;
+        switch(errorCode){
+            case GL_INVALID_ENUM: error = "Invalid Enum"; break;
+            case GL_INVALID_VALUE: error = "Invalid value"; break;
+            case GL_INVALID_OPERATION: error = "Invalid operation"; break;
+            case GL_STACK_OVERFLOW: error = "stack overflow"; break;
+            case GL_STACK_UNDERFLOW: error = "stack underflow"; break;
+            case GL_OUT_OF_MEMORY: error = "out of memory"; break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: error = "invalid framebuffer operation"; break;
+        }
+        printf("%s, | %s ( %d ) \n", error.c_str(), file, line);
+    }
+    return errorCode;
+}
+#define glCheckError() glCheckError_(__FILE__, __LINE__)
+
 //Dummy constructors / Destructors
 RenderManager::RenderManager(){}
 RenderManager::~RenderManager(){}
@@ -64,59 +84,65 @@ bool RenderManager::initFBOs(){
 }
 void RenderManager::render(const unsigned int start){
     glEnable(GL_DEPTH_TEST);
-
+    
     buildRenderQueue();
 
-    for(unsigned int i = 0; i < 4; ++i){
-        pointLightShadowFBOs[i].bind();
+    if(hasMoved){
+        hasMoved = false;
+        for (unsigned int i = 0; i < 4; ++i)
+        {
+            pointLightShadowFBOs[i].bind();
 
-        //Setup matrices and shader
-        float aspect = (float)pointLightShadowFBOs[i].width / (float)pointLightShadowFBOs[i].height;
-        float zNear = 1.0f;
-        float zFar  = 2000.0f;
-        float const ang = glm::radians(90.0f);
-        glm::mat4 shadowProj = glm::perspective(ang, aspect, zNear, zFar );
+            //Setup matrices and shader
+            float aspect = (float)pointLightShadowFBOs[i].width / (float)pointLightShadowFBOs[i].height;
+            float zNear = 1.0f;
+            float zFar = 2000.0f;
+            float const ang = glm::radians(90.0f);
+            glm::mat4 shadowProj = glm::perspective(ang, aspect, zNear, zFar);
 
-        //look at matrix setup
-        glm::mat4 lookAtPerFace[6];
-        glm::vec3 lightPos = pointLightPositions[i];
-        lookAtPerFace[0] = glm::lookAt(lightPos, lightPos + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0));
-        lookAtPerFace[1] = glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0));
-        lookAtPerFace[2] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-        lookAtPerFace[3] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0));
-        lookAtPerFace[4] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0));
-        lookAtPerFace[5] = glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0));
+            //look at matrix setup
+            glm::mat4 lookAtPerFace[6];
+            glm::vec3 lightPos = pointLightPositions[i];
+            lookAtPerFace[0] = glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+            lookAtPerFace[1] = glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+            lookAtPerFace[2] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+            lookAtPerFace[3] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
+            lookAtPerFace[4] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
+            lookAtPerFace[5] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
 
-        //Shader setup
-        shaderAtlas[4]->use();
-        shaderAtlas[4]->setVec3("lightPos", lightPos);
-        shaderAtlas[4]->setFloat("far_plane", zFar);
+            //Shader setup
+            shaderAtlas[4]->use();
+            shaderAtlas[4]->setVec3("lightPos", lightPos);
+            shaderAtlas[4]->setFloat("far_plane", zFar);
 
-        for(unsigned int i = 0; i < 6; ++i){
-            std::string number = std::to_string(i);
-            lookAtPerFace[i] = shadowProj * lookAtPerFace[i];
-            shaderAtlas[4]->setMat4(("shadowMatrices["  + number + "]").c_str(), lookAtPerFace[i]);
+            for (unsigned int i = 0; i < 6; ++i)
+            {
+                std::string number = std::to_string(i);
+                lookAtPerFace[i] = shadowProj * lookAtPerFace[i];
+                shaderAtlas[4]->setMat4(("shadowMatrices[" + number + "]").c_str(), lookAtPerFace[i]);
+            }
+
+            glm::mat4 M = glm::mat4(1.0);
+            for (unsigned int i = 0; i < renderObjectQueue->size(); ++i)
+            {
+                Model *currentModel = (*renderObjectQueue)[i];
+
+                M = currentModel->getModelMatrix();
+
+                //Shader setup stuff that changes every frame
+                shaderAtlas[4]->setMat4("M", M);
+
+                //Draw object
+                currentModel->draw(*shaderAtlas[4], false);
+            }
         }
 
-        glm::mat4 M = glm::mat4(1.0);
-        for(unsigned int i = 0; i < renderObjectQueue->size(); ++i){
-            Model * currentModel = (*renderObjectQueue)[i];
+        // Set shadow fbo to draw all our shadow stuff to the depth buffer
+        dirShadowFBO.bind();
 
-            M = currentModel->getModelMatrix();
-
-            //Shader setup stuff that changes every frame
-            shaderAtlas[4]->setMat4("M", M );
-            
-            //Draw object
-            currentModel->draw(*shaderAtlas[4]);
-        }
+        drawSceneFromLightPOV();
     }
-
-    //Set shadow fbo to draw all our shadow stuff to the depth buffer
-    dirShadowFBO.bind();
-
-    drawSceneFromLightPOV();
-
+    // glCheckError();
     //Set the multisampled FBO as the first render target
     multiSampledFBO.bind();
 
@@ -126,6 +152,7 @@ void RenderManager::render(const unsigned int start){
     //First we draw the scene as normal but on the offscreen buffer
     drawScene();
 
+    // glCheckError();
     //Resolving the multisampled buffer into a regular one for postprocessing
     multiSampledFBO.blitTo(simpleFBO);
 
@@ -138,10 +165,12 @@ void RenderManager::render(const unsigned int start){
     //Render to quad and apply postprocessing effects
     postProcess(start);
 
+    // glCheckError();
     //Drawing to the screen by swapping the window's surface with the
     //final buffer containing all rendering information
     screen->swapDisplayBuffer();
 
+    glCheckError();
     //Set camera pointer to null just in case a scene change occurs
     sceneCamera = nullptr;
 }
@@ -226,7 +255,7 @@ void RenderManager::drawSceneFromLightPOV(){
         shaderAtlas[3]->setMat4("lightSpaceMatrix", ModelLS);
         
         //Draw object
-        currentModel->draw(*shaderAtlas[3]);
+        currentModel->draw(*shaderAtlas[3], false);
     }
 
 }
@@ -265,9 +294,9 @@ void RenderManager::drawScene(){
         glActiveTexture(GL_TEXTURE2 + i);
         shaderAtlas[0]->setInt(("pointLights[" + number + "].depthMap").c_str(), 2 + i);
         glBindTexture(GL_TEXTURE_CUBE_MAP, pointLightShadowFBOs[i].depthMap);
+        shaderAtlas[0]->setFloat("far_plane", 2000.0f);
     }
 
-    // while( !renderObjectQueue->empty() ){
     for(unsigned int i = 0; i < renderObjectQueue->size(); ++i){
         Model * currentModel = (*renderObjectQueue)[i];
 
@@ -293,7 +322,7 @@ void RenderManager::drawScene(){
         glBindTexture(GL_TEXTURE_2D, dirShadowFBO.depthMap);
         
         //Draw object
-        currentModel->draw(*shaderAtlas[0]);
+        currentModel->draw(*shaderAtlas[0], true);
     }
 
     //Drawing skybox
@@ -323,7 +352,6 @@ void RenderManager::postProcess(const unsigned int start){
     // glBindTexture(GL_TEXTURE_2D, shadowFBO.depthMap);
     glBindTexture(GL_TEXTURE_2D, simpleFBO.texColorBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    // glDisable(GL_FRAMEBUFFER_SRGB);
 
     glBindVertexArray(0);
 }

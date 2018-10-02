@@ -19,9 +19,9 @@ void Model::loadModel(std::string path){
     processNode(scene->mRootNode, scene);
 }
 
-void Model::draw(Shader shader){
+void Model::draw(const Shader &shader, const  bool textured){
     for(int i = 0; i < meshes.size(); ++i){
-        meshes[i].draw(shader, textureAtlas);
+        meshes[i].draw(shader, textureAtlas, textured);
     }
 }
 

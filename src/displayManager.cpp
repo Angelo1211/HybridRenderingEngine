@@ -47,11 +47,6 @@ void DisplayManager::shutDown(){
 
 //Swaps the finished drawn buffer with the window bufffer.
 void DisplayManager::swapDisplayBuffer(){
-    // int value;
-    // SDL_GL_GetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, &value);
-    // if(value == 1){
-    //     printf("here!\n");
-    // }
     SDL_GL_SwapWindow(mWindow);
 }
 
@@ -119,7 +114,7 @@ bool DisplayManager::createGLContext(){
             printf("Version:  %s\n", glGetString(GL_VERSION));
 
             //TODO: move this somewhere else
-            // SDL_GL_SetSwapInterval(1);
+            SDL_GL_SetSwapInterval(0);
             // glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
             glEnable(GL_FRAMEBUFFER_SRGB);

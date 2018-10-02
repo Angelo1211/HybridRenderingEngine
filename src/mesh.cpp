@@ -7,40 +7,59 @@
 #include "mesh.h"
 #include <string>
 
-void Mesh::draw(const Shader &shader, const std::unordered_map<std::string, Texture> &textureAtlas){
+void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured){
     //TODO: texture managing 
     unsigned int nDiffuse  = 0;
     unsigned int nSpecular = 0;
+    if(textured){
+        // if(textures.size() > 0){
+        //     //Diffuse
+        //     glActiveTexture(GL_TEXTURE0);
+        //     shader.setInt("diffuse1", 1);
+        //     glBindTexture(GL_TEXTURE_2D, textureAtlas.at(textures[0]).textureID);
 
-    for(unsigned int i = 0; i < textures.size(); ++i){
-        //Activate next texture unit
-        glActiveTexture(GL_TEXTURE0 + i);
-        Texture currentTex = textureAtlas.at(textures[i]);
+        //     if( textures.size() > 1){
+        //         // Specular
+        //         glActiveTexture(GL_TEXTURE1);
+        //         shader.setInt("specular1", 1);
+        //         glBindTexture(GL_TEXTURE_2D, textureAtlas.at(textures[1]).textureID);
+        //     }
+        // }
 
-        //Check the type of hte texture to increment counter accordingly
-        std::string name  = currentTex.type; 
-        std::string number;
-        if(name == "diffuse"){
-            ++nDiffuse;
-            number = std::to_string(nDiffuse);
+        for (unsigned int i = 0; i < textures.size(); ++i)
+        {
+            //Activate next texture unit
+            glActiveTexture(GL_TEXTURE0 + i);
+            currentTex = textureAtlas.at(textures[i]);
+
+            //Check the type of hte texture to increment counter accordingly
+            std::string name = currentTex.type;
+            std::string number;
+            if (name == "diffuse")
+            {
+                ++nDiffuse;
+                number = std::to_string(nDiffuse);
+            }
+            else if (name == "specular")
+            {
+                ++nSpecular;
+                number = std::to_string(nSpecular);
+            }
+            shader.setInt((name + number).c_str(), i);
+
+            //Actually binding the texture now
+            glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
         }
-        else if (name == "specular"){
-            ++nSpecular;
-            number = std::to_string(nSpecular);
-        }
-        shader.setInt((name + number).c_str(), i);
-
-        //Actually binding the texture now
-        glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
+        // // if (nSpecular == 0)
+        // // {
+        //     shader.setInt("specularFlag", 0);
+        // }
+        // else
+        // {
+        //     shader.setFloat("specularFlag", 1.0);
+        // }
+        glActiveTexture(GL_TEXTURE0);
     }
-    if(nSpecular == 0){
-        shader.setInt("specularFlag", 0);
-    }
-    else{
-        shader.setFloat("specularFlag", 1.0);
-    }
-    glActiveTexture(GL_TEXTURE0);
-
 
     //Mesh Drawing
     glBindVertexArray(VAO);

@@ -17,6 +17,8 @@
 #include <string>
 #include <unordered_map>
 
+typedef std::unordered_map<std::string, Texture>  tAtlas;
+
 //Beware the tale of the circular dependency!!!!
 struct Vertex{
    glm::vec3 position; 
@@ -39,8 +41,9 @@ class Mesh {
             setupMesh();
         }
 
-        void draw(const Shader &shader, const std::unordered_map<std::string, Texture> &textureAtlas);
+        void draw(const Shader &shader, const tAtlas &textureAtlas, bool textured);
     private:
+        Texture currentTex;
         unsigned int VAO, VBO, EBO;
 
         void setupMesh();
