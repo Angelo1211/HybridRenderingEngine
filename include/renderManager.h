@@ -70,6 +70,8 @@ class RenderManager{
 
         // TODO: MOVE LIGHT INFO INTO ITS OWN CLASS (POSSIBLY ON SCENE LOAD)
         const int shadowMapResolution = 2 * 1024;
+        float exposure = 1.0f;
+        float dirLightStrength = 1.0f;
 
         const glm::vec3 pointLightPositions[4] = {
             glm::vec3(1100.0f, 200.0f, -400.0f),

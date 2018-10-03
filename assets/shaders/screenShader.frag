@@ -5,6 +5,7 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform int offset; 
+uniform float exposure;
 
 void main(){
     // float frequency = 100;
@@ -13,6 +14,16 @@ void main(){
     // float distortion = sin(TexCoords.y * frequency + offset*speed)* amplitude;
     // vec2 offSetCoords = vec2(TexCoords.x + distortion, TexCoords.y);
     // FragColor = texture(screenTexture, offSetCoords);
-    FragColor = texture(screenTexture, TexCoords);
+
+    vec3 result = texture(screenTexture, TexCoords).rgb;
+
+    //Exposure tone mapping
+    vec3 toneMappedResult = vec3(1.0) - exp(-result * exposure);
+    //reinhard tone mapping
+    // vec3 toneMappedResult = result / (result + vec3(1.0));
+
+    FragColor = vec4(toneMappedResult, 1.0) ;
+    // FragColor = vec4(result, 1.0) ;
+
     // FragColor = vec4(vec3(texture(screenTexture, TexCoords).r), 1.0);
 }

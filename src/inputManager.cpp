@@ -7,6 +7,9 @@
 #include "inputManager.h"
 #include <string>
 #include "glm/glm.hpp"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 //Dummy constructors and destructors
 InputManager::InputManager(){}
@@ -17,8 +20,9 @@ bool InputManager::startUp(SceneManager sceneManager){
     sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
     
     //Only really care about relative mouse motion because we're building a free camera
-    bool success = !SDL_SetRelativeMouseMode(SDL_TRUE);
-    return success;
+    // bool success = !SDL_SetRelativeMouseMode(SDL_TRUE);
+    // return success;
+    return true;
 }
 
 void InputManager::shutDown(){
@@ -29,11 +33,15 @@ void InputManager::shutDown(){
 //of this function and either performs and exit or sends the result to the even handler
 void InputManager::processInput(bool &done, unsigned int deltaT){
     SDL_Event event;
+    ImGuiIO& io = ImGui::GetIO();
     while(SDL_PollEvent(&event)){
         //First check if user requests an exit
         if(event.type == SDL_QUIT){
             done = true;
             return;       
+        }
+        else if(io.WantCaptureKeyboard || io.WantCaptureMouse  ){
+            ImGui_ImplSDL2_ProcessEvent(&event);
         }
         //Handle any other relevant input data 
         //Keypresses, mouse etc

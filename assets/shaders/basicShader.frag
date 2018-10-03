@@ -37,7 +37,8 @@ uniform float far_plane;
 uniform vec3 cameraPos_wS;
 
 //Textures to sample from
-uniform sampler2DShadow shadowMap;
+// uniform sampler2DShadow shadowMap;
+uniform sampler2D shadowMap;
 
 uniform sampler2D diffuse1;
 uniform sampler2D specular1;
@@ -83,7 +84,8 @@ void main(){
         result += calcPointLight(pointLights[i], norm, fs_in.fragPos_wS, viewDir, color, specularIntensity, viewDistance);
     }
 
-    FragColor = clamp(vec4(result, 1.0), 0.0, 1.0);
+
+    FragColor = vec4(result, 1.0);
     // FragColor = vec4(specular, 1.0);
     // FragColor = vec4(diffuse, 1.0);
     // FragColor = vec4( ambient, 1.0);
@@ -104,7 +106,8 @@ vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec
     float nDotHBP = pow(max(dot(normal, halfway), 0.0), 32.0); //N dot H using blinn phong
     vec3 specular = light.specular * nDotHBP * spec;
 
-    vec3 lighting = (ambient + (shadow) * (diffuse + specular)) * col;
+    // vec3 lighting = (ambient + (shadow) * (diffuse + specular)) * col;
+    vec3 lighting = (ambient + (1.0 -shadow) * (diffuse + specular)) * col;
     
     //Total contribution
     return lighting;
@@ -177,7 +180,21 @@ float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDi
 float calcShadows(vec4 fragPosLightSpace){
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
-    float shadow = texture(shadowMap, projCoords.xyz);
+    float bias = 0.0;
+    float shadow = 0.0;
+
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for(int x = -1; x <= 1; ++x){
+        for(int y = -1; y <= 1; ++y){
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x,y) * texelSize).r;
+            shadow += projCoords.z - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    
+    shadow /= 9.0;
+
+    // float shadow = texture(shadowMap, projCoords.xyz);
+    // float shadow = texture(shadowMap, projCoords.xyz);
     return shadow;
 }
 

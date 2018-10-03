@@ -53,8 +53,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
         else{
             if( !setupQuad()){
                 printf("Final drawing quad failed to instantiate! \n");
-                return false;
-            }
+                return false; }
         }
     }
     return true;
@@ -85,10 +84,14 @@ bool RenderManager::initFBOs(){
 
     return initFBOFlag1 && initFBOFlag2 && initFBOFLag3 && initFBOFlagPointLights;
 }
+
 void RenderManager::render(const unsigned int start){
+    //Imgui frame setup
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(screen->getWindow());
     ImGui::NewFrame();
+
+    ImGui::Begin("Rendering Controls");
 
     glEnable(GL_DEPTH_TEST);
     
@@ -124,14 +127,18 @@ void RenderManager::render(const unsigned int start){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
     //Render to quad and apply postprocessing effects
     postProcess(start);
 
-    ImGui::ShowDemoWindow();
 
+    //Closing Rendering Window and rendering all gui stuff
+    ImGui::End();
     ImGui::EndFrame();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
     // glCheckError();
     //Drawing to the screen by swapping the window's surface with the
     //final buffer containing all rendering information
@@ -288,9 +295,11 @@ void RenderManager::drawScene(){
     shaderAtlas[0]->use();
     
     //Directional light
+
+    ImGui::SliderFloat("Sun Strength", &dirLightStrength, 0.1f, 200.0f);
     shaderAtlas[0]->setVec3("dirLight.direction", -dirLightPosition);
     shaderAtlas[0]->setVec3("dirLight.ambient",   glm::vec3(0.02f));
-    shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(0.9f));
+    shaderAtlas[0]->setVec3("dirLight.diffuse",   glm::vec3(dirLightStrength));
     shaderAtlas[0]->setVec3("dirLight.specular",  glm::vec3(0.5f));
 
     for(unsigned int i = 0; i < 4; ++i){
@@ -354,9 +363,11 @@ void RenderManager::drawSkybox(const glm::mat4  &VP){
 }
 
 void RenderManager::postProcess(const unsigned int start){
+    ImGui::SliderFloat("Exposure", &exposure, 0.1f, 5.0f);
     //Shader setup for postprocessing
     shaderAtlas[1]->use();
     shaderAtlas[1]->setInt("offset", start);
+    shaderAtlas[1]->setFloat("exposure", exposure);
 
     //Switching to the VAO of the quad and binding the texture buffer with
     // frame drawn off-screen
