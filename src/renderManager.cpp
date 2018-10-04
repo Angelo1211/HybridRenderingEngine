@@ -76,13 +76,14 @@ bool RenderManager::initFBOs(){
     bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
     bool initFBOFlag2 = simpleFBO.setupFrameBuffer();
     bool initFBOFLag3 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
+    bool initFBOFlag4 = pingPongFBO.setupFrameBuffer();
     
     bool initFBOFlagPointLights = true;
     for(unsigned int i = 0; i < 4; ++i ){
         initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution, true);
     }
 
-    return initFBOFlag1 && initFBOFlag2 && initFBOFLag3 && initFBOFlagPointLights;
+    return initFBOFlag1 && initFBOFlag2 && initFBOFLag3 && initFBOFlag4 && initFBOFlagPointLights;
 }
 
 void RenderManager::render(const unsigned int start){
@@ -92,6 +93,7 @@ void RenderManager::render(const unsigned int start){
     ImGui::NewFrame();
 
     ImGui::Begin("Rendering Controls");
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
     glEnable(GL_DEPTH_TEST);
     
@@ -122,11 +124,6 @@ void RenderManager::render(const unsigned int start){
     //Resolving the multisampled buffer into a regular one for postprocessing
     multiSampledFBO.blitTo(simpleFBO);
 
-    //Setting back to default framebuffer (screen) and clearing
-    //No need for depth testing cause we're drawing to a flat quad
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 
     //Render to quad and apply postprocessing effects
     postProcess(start);
@@ -239,7 +236,8 @@ bool RenderManager::loadShaders(){
     shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
     shaderAtlas[3] = new Shader("shadowShader.vert", "shadowShader.frag");
     shaderAtlas[4] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
-
+    shaderAtlas[5] = new Shader("splitHighShader.vert", "splitHighShader.frag");
+    shaderAtlas[6] = new Shader("blurShader.vert", "blurShader.frag");
 
     // shaderAtlas[2]->use();
     // shaderAtlas[2]->setInt("skybox", 0);
@@ -363,17 +361,65 @@ void RenderManager::drawSkybox(const glm::mat4  &VP){
 }
 
 void RenderManager::postProcess(const unsigned int start){
+
+    // Separating the high exposure content to the pingpongbuffer
+    pingPongFBO.bind();
+    shaderAtlas[5]->use();
+
+    glBindVertexArray(quadVAO);
+    glDisable(GL_DEPTH_TEST);
+    glBindTexture(GL_TEXTURE_2D, simpleFBO.texColorBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0);
+
+    //Applying Gaussian blur in ping pong fashion
+    shaderAtlas[6]->use();
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(quadVAO);
+    ImGui::SliderInt("Blur", &amount, 0, 10);
+
+    for(int i =0; i < amount; ++i){
+        //Horizontal pass 
+        glBindFramebuffer(GL_FRAMEBUFFER, simpleFBO.frameBufferID);
+        glDrawBuffer(GL_COLOR_ATTACHMENT1);
+        shaderAtlas[6]->setBool("horizontal", true);
+        glBindTexture(GL_TEXTURE_2D, pingPongFBO.texColorBuffer);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        //Vertical pass 
+        glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO.frameBufferID);
+        shaderAtlas[6]->setBool("horizontal", false);
+        glBindTexture(GL_TEXTURE_2D, simpleFBO.blurHighEnd);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
+    //Setting back to default framebuffer (screen) and clearing
+    //No need for depth testing cause we're drawing to a flat quad
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     ImGui::SliderFloat("Exposure", &exposure, 0.1f, 5.0f);
     //Shader setup for postprocessing
     shaderAtlas[1]->use();
     shaderAtlas[1]->setInt("offset", start);
     shaderAtlas[1]->setFloat("exposure", exposure);
+    shaderAtlas[1]->setInt("screenTexture", 0);
+    shaderAtlas[1]->setInt("bloomBlur", 1);
 
+    glActiveTexture(GL_TEXTURE0);
+
+    glActiveTexture(GL_TEXTURE0);
     //Switching to the VAO of the quad and binding the texture buffer with
     // frame drawn off-screen
     glBindVertexArray(quadVAO);
     glDisable(GL_DEPTH_TEST);
-    // glBindTexture(GL_TEXTURE_2D, shadowFBO.depthMap);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, pingPongFBO.texColorBuffer);
+
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, simpleFBO.texColorBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 

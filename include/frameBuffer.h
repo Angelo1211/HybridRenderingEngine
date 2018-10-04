@@ -22,6 +22,11 @@ struct FrameBuffer{
 
 struct ResolveBuffer : public FrameBuffer{
     bool setupFrameBuffer();
+    unsigned int blurHighEnd;
+};
+
+struct PingPongBuffer : public FrameBuffer{
+    bool setupFrameBuffer();
 };
 
 //Needs to be refactored at some point

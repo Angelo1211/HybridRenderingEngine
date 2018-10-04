@@ -49,7 +49,7 @@ class RenderManager{
         void postProcess(const unsigned int start);
         void buildRenderQueue();
 
-        Shader *shaderAtlas[5]; //The number is kind of arbitrary for now
+        Shader *shaderAtlas[7]; //The number is kind of arbitrary for now
         SceneManager   * sceneLocator;
         Camera *sceneCamera;
         DisplayManager * screen;
@@ -61,10 +61,13 @@ class RenderManager{
         //OPENGL STUFF TODO TODO TODO
         GLenum glCheckError_(const char *file, int line);
         bool hasMoved = true;
+
         FrameBuffer multiSampledFBO;
         ResolveBuffer simpleFBO;
         DepthBuffer  dirShadowFBO;
+        PingPongBuffer pingPongFBO;
         DepthBuffer   pointLightShadowFBOs[4];
+
         unsigned int quadVAO;
         unsigned int quadVBO;
 
@@ -72,6 +75,7 @@ class RenderManager{
         const int shadowMapResolution = 2 * 1024;
         float exposure = 1.0f;
         float dirLightStrength = 1.0f;
+        int amount = 0;
 
         const glm::vec3 pointLightPositions[4] = {
             glm::vec3(1100.0f, 200.0f, -400.0f),

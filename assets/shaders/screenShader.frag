@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
+uniform sampler2D bloomBlur;
 uniform int offset; 
 uniform float exposure;
 
@@ -15,10 +16,13 @@ void main(){
     // vec2 offSetCoords = vec2(TexCoords.x + distortion, TexCoords.y);
     // FragColor = texture(screenTexture, offSetCoords);
 
-    vec3 result = texture(screenTexture, TexCoords).rgb;
+    vec3 hdrCol = texture(screenTexture, TexCoords).rgb;
+    vec3 bloomCol = texture(bloomBlur, TexCoords).rgb;
+
+    hdrCol += bloomCol;
 
     //Exposure tone mapping
-    vec3 toneMappedResult = vec3(1.0) - exp(-result * exposure);
+    vec3 toneMappedResult = vec3(1.0) - exp(-hdrCol * exposure);
     //reinhard tone mapping
     // vec3 toneMappedResult = result / (result + vec3(1.0));
 
