@@ -32,7 +32,7 @@ class DisplayManager{
 
         //TODO
         void swapDisplayBuffer();
-        SDL_Window * getWindow();
+        void bind();
 
     private:
         //Init functions
@@ -40,6 +40,7 @@ class DisplayManager{
         bool startOpenGL();
         bool createWindow();
         bool createGLContext();
+        bool createImGuiContext();
 
         //Pointers to the SDL window and OpenGL Context
         SDL_Window   *mWindow;

@@ -8,13 +8,18 @@
 
 // void Skybox::draw(const Shader &shader){
 void Skybox::draw(){
+    //We change the depth function because we set the skybox to always have
+    // a clipspace value of one so if it isn't changed to less than or equal it will fail
+    glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
     
     glBindVertexArray(VAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, skyBoxCubeMap.textureID);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
     glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 }
 
 void Skybox::setupVertices(){
@@ -80,4 +85,10 @@ void Skybox::setupVertices(){
 
     //Unbinding VAO
     glBindVertexArray(0);
+}
+
+void Skybox::setup(const std::string &filePath){
+    setupVertices();
+
+    skyBoxCubeMap.loadCubeMap(filePath);
 }

@@ -49,5 +49,14 @@ class Mesh {
         void setupMesh();
 };
 
+class Quad {
+    public:
+        void draw(const unsigned int readTexture1, const unsigned int readTexture2 = 0);
+        void setupQuad();
+
+    private:
+        unsigned int VAO, VBO;
+};
+
 
 #endif

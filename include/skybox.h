@@ -11,19 +11,16 @@
 
 #include "texture.h"
 #include "shader.h"
+#include "glm/glm.hpp"
 #include <string>
-
 
 class Skybox{
     public:
-        Skybox(const std::string &filePath){
-            setupVertices();
+        void setup(const std::string &filePath);
 
-            skyBoxCubeMap.loadCubeMap(filePath);
-        };
+        void update();
 
         void draw();
-        // void draw(const Shader &shader);
 
     private:
         void setupVertices();

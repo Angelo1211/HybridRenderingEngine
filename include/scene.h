@@ -17,7 +17,7 @@
 #include "skybox.h"
 #include "glm/glm.hpp"
 #include "nlohmann/json.hpp"
-// #include "light.h"
+#include "light.h"
 
 using json = nlohmann::json;
 
@@ -30,37 +30,58 @@ class Scene{
         //Updates all models, lights and cameras
         void update(unsigned int deltaT);
 
+        //Scene drawing functions
+        void drawPointLightShadow(Shader *pointLightShader, unsigned int index, unsigned int cubeMapTarget);
+        void drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID);
+        void drawFullScene(Shader *mainSceneShader, Shader *skyboxShader);
+
         //Getters used in the setup of the render queue
         std::vector<Model*>* getVisiblemodels();
         Camera * getCurrentCamera();
-        // BaseLight * getCurrentLights();
-        int getLightCount();
+        unsigned int getLightCount();
+        unsigned int getShadowRes();
 
-        Skybox * getCurrentSkybox();
-        
         //Signals issues to scene Manager
         bool checkIfEmpty();  
 
     private:
-        std::string sceneID;
         const std::string folderPath = "../assets/scenes/";
         const std::string fileExtension = ".json";
 
+        std::string sceneID;
         bool missingScene;
-        int lightCount;
+
         Camera mainCamera;
-        Skybox *mainSkyBox;
-        // BaseLight *lights; //Array of lights in scene
+        Skybox mainSkyBox;
+        DirectionalLight dirLight;
+
+        unsigned int pointLightCount;
+        PointLight *pointLights;
+        // std::vector<PointLight> pointLights;
+
+        // const glm::vec3 pointLightPositions[4] = {
+        //     glm::vec3(1100.0f, 200.0f, -400.0f),
+        //     glm::vec3(1100.0f, 200.0f, 400.0f),
+        //     glm::vec3(-1150.0f, 200.0f, 400.0f),
+        //     glm::vec3(-1150.0f, 200.0f, -400.0f)
+        // };
+
+        // const glm::vec3 pointLightColor[4] = {
+        //     glm::vec3(1.0f, 0.0f, 0.0f),
+        //     glm::vec3(0.0f, 1.0f, 0.0f),
+        //     glm::vec3(0.0f, 0.0f, 1.0f),
+        //     glm::vec3(0.0f, 1.0f, 1.0f)
+        // };
 
         //Contains the models that remain after frustrum culling
         std::vector<Model*> visibleModels;
         std::vector<Model*> modelsInScene;
 
-        //TODO 
-        bool checkFileValidity(const std::string &filePath);
+        //Scene loading
         bool loadContent();
         void loadSceneModels(const json &sceneConfigJson);
         void loadSkyBox(const json &sceneConfigJson);
+        void loadLights(const json &sceneConfigJson);
         
         //Finds objects that the camera can see
         void frustrumCulling();

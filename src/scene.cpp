@@ -5,15 +5,15 @@
 
 //Headers
 #include "scene.h"
+#include "fileManager.h"
 #include <iostream>
 #include <fstream>
-#include <sys/stat.h>
-#include <sys/types.h>
-
+#include "imgui/imgui.h"
 
 Scene::Scene(const std::string &sceneName){
     sceneID = sceneName;
-    if( !checkFileValidity(folderPath + sceneName + fileExtension) ){
+    // if( !checkFileValidity(folderPath + sceneName + fileExtension) ){
+    if( !FLOAD::checkFileValidity(folderPath + sceneName + fileExtension) ){
         //If you do not find the scene file set the quit flag to true 
         printf("Cannot find scene descriptor file for %s \n", sceneID.c_str());
         missingScene = true; 
@@ -30,8 +30,7 @@ Scene::~Scene(){
         for(Model *models : modelsInScene){
             delete models;
         }
-        delete mainSkyBox;
-        // delete [] lights;
+        delete [] pointLights;
     }
 }
 
@@ -47,61 +46,256 @@ void Scene::update(unsigned int deltaT){
     }
     frustrumCulling();
 }
+
+void Scene::drawPointLightShadow(Shader *pointLightShader, unsigned int index, unsigned int cubeMapTarget){
+    //Current light
+    PointLight * light = &pointLights[index];
+    light->depthMapTextureID = cubeMapTarget;
+    //Shader setup
+    pointLightShader->use();
+    pointLightShader->setVec3("lightPos", light->position);
+    pointLightShader->setFloat("far_plane", light->zFar);
+
+    //Matrix setup
+    glm::mat4 lightMatrix, M;
+    glm::mat4 shadowProj = light->shadowProjectionMat;
+    for (unsigned int face = 0; face < PointLight::numFaces; ++face){
+        std::string number = std::to_string(face);
+        lightMatrix = shadowProj * light->lookAtPerFace[face];
+        pointLightShader->setMat4(("shadowMatrices[" + number + "]").c_str(), lightMatrix);
+    }
+
+    for(unsigned int i = 0; i < modelsInScene.size(); ++i){
+        Model * currentModel = modelsInScene[i];
+
+        M = currentModel->getModelMatrix();
+        //Shader setup stuff that changes every frame
+        pointLightShader->setMat4("M", M);
+        
+        //Draw object
+        currentModel->draw(*pointLightShader, false);
+    }
+}
+
+void Scene::drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID){
+    glm::mat4 ModelLS = glm::mat4(1.0);
+    dirLight.depthMapTextureID = targetTextureID;
+    //Drawing every object into the shadow buffer
+    for(unsigned int i = 0; i < modelsInScene.size(); ++i){
+        Model * currentModel = modelsInScene[i];
+
+        //Matrix setup
+        ModelLS = dirLight.lightSpaceMatrix * currentModel->getModelMatrix();
+
+        //Shader setup stuff that changes every frame
+        dirLightShader->use();
+        dirLightShader->setMat4("lightSpaceMatrix", ModelLS);
+        
+        //Draw object
+        currentModel->draw(*dirLightShader, false);
+    }
+}
+
+void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
+    //Matrix Setup
+    glm::mat4 MVP = glm::mat4(1.0);
+    glm::mat4 M   = glm::mat4(1.0);
+    glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
+    glm::mat4 VPCubeMap = mainCamera.projectionMatrix *glm::mat4(glm::mat3(mainCamera.viewMatrix));
+
+    mainSceneShader->use();
+    ImGui::SliderFloat("Sun Strength", &dirLight.strength, 0.1f, 200.0f);
+    mainSceneShader->setVec3("dirLight.direction", dirLight.direction);
+    mainSceneShader->setVec3("dirLight.ambient",   dirLight.strength * dirLight.ambient);
+    mainSceneShader->setVec3("dirLight.diffuse",   dirLight.strength * dirLight.color * dirLight.diffuse);
+    mainSceneShader->setVec3("dirLight.specular",  dirLight.strength * dirLight.specular);
+
+    for(unsigned int i = 0; i < pointLightCount; ++i){
+        PointLight * light = &pointLights[i];
+        std::string number = std::to_string(i);
+
+        mainSceneShader->setVec3(("pointLights["  + number + "].position").c_str(), light->position);
+        mainSceneShader->setVec3(("pointLights["  + number + "].ambient").c_str(),  light->strength * light->ambient);
+        mainSceneShader->setVec3(("pointLights["  + number + "].diffuse").c_str(),  light->strength * light->color * light->diffuse);
+        mainSceneShader->setVec3(("pointLights["  + number + "].specular").c_str(), light->strength * light->specular);
+        mainSceneShader->setFloat(("pointLights[" + number + "].constant").c_str(), light->attenuation[0]);
+        mainSceneShader->setFloat(("pointLights[" + number + "].linear").c_str(),   light->attenuation[1]);
+        mainSceneShader->setFloat(("pointLights[" + number + "].quadratic").c_str(),light->attenuation[2]);
+
+        glActiveTexture(GL_TEXTURE2 + i);
+        mainSceneShader->setInt(("pointLights[" + number + "].depthMap").c_str(), 2 + i);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
+        mainSceneShader->setFloat("far_plane", 2000.0f);
+    }
+
+    glActiveTexture(GL_TEXTURE2 + pointLightCount);
+    mainSceneShader->setInt("shadowMap", 2 + pointLightCount);
+    glBindTexture(GL_TEXTURE_2D, dirLight.depthMapTextureID);
+
+    for(unsigned int i = 0; i < visibleModels.size(); ++i){
+        Model * currentModel = visibleModels[i];
+
+        //Matrix setup
+        M  = currentModel->getModelMatrix();
+        MVP = VP * M;
+
+        //Shader setup stuff that changes every frame
+        mainSceneShader->setMat4("MVP", MVP);
+        mainSceneShader->setMat4("M", M);
+        mainSceneShader->setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
+        mainSceneShader->setVec3("cameraPos_wS", mainCamera.position);
+        
+        //Draw object
+        currentModel->draw(*mainSceneShader, true);
+    }
+
+    //Drawing skybox
+    skyboxShader->use();
+    skyboxShader->setMat4("VP", VPCubeMap);
+    mainSkyBox.draw();
+}
 //-----------------------------GETTERS----------------------------------------------
 std::vector<Model*>* Scene::getVisiblemodels(){
     return &visibleModels;
 }
+
 Camera* Scene::getCurrentCamera(){
     return &mainCamera;
 }
-// BaseLight * Scene::getCurrentLights(){
-//     return lights;
-// }
-int Scene::getLightCount(){
-    return lightCount;
+
+unsigned int Scene::getLightCount(){
+    return pointLightCount;
+}
+
+unsigned int Scene::getShadowRes(){
+    return dirLight.shadowRes;
 }
 //----------------------------------------------------------------
-
 bool Scene::checkIfEmpty(){
     return missingScene;
 }
-
-Skybox *Scene::getCurrentSkybox(){
-    return mainSkyBox;
-}
-
 //-----------------------------SCENE LOADING-----------------------------------
 
 //Config file parsing, gets all the important 
 bool Scene::loadContent(){
+    //Parsing into Json file readable format
     std::string sceneConfigFilePath = folderPath + sceneID + fileExtension;
     std::ifstream file(sceneConfigFilePath.c_str());
+    json configJson;
+    file >> configJson;
 
-    //Begin config file parsing
-    if( !file.good() ){
-        //Check config file exists
-        printf("Error! Config: %s does not exist.\n", sceneConfigFilePath.c_str());
+    //Checking that config file belongs to current scene and is properly formatted
+    if (configJson["sceneID"] != sceneID & ((unsigned int)configJson["models"].size() != 0)){
+        printf("Error! Config file: %s does not belong to current scene, check configuration.\n", sceneConfigFilePath.c_str());
         return false;
     }
+    //now we can parse the rest of the file "safely"
+    //TODO: more safety checks
     else{
-        //Parsing into Json file readable format
-        json configJson;
-        file >> configJson;
-        //Checking that config file belongs to current scene and is properly formatted
-        if(configJson["sceneID"] != sceneID){
-            printf("Error! Config file: %s does not belong to current scene, check configuration.\n",sceneConfigFilePath.c_str());
-            return false;
-        }
-        //now we can parse the rest of the file "safely"
-        else{
-            printf("Loading models...\n");
-            loadSceneModels(configJson);
+        printf("Loading models...\n");
+        loadSceneModels(configJson);
 
-            printf("Generating skybox...\n");
-            loadSkyBox(configJson);
+        printf("Generating skybox...\n");
+        loadSkyBox(configJson);
 
-            //lastly we check if the scene is empty and return
-            return !modelsInScene.empty();
+        printf("Loading scene lighting...\n");
+        loadLights(configJson);
+
+        //lastly we check if the scene is empty and return
+        printf("Loading Complete!...\n");
+        return !modelsInScene.empty();
+    }
+}
+
+void Scene::loadLights(const json &sceneConfigJson){
+    //Directional light
+    printf("Loading directional light...\n");
+    {
+        json light = sceneConfigJson["directionalLight"];
+
+        //Vector values
+        dirLight.ambient  = glm::vec3((float)light["ambient"]);
+        dirLight.diffuse  = glm::vec3((float)light["diffuse"]);
+        dirLight.specular = glm::vec3((float)light["specular"]);
+
+        json direction = light["direction"];
+        dirLight.direction = glm::vec3((float)direction[0],
+                                        (float)direction[1],
+                                        (float)direction[2]);
+
+        json color = light["color"];
+        dirLight.color = glm::vec3((float)color[0],
+                                        (float)color[1],
+                                        (float)color[2]);
+                                        
+        //Scalar values
+        dirLight.distance = (float)light["distance"];
+        dirLight.strength = (float)light["strength"];
+        dirLight.zNear = (float)light["zNear"];
+        dirLight.zFar = (float)light["zFar"];
+        dirLight.orthoBoxSize = (float)light["orthoSize"];
+        dirLight.shadowRes = (unsigned int)light["shadowRes"];
+
+        //Matrix values
+        float left   = dirLight.orthoBoxSize;
+        float right  = -left;
+        float top    = left;
+        float bottom = -top;
+        dirLight.shadowProjectionMat = glm::ortho(left, right, bottom, top, dirLight.zNear, dirLight.zFar);
+        dirLight.lightView = glm::lookAt(dirLight.distance * -dirLight.direction,
+                                        glm::vec3(0.0f, 0.0f, 0.0f),
+                                        glm::vec3(0.0f, 1.0f, 0.0f));
+
+        dirLight.lightSpaceMatrix = dirLight.shadowProjectionMat * dirLight.lightView;
+    }
+    //Point lights
+    printf("Loading point light...\n");
+    {
+        //Get number of lights in scene and initialize array containing them
+        pointLightCount = (unsigned int)sceneConfigJson["pointLights"].size();
+        pointLights = new PointLight[pointLightCount];
+
+        for(unsigned int i = 0; i < pointLightCount; ++i){
+            json light = sceneConfigJson["pointLights"][i];
+            //Vector values
+            pointLights[i].ambient = glm::vec3((float)light["ambient"]);
+            pointLights[i].diffuse = glm::vec3((float)light["diffuse"]);
+            pointLights[i].specular = glm::vec3((float)light["specular"]);
+
+            json position = light["position"];
+            pointLights[i].position = glm::vec3((float)position[0],
+                                           (float)position[1],
+                                           (float)position[2]);
+
+            json color = light["color"];
+            pointLights[i].color = glm::vec3((float)color[0],
+                                       (float)color[1],
+                                       (float)color[2]);
+
+            json attenuation = light["attenuation"];
+            pointLights[i].attenuation = glm::vec3((float)attenuation[0],
+                                       (float)attenuation[1],
+                                       (float)attenuation[2]);
+
+            //Scalar values
+            pointLights[i].strength = (float)light["strength"];
+            pointLights[i].zNear = (float)light["zNear"];
+            pointLights[i].zFar = (float)light["zFar"];
+            pointLights[i].shadowRes = (unsigned int)light["shadowRes"];
+            //Always using cubefaces so we can hard code this to 1
+            pointLights[i].aspect = 1.0f;
+
+            //Matrix setup
+            pointLights[i].shadowProjectionMat = glm::perspective(pointLights[i].ang,
+                pointLights[i].aspect, pointLights[i].zNear,pointLights[i].zFar);
+            
+            glm::vec3 lightPos = pointLights[i].position;
+            pointLights[i].lookAtPerFace[0] = glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+            pointLights[i].lookAtPerFace[1] = glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+            pointLights[i].lookAtPerFace[2] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+            pointLights[i].lookAtPerFace[3] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
+            pointLights[i].lookAtPerFace[4] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
+            pointLights[i].lookAtPerFace[5] = glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
         }
     }
 }
@@ -111,8 +305,7 @@ void Scene::loadSkyBox(const json &sceneConfigJson){
     std::string skyBoxFolderPath = "../assets/skyboxes/";
     skyBoxFolderPath += skyBoxName;
 
-    mainSkyBox = new Skybox(skyBoxFolderPath);
-    // mainSkyBox->loadCubeMap(skyBoxFolderPath);
+    mainSkyBox.setup(skyBoxFolderPath);
 }
 
 void Scene::loadSceneModels(const json &sceneConfigJson ){
@@ -120,8 +313,8 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
     std::string modelMesh, modelMaterial;
     TransformParameters initParameters;
     unsigned int modelCount = (unsigned int)sceneConfigJson["models"].size();
-    for (unsigned int i = 0; i < modelCount; ++i)
-    {
+
+    for (unsigned int i = 0; i < modelCount; ++i){
         //get model mesh and material info
         json currentModel = sceneConfigJson["models"][i];
         modelMesh = currentModel["mesh"];
@@ -142,38 +335,16 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
 
         //attempts to load model with the initparameters it has read
         modelMesh = "../assets/models/" + sceneID + "/" + modelMesh;
-        if (!checkFileValidity(modelMesh))
-        {
+        if (!FLOAD::checkFileValidity(modelMesh)){
             //If the mesh deos not exist it's very likely nothing else does, quit early
             printf("Error! Mesh: %s does not exist.\n", modelMesh.c_str());
         }
-        else
-        {
+        else{
             modelMaterial = "../assets/models/" + modelMaterial;
             modelsInScene.push_back(new Model(modelMesh, modelMaterial, initParameters));
         }
     }
 }
-
-bool Scene::checkFileValidity(const std::string &filePath){
-    struct stat info;
-    //file is blocking access
-    if( stat( filePath.c_str(), &info ) != 0 ){
-        printf( "Cannot access %s\n", filePath.c_str() );
-         return false;
-    }
-    else if( info.st_mode & S_IFMT ){
-        //file is accessible
-        printf( "%s is a valid file\n", filePath.c_str() );
-        return true;
-    }
-    else{
-        //File does not exist
-        printf("Error! File: %s does not exist.\n", filePath.c_str());
-        return false;
-    }
-}
-
 
 //-------------------------------------------------------------
 //TODO TODO TODO TODO TODO TODO TODO
@@ -185,15 +356,3 @@ void Scene::frustrumCulling(){
         // }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

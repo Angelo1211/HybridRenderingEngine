@@ -35,11 +35,15 @@ bool DisplayManager::startUp(){
                     success = false;
                 }
                 else{
-                    ImGui::CreateContext();
-                    ImGuiIO &io = ImGui::GetIO();
-                    ImGui_ImplSDL2_InitForOpenGL(mWindow, mContext);
-                    ImGui_ImplOpenGL3_Init(glsl_version);
-                    ImGui::StyleColorsDark();
+                    if( !createImGuiContext()){
+                        success = false;
+                    }
+                    else{
+                        //Imgui first frame setup
+                        ImGui_ImplOpenGL3_NewFrame();
+                        ImGui_ImplSDL2_NewFrame(mWindow);
+                        ImGui::NewFrame();
+                    }
                 }
             }
         }
@@ -49,6 +53,7 @@ bool DisplayManager::startUp(){
 
 //Closes down the opengl context and sdl, also destroys window.
 void DisplayManager::shutDown(){
+    ImGui::EndFrame();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
@@ -59,8 +64,36 @@ void DisplayManager::shutDown(){
 }
 
 //Swaps the finished drawn buffer with the window bufffer.
+//Also initializes a new frame for the gui renderer.
 void DisplayManager::swapDisplayBuffer(){
+    //Now that all data has been added to the frame we overlay the GUI onto it
+    //Just before frame swap
+    ImGui::EndFrame();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    //Actual buffer swap
     SDL_GL_SwapWindow(mWindow);
+
+    //Signaling beginning of frame to gui
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(mWindow);
+    ImGui::NewFrame();
+}
+
+void DisplayManager::bind(){
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
+//Entry point to SDL
+bool DisplayManager::startSDL(){
+    if( SDL_Init(SDL_INIT_VIDEO) != 0){
+        printf("Failed to initialize SDL. Error: %s\n", SDL_GetError() );
+        return  false;
+    }
+    return true;
 }
 
 //Entry point to OpenGL
@@ -75,23 +108,13 @@ bool DisplayManager::startOpenGL(){
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
 
-        // Also request a depth buffer
-        // No point in having a deplth buffer if your pipeline includes
-        // post processing
+        // No point in having a deplth buffer if you're using the default 
+        // buffer for post processing
         // SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
         //Also set the default buffer to be sRGB 
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
-    }
-    return true;
-}
-
-//Entry point to SDL
-bool DisplayManager::startSDL(){
-    if( SDL_Init(SDL_INIT_VIDEO) != 0){
-        printf("Failed to initialize SDL. Error: %s\n", SDL_GetError() );
-        return  false;
     }
     return true;
 }
@@ -117,7 +140,7 @@ bool DisplayManager::createGLContext(){
     }
     else{
         if (!gladLoadGLLoader(SDL_GL_GetProcAddress)){
-            printf("GLAD could not load SDL Context.");
+            printf("GLAD could not load SDL Context.\n");
             return false;
         }
         else{
@@ -126,7 +149,7 @@ bool DisplayManager::createGLContext(){
             printf("Renderer: %s\n", glGetString(GL_RENDERER));
             printf("Version:  %s\n", glGetString(GL_VERSION));
 
-            //TODO: move this somewhere else
+            //Init GL context settings
             SDL_GL_SetSwapInterval(0);
             // glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
@@ -139,6 +162,16 @@ bool DisplayManager::createGLContext(){
     }
 }
 
-SDL_Window* DisplayManager::getWindow(){
-    return mWindow;
+bool DisplayManager::createImGuiContext(){
+    ImGuiContext * mGuiContext = ImGui::CreateContext();
+    if( mGuiContext == nullptr){
+        printf("Could not load IMGUI context!\n");
+        return false;
+    }
+    else{
+        ImGui_ImplSDL2_InitForOpenGL(mWindow, mContext);
+        ImGui_ImplOpenGL3_Init(glsl_version);
+        ImGui::StyleColorsDark();
+        return true;
+    }
 }
