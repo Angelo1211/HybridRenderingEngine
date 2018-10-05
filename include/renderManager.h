@@ -31,55 +31,33 @@ class RenderManager{
         void shutDown();
 
         void render(const unsigned int start);
-
     private:
         //Setup
         bool initFBOs();
         bool loadShaders();
 
-        //Internal Rendering
-        // void drawScene();
-        // void drawPointShadow(int i );
-        // void drawDirShadow();
+        //Internal Rendering functions
         void postProcess(const unsigned int start);
         void buildRenderQueue();
 
+        //Pointers to data important for rendering
+        //Todo:: move this to scene class?
         Shader *shaderAtlas[7]; //The number is kind of arbitrary for now
         SceneManager   * sceneLocator;
         Scene  *currentScene;
         Camera *sceneCamera;
         DisplayManager * screen;
 
-        // std::vector<Model*> *renderObjectQueue;        
-
-        //OPENGL STUFF TODO TODO TODO
+        unsigned int numLights;
         bool hasMoved = true;
         Quad canvas;
 
+        //Render pipeline FBO's
         FrameBuffer multiSampledFBO;
         ResolveBuffer simpleFBO;
         DepthBuffer  dirShadowFBO;
         PingPongBuffer pingPongFBO;
         DepthBuffer   *pointLightShadowFBOs;
 
-        // TODO: MOVE LIGHT INFO INTO ITS OWN CLASS (POSSIBLY ON SCENE LOAD)
-        // const int shadowMapResolution = 2 * 1024;
-        float exposure = 1.0f;
-        unsigned int numLights;
-        int amount = 0;
-
-        // const glm::vec3 pointLightPositions[4] = {
-        //     glm::vec3(1100.0f, 200.0f, -400.0f),
-        //     glm::vec3(1100.0f, 200.0f, 400.0f),
-        //     glm::vec3(-1150.0f, 200.0f, 400.0f),
-        //     glm::vec3(-1150.0f, 200.0f, -400.0f)
-        // };
-
-        // const glm::vec3 pointLightColor[4] = {
-        //     glm::vec3(1.0f, 0.0f, 0.0f),
-        //     glm::vec3(0.0f, 1.0f, 0.0f),
-        //     glm::vec3(0.0f, 0.0f, 1.0f),
-        //     glm::vec3(0.0f, 1.0f, 1.0f)
-        // };
 };
 #endif

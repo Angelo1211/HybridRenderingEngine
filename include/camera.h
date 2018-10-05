@@ -42,6 +42,10 @@ struct Camera{
     glm::vec3 front;
     glm::vec3 side;
 
+    //Optical properties
+    float exposure = 1.0f;
+    int blurAmount = 0;
+
     //Values related to orbiting mode
     float radius  = 1;
     float period  = 30; //in seconds

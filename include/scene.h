@@ -57,21 +57,6 @@ class Scene{
 
         unsigned int pointLightCount;
         PointLight *pointLights;
-        // std::vector<PointLight> pointLights;
-
-        // const glm::vec3 pointLightPositions[4] = {
-        //     glm::vec3(1100.0f, 200.0f, -400.0f),
-        //     glm::vec3(1100.0f, 200.0f, 400.0f),
-        //     glm::vec3(-1150.0f, 200.0f, 400.0f),
-        //     glm::vec3(-1150.0f, 200.0f, -400.0f)
-        // };
-
-        // const glm::vec3 pointLightColor[4] = {
-        //     glm::vec3(1.0f, 0.0f, 0.0f),
-        //     glm::vec3(0.0f, 1.0f, 0.0f),
-        //     glm::vec3(0.0f, 0.0f, 1.0f),
-        //     glm::vec3(0.0f, 1.0f, 1.0f)
-        // };
 
         //Contains the models that remain after frustrum culling
         std::vector<Model*> visibleModels;

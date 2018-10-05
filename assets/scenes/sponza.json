@@ -14,7 +14,7 @@
         "diffuse": 1.0,
         "specular": 0.5,
         "direction": [-1.0, -4.0, -1.0],
-        "color": [0.0, 1.0, 0.0],
+        "color": [1.0, 1.0, 1.0],
         "distance": 1500.0,
         "strength": 1.0,
         "zNear": 1.0,
