@@ -19,7 +19,7 @@ struct Texture{
     std::string path;
 };
 
-struct CubeMap : Texture{
+struct CubeMap : public Texture{
     void loadCubeMap(const std::string &filePath);
     void loadCubeMap(const int shadow_width, const int shadow_height);
     const unsigned int numSidesInCube = 6;

@@ -7,9 +7,16 @@
 #include <glad/glad.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "gli/gli.hpp"
+#include "fileManager.h"
 
 void Texture::setupTexture(const std::string &filePath, bool sRGB){
     path = filePath;
+    std::string fileExtension = FLOAD::getFileExtension(filePath);
+
+    if( fileExtension == ".dds"){
+        printf("HEre\n");
+    }
     unsigned int ID;
     glGenTextures(1, &ID);
 

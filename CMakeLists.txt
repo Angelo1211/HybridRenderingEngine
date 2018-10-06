@@ -15,9 +15,9 @@ if(WIN32)
 endif()
 # Picking correct sdl2 lib for each compiler for the windwos version
 
+find_package(OpenMP REQUIRED)
 
 find_package(SDL2 REQUIRED)
-find_package(OpenMP REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR} include libs)
 
 find_package(ASSIMP REQUIRED)

@@ -1,3 +1,5 @@
+June 28, 2016 Morgan McGuire reduced the texture file sizes using PNGcrush and ImageOptim
+
 July 14, 2011 Morgan McGuire modified the model from Crytek's OBJ
 export to correct some small errors.  He computed bump maps from the
 normal maps using <a

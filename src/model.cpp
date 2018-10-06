@@ -14,7 +14,7 @@ void Model::loadModel(std::string path){
     const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 
     directory = path.substr(0, path.find_last_of('/'));
-    directory += "/";
+    // directory += "/";
 
     processNode(scene->mRootNode, scene);
 }
@@ -148,26 +148,25 @@ std::vector<std::string> Model::processTextures(const aiMaterial *material){
         textures.push_back(fullTexturePath);
     }
 
-
     //normal textures TODO DO DO 
-    // aiTextureType type = aiTextureType_DISPLACEMENT;
-    // std::string fullTexturePath = directory;
-    // for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
-    //     material->GetTexture(type, 0, &texturePath);
-    //     fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-    //     //Checking if the texture has already been loaded
-    //     if (textureAtlas.count(fullTexturePath) == 1)
-    //     {
-    //         //Texture already exists in the Atlas 16//16//16
-    //     }
-    //     else
-    //     {
-    //         Texture texture;
-    //         texture.type = "normal" + std::to_string(i);
-    //         texture.setupTexture(fullTexturePath);
-    //         textureAtlas.insert({fullTexturePath, texture});
-    //     }
-    //     textures.push_back(fullTexturePath);
-    // }
+    type = aiTextureType_DISPLACEMENT;
+    fullTexturePath = directory;
+    for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
+        material->GetTexture(type, 0, &texturePath);
+        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+        //Checking if the texture has already been loaded
+        if (textureAtlas.count(fullTexturePath) == 1)
+        {
+            //Texture already exists in the Atlas 16//16//16
+        }
+        else
+        {
+            Texture texture;
+            texture.type = "normal" + std::to_string(i);
+            texture.setupTexture(fullTexturePath, false);
+            textureAtlas.insert({fullTexturePath, texture});
+        }
+        textures.push_back(fullTexturePath);
+    }
     return textures;
 }
