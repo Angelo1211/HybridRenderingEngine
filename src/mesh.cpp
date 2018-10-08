@@ -12,45 +12,46 @@ void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured)
     unsigned int nDiffuse  = 0;
     unsigned int nSpecular = 0;
     if(textured){
-        // if(textures.size() > 0){
-        //     //Diffuse
-        //     glActiveTexture(GL_TEXTURE0);
-        //     shader.setInt("diffuse1", 1);
-        //     glBindTexture(GL_TEXTURE_2D, textureAtlas.at(textures[0]).textureID);
+            //Diffuse
+            glActiveTexture(GL_TEXTURE0);
+            shader.setInt("diffuse1", 0);
+            glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-        //     if( textures.size() > 1){
-        //         // Specular
-        //         glActiveTexture(GL_TEXTURE1);
-        //         shader.setInt("specular1", 1);
-        //         glBindTexture(GL_TEXTURE_2D, textureAtlas.at(textures[1]).textureID);
-        //     }
-        // }
+            // Specular
+            glActiveTexture(GL_TEXTURE1);
+            shader.setInt("specular1", 1);
+            glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-        for (unsigned int i = 0; i < textures.size(); ++i)
-        {
-            //Activate next texture unit
-            glActiveTexture(GL_TEXTURE0 + i);
-            currentTex = textureAtlas.at(textures[i]);
+            // normal
+            glActiveTexture(GL_TEXTURE2);
+            shader.setInt("normal1", 2);
+            glBindTexture(GL_TEXTURE_2D, textures[2]);
 
-            //Check the type of hte texture to increment counter accordingly
-            std::string name = currentTex.type;
-            std::string number;
-            if (name == "diffuse")
-            {
-                ++nDiffuse;
-                number = std::to_string(nDiffuse);
-            }
-            else if (name == "specular")
-            {
-                ++nSpecular;
-                number = std::to_string(nSpecular);
-            }
-            shader.setInt((name + number).c_str(), i);
+            // for (unsigned int i = 0; i < textures.size(); ++i)
+            // {
+            //     //Activate next texture unit
+            //     glActiveTexture(GL_TEXTURE0 + i);
+            //     currentTex = textureAtlas.at(textures[i]);
 
-            //Actually binding the texture now
-            glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
-        }
-        glActiveTexture(GL_TEXTURE0);
+            //     //Check the type of hte texture to increment counter accordingly
+            //     std::string name = currentTex.type;
+            //     std::string number;
+            //     if (name == "diffuse")
+            //     {
+            //         ++nDiffuse;
+            //         number = std::to_string(nDiffuse);
+            //     }
+            //     else if (name == "specular")
+            //     {
+            //         ++nSpecular;
+            //         number = std::to_string(nSpecular);
+            //     }
+            //     shader.setInt((name + number).c_str(), i);
+
+            //     //Actually binding the texture now
+            //     glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
+            // }
+            glActiveTexture(GL_TEXTURE0);
     }
 
     //Mesh Drawing
@@ -87,6 +88,10 @@ void Mesh::setupMesh(){
     //Vertex texture coord
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
+
+    //Tangent position
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
 
     //Unbinding VAO
     glBindVertexArray(0);

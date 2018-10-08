@@ -15,8 +15,8 @@ class DisplayManager{
     public:
         //The screen size is fixed and set at compile time along with other important
         //Display related values.
-        const static int SCREEN_WIDTH  = 1920; //640 1280
-        const static int SCREEN_HEIGHT = 1080; //480 720
+        const static int SCREEN_WIDTH  = 1280; //640 1920
+        const static int SCREEN_HEIGHT = 720 ; //480 1080
         const static int SCREEN_PITCH  = SCREEN_HEIGHT*sizeof(Uint32);
         constexpr static float SCREEN_ASPECT_RATIO = SCREEN_WIDTH /(float)SCREEN_HEIGHT;
         const char* glsl_version ="#version 450";

@@ -24,16 +24,17 @@ struct Vertex{
    glm::vec3 position; 
    glm::vec3 normal; 
    glm::vec2 texCoords; 
+   glm::vec3 tangent; 
 };
 
 class Mesh {
     public:
         std::vector<Vertex> vertices;
         std::vector<unsigned int > indices;
-        std::vector<std::string> textures;
+        std::vector<unsigned int > textures;
         Mesh(const std::vector<Vertex> &vertices, 
              const std::vector<unsigned int> &indices,
-             const std::vector<std::string> &textures){
+             const std::vector<unsigned int> &textures){
             this->vertices = vertices;
             this->indices  = indices;
             this->textures = textures;

@@ -89,7 +89,9 @@ void RenderManager::render(const unsigned int start){
         }
         // Directional shadows
         dirShadowFBO.bind();
+        // glDisable(GL_CULL_FACE);
         currentScene->drawDirLightShadows(shaderAtlas[3], dirShadowFBO.depthMap);
+        // glEnable(GL_CULL_FACE);
     }
     //Set the multisampled FBO as the first render target
     multiSampledFBO.bind();

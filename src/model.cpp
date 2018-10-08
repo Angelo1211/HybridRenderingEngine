@@ -11,7 +11,7 @@
 
 void Model::loadModel(std::string path){
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate |aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
 
     directory = path.substr(0, path.find_last_of('/'));
     // directory += "/";
@@ -54,7 +54,7 @@ void Model::processNode(aiNode *node, const aiScene *scene){
 Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
     std::vector<Vertex> vertices;
     std::vector<unsigned int > indices;
-    std::vector<std::string> textures;
+    std::vector<unsigned int > textures;
     //Process vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; ++i){
         //Process vertex positions, normals and texture coordinates
@@ -66,6 +66,12 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
         vertex.position = vector;
+
+        //Process tangent
+        vector.x = mesh->mTangents[i].x;
+        vector.y = mesh->mTangents[i].y;
+        vector.z = mesh->mTangents[i].z;
+        vertex.tangent = vector;
 
         //Process normals
         vector.x = mesh->mNormals[i].x;
@@ -102,71 +108,80 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
     return Mesh(vertices, indices, textures);
 }
 
-std::vector<std::string> Model::processTextures(const aiMaterial *material){
-    std::vector<std::string> textures;
+std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
+    std::vector<unsigned int> textures;
+
     //Finding current texture directory
     aiString texturePath;
+    aiTextureType type;
+    std::string fullTexturePath;
 
     //Loading textures one type at a time
     //Diffuse textures 
-    aiTextureType type = aiTextureType_DIFFUSE;
-    std::string fullTexturePath = directory;
-    for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
+    type = aiTextureType_DIFFUSE;
+    fullTexturePath = directory;
+    if( material->GetTextureCount(type) > 0 ){
+        //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
         fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-        //Checking if the texture has already been loaded
-        if (textureAtlas.count(fullTexturePath) == 1){
-            //Texture already exists in the Atlas 16//16//16
-        }
-        else
-        {
-            Texture texture;
-            texture.type = "diffuse";
-            texture.setupTexture(fullTexturePath, true);
-            textureAtlas.insert({fullTexturePath, texture});
-        }
-        textures.push_back(fullTexturePath);
+    }
+    else{
+        fullTexturePath = fullTexturePath + "dummy.dds";
+    }
+    //Checking if this is hte first tiem we are loading this texture 
+    if (textureAtlas.count(fullTexturePath) == 0){
+        Texture texture;
+        texture.type = "diffuse";
+        texture.setupTexture(fullTexturePath, true);
+        textureAtlas.insert({fullTexturePath, texture});
     }
 
+    //No matter what, you push it to the vector of texures id's
+    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
     //Specular textures 
     type = aiTextureType_SPECULAR;
     fullTexturePath = directory;
-    for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
+    if( material->GetTextureCount(type) > 0 ){
+        //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
         fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-        //Checking if the texture has already been loaded
-        if (textureAtlas.count(fullTexturePath) == 1){
-            //Texture already exists in the Atlas 16//16//16
-        }
-        else{
-            Texture texture;
-            texture.type = "specular";
-            texture.setupTexture(fullTexturePath, false);
-            textureAtlas.insert({fullTexturePath, texture});
-        }
-        textures.push_back(fullTexturePath);
+    }
+    else{
+        fullTexturePath = fullTexturePath + "dummy_specular.dds";
+    }
+    //Checking if this is hte first tiem we are loading this texture 
+    if (textureAtlas.count(fullTexturePath) == 0){
+        Texture texture;
+        texture.type = "specular";
+        texture.setupTexture(fullTexturePath, true);
+        textureAtlas.insert({fullTexturePath, texture});
     }
 
+    //No matter what, you push it to the vector of texures id's
+    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+
     //normal textures TODO DO DO 
-    type = aiTextureType_DISPLACEMENT;
+    type = aiTextureType_NORMALS;
     fullTexturePath = directory;
-    for(unsigned int i = 0; i < material->GetTextureCount(type); ++i){
+    if( material->GetTextureCount(type) > 0 ){
+        //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
         fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-        //Checking if the texture has already been loaded
-        if (textureAtlas.count(fullTexturePath) == 1)
-        {
-            //Texture already exists in the Atlas 16//16//16
-        }
-        else
-        {
-            Texture texture;
-            texture.type = "normal" + std::to_string(i);
-            texture.setupTexture(fullTexturePath, false);
-            textureAtlas.insert({fullTexturePath, texture});
-        }
-        textures.push_back(fullTexturePath);
     }
+    else{
+        fullTexturePath = fullTexturePath + "dummy_ddn.dds";
+    }
+    //Checking if this is hte first tiem we are loading this texture 
+    if (textureAtlas.count(fullTexturePath) == 0){
+        Texture texture;
+        texture.type = "normal";
+        texture.setupTexture(fullTexturePath, true);
+        textureAtlas.insert({fullTexturePath, texture});
+    }
+
+    //No matter what, you push it to the vector of texures id's
+    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+
     return textures;
 }

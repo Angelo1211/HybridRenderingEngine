@@ -9,7 +9,6 @@
 
 //Hybrid Rendering Engine
 int main( int argc, char* args[] ){
-
     if(Engine::instance().startUp()){
         Engine::instance().run();
     }

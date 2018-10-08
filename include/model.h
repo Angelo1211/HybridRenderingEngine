@@ -40,6 +40,7 @@ class Model {
         void update( const unsigned int deltaT);
 
         glm::mat4 getModelMatrix();
+        static const unsigned int numTextures = 3;
     private:
         TransformParameters modelParameters;
         glm::mat4 modelMatrix;
@@ -51,7 +52,7 @@ class Model {
         void loadModel(std::string path);
         void processNode(aiNode *node, const aiScene *scene);
         Mesh processMesh(aiMesh *mesh, const aiScene *scene);
-        std::vector<std::string> processTextures(const aiMaterial *material);
+        std::vector<unsigned int> processTextures(const aiMaterial *material);
 };
 
 #endif 

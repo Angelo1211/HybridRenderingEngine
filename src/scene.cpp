@@ -80,6 +80,18 @@ void Scene::drawPointLightShadow(Shader *pointLightShader, unsigned int index, u
 void Scene::drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID){
     glm::mat4 ModelLS = glm::mat4(1.0);
     dirLight.depthMapTextureID = targetTextureID;
+
+    float left = dirLight.orthoBoxSize;
+    float right = -left;
+    float top = left;
+    float bottom = -top;
+    dirLight.shadowProjectionMat = glm::ortho(left, right, bottom, top, dirLight.zNear, dirLight.zFar);
+    dirLight.lightView = glm::lookAt(dirLight.distance * -dirLight.direction,
+                                     glm::vec3(0.0f, 0.0f, 0.0f),
+                                     glm::vec3(0.0f, 1.0f, 0.0f));
+
+    dirLight.lightSpaceMatrix = dirLight.shadowProjectionMat * dirLight.lightView;
+
     //Drawing every object into the shadow buffer
     for(unsigned int i = 0; i < modelsInScene.size(); ++i){
         Model * currentModel = modelsInScene[i];
@@ -103,18 +115,27 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
     glm::mat4 VPCubeMap = mainCamera.projectionMatrix *glm::mat4(glm::mat3(mainCamera.viewMatrix));
 
+    //Just to avoid magic constants
+    const unsigned int numTextures =  Model::numTextures;
+
     //Setting colors in the gui
     if(ImGui::CollapsingHeader("Directional Light Settings")){
         ImGui::TextColored(ImVec4(1,1,1,1), "Directional light Settings");
-        ImGui::ColorEdit3("Sun Color", (float *)&dirLight.color);
-        ImGui::SliderFloat("Sun Strength", &dirLight.strength, 0.1f, 200.0f);
+        ImGui::ColorEdit3("Color", (float *)&dirLight.color);
+        ImGui::SliderFloat("Strength", &dirLight.strength, 0.1f, 200.0f);
+        ImGui::SliderFloat("BoxSize", &dirLight.orthoBoxSize, 0.1f, 500.0f);
+        ImGui::SliderFloat("Distance", &dirLight.distance, 0.1f, 500.0f);
+        ImGui::SliderFloat3("Direction", (float*)&dirLight.direction, -5.0f, 5.0f);
+        ImGui::InputFloat3("Camera Position", (float*)&mainCamera.position);
     }
 
     mainSceneShader->use();
-    mainSceneShader->setVec3("dirLight.direction", dirLight.direction);
+    mainSceneShader->setVec3("dirLight_wS", dirLight.direction);
     mainSceneShader->setVec3("dirLight.ambient",   dirLight.ambient);
     mainSceneShader->setVec3("dirLight.diffuse",   dirLight.strength * dirLight.color * dirLight.diffuse);
     mainSceneShader->setVec3("dirLight.specular",  dirLight.specular);
+    mainSceneShader->setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
+    mainSceneShader->setVec3("cameraPos_wS", mainCamera.position);
 
     if(ImGui::CollapsingHeader("PointLights", ImGuiTreeNodeFlags_DefaultOpen)){
         for (unsigned int i = 0; i < pointLightCount; ++i)
@@ -127,23 +148,28 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
             ImGui::TextColored(ImVec4(1, 1, 1, 1), ("Light" + number).c_str());
             ImGui::SliderFloat(("Strength" + number).c_str(), &(light->strength), 0.1f, 200.0f);
             ImGui::ColorEdit3(("Color" + number).c_str(), (float *)&(light->color));
+            ImGui::InputFloat3(("Position"+ number).c_str(), (float*)&(light->position));
 
-            mainSceneShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position); 
+            // mainSceneShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position); 
+            mainSceneShader->setVec3(("pointLight_wS[" + number + "]").c_str(), light->position); 
             mainSceneShader->setVec3(("pointLights[" + number + "].ambient").c_str(), light->ambient);
             mainSceneShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), light->strength * light->color * light->diffuse);
             mainSceneShader->setVec3(("pointLights[" + number + "].specular").c_str(), light->specular);
             mainSceneShader->setFloat(("pointLights[" + number + "].constant").c_str(), light->attenuation[0]);
             mainSceneShader->setFloat(("pointLights[" + number + "].linear").c_str(), light->attenuation[1]);
             mainSceneShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), light->attenuation[2]);
-      
-            glActiveTexture(GL_TEXTURE2 + i); 
-            mainSceneShader->setInt(("pointLights[" + number + "].depthMap").c_str(), 2 + i);
+
+
+            //Change constants herer TODO TODO  
+            glActiveTexture(GL_TEXTURE0 + numTextures + i); 
+            mainSceneShader->setInt(("pointLights[" + number + "].depthMap").c_str(), numTextures + i);
             glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
             mainSceneShader->setFloat("far_plane", light->zFar);
         }   
     }    
-    glActiveTexture(GL_TEXTURE2 + pointLightCount);
-    mainSceneShader->setInt("shadowMap", 2 + pointLightCount);
+    //Setting directional shadow depth map textures
+    glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount);
+    mainSceneShader->setInt("shadowMap", numTextures + pointLightCount);
     glBindTexture(GL_TEXTURE_2D, dirLight.depthMapTextureID);
 
     for(unsigned int i = 0; i < visibleModels.size(); ++i){
@@ -156,8 +182,6 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
         //Shader setup stuff that changes every frame
         mainSceneShader->setMat4("MVP", MVP);
         mainSceneShader->setMat4("M", M);
-        mainSceneShader->setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
-        mainSceneShader->setVec3("cameraPos_wS", mainCamera.position);
         
         //Draw object
         currentModel->draw(*mainSceneShader, true);

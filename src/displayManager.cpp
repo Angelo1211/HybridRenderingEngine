@@ -114,7 +114,7 @@ bool DisplayManager::startOpenGL(){
 
         //Also set the default buffer to be sRGB 
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-        SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+        // SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
     }
     return true;
 }

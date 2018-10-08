@@ -14,6 +14,7 @@
 
 struct Texture{
     void setupTexture(const std::string &filePath, bool sRGB);
+    unsigned int  Texture::loadDSFile(char const* Filename);
     unsigned int textureID;
     std::string type;
     std::string path;
