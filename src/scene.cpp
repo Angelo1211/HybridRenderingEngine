@@ -108,6 +108,30 @@ void Scene::drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextu
     }
 }
 
+void Scene::drawGeometry(Shader *gBufferShader){
+    //Matrix Setup
+    glm::mat4 MVP = glm::mat4(1.0);
+    glm::mat4 M   = glm::mat4(1.0);
+    glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
+
+    gBufferShader->use();
+
+    for(unsigned int i = 0; i < visibleModels.size(); ++i){
+        Model * currentModel = visibleModels[i];
+
+        //Matrix setup
+        M  = currentModel->getModelMatrix();
+        MVP = VP * M;
+
+        //Shader setup stuff that changes every frame
+        gBufferShader->setMat4("MVP", MVP);
+        gBufferShader->setMat4("M", M);
+        
+        //Draw object
+        currentModel->draw(*gBufferShader, true);
+    }
+}
+
 void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);

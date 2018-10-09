@@ -53,11 +53,12 @@ class RenderManager{
         Quad canvas;
 
         //Render pipeline FBO's
-        FrameBuffer multiSampledFBO;
+        GeometryBuffer gBuffer;
         ResolveBuffer simpleFBO;
-        DepthBuffer  dirShadowFBO;
-        PingPongBuffer pingPongFBO;
-        DepthBuffer   *pointLightShadowFBOs;
+        // FrameBuffer multiSampledFBO;
+        // DepthBuffer  dirShadowFBO;
+        // PingPongBuffer pingPongFBO;
+        // DepthBuffer   *pointLightShadowFBOs;
 
 };
 #endif

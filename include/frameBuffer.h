@@ -4,6 +4,11 @@
 /* TODO TODO TODO 
 You should refactor away some of the texture creation code into the texture class to
 avoid cluttering so much of the frame buffer creation with texture stuff.
+
+Also having different structs for each kind of framebuffer is somewhat wwasteful
+since you also have initialization for each one. I'm not really sure how to 
+compress this though since each initialization is genuinely different for each 
+kind of buffer. TODO?
 */
 
 #include "texture.h"
@@ -38,5 +43,12 @@ struct DepthBuffer{
     int width, height;
 };
 
+//Needs to be refactored at some point
+struct GeometryBuffer{
+    void bind();
+    bool setupFrameBuffer();
+    unsigned int frameBufferID, positionBuffer, normalsBuffer, albedoSpecBuffer, zBufferWStencil;
+    int width, height;
+};
 
 #endif

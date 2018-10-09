@@ -84,7 +84,7 @@ void DisplayManager::swapDisplayBuffer(){
 void DisplayManager::bind(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 //Entry point to SDL

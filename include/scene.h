@@ -31,6 +31,7 @@ class Scene{
         void update(unsigned int deltaT);
 
         //Scene drawing functions
+        void drawGeometry(Shader *gBufferShader);
         void drawPointLightShadow(Shader *pointLightShader, unsigned int index, unsigned int cubeMapTarget);
         void drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID);
         void drawFullScene(Shader *mainSceneShader, Shader *skyboxShader);

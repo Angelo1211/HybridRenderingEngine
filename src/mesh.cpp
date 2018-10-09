@@ -152,3 +152,23 @@ void Quad::draw(const unsigned int readTexture1, const unsigned int readTexture2
 
     glBindVertexArray(0);
 }
+
+void Quad::drawDeffered(const unsigned int position,
+                  const unsigned int normals,
+                  const unsigned int albedoSpec){
+    glBindVertexArray(VAO);
+    // glDisable(GL_DEPTH_TEST);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, position);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, normals);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, albedoSpec);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0);
+}

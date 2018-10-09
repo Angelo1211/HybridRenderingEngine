@@ -10,7 +10,8 @@ void FrameBuffer::bind(){
     glViewport(0,0,width, height);
     glBindFramebuffer(GL_FRAMEBUFFER, frameBufferID);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+    // glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -23,7 +24,6 @@ void FrameBuffer::blitTo(const ResolveBuffer &FBO){
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 }
-
 
 bool FrameBuffer::setupFrameBuffer(bool isMultiSampled){
     multiSampled = isMultiSampled;
@@ -99,17 +99,17 @@ bool ResolveBuffer::setupFrameBuffer(){
     //We now add the attachment to the framebuffer object
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
 
-    glGenTextures(1, &blurHighEnd);
-    glBindTexture(GL_TEXTURE_2D, blurHighEnd);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // glGenTextures(1, &blurHighEnd);
+    // glBindTexture(GL_TEXTURE_2D, blurHighEnd);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glBindTexture(GL_TEXTURE_2D, 0);
 
-    //We now add the attachment to the framebuffer object
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, blurHighEnd, 0);
+    // //We now add the attachment to the framebuffer object
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, blurHighEnd, 0);
 
     //Check if frame buffer is complete or not
     if( glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
@@ -202,4 +202,69 @@ bool PingPongBuffer::setupFrameBuffer(){
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return true;
+}
+
+//-----------------------------------------------------------------------------------------------
+//GeometryBuffer
+
+bool GeometryBuffer::setupFrameBuffer(){
+    width = DisplayManager::SCREEN_WIDTH;
+    height = DisplayManager::SCREEN_HEIGHT;
+
+    glGenFramebuffers(1, &frameBufferID);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBufferID);
+     
+    //Position buffer
+    glGenTextures(1, &positionBuffer);
+    glBindTexture(GL_TEXTURE_2D, positionBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, positionBuffer, 0);
+
+    //Normal buffer
+    glGenTextures(1, &normalsBuffer);
+    glBindTexture(GL_TEXTURE_2D, normalsBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normalsBuffer, 0);
+
+    //Color+ Specular buffer
+    glGenTextures(1, &albedoSpecBuffer);
+    glBindTexture(GL_TEXTURE_2D, albedoSpecBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, albedoSpecBuffer, 0);
+
+    //Color+ Specular buffer
+    glGenRenderbuffers(1, &zBufferWStencil);
+    glBindRenderbuffer(GL_RENDERBUFFER, zBufferWStencil);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    //Actually attaching to the frame buffer
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, zBufferWStencil);
+
+    //Setting color attachments for rendering
+    unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, attachments);
+
+    if( glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
+        printf(" Failed to initialize the offscreen frame buffer!\n");
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return false;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return true;
+}
+
+void GeometryBuffer::bind(){
+    glViewport(0,0,width, height);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBufferID);
+    glEnable(GL_DEPTH_TEST);
+    // glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
