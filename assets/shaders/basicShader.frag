@@ -6,6 +6,8 @@ in VS_OUT{
     vec3 cameraPos_tS;
     vec3 dirLight_tS;
     vec3 pointLight_tS[4];
+    vec3 fragPos_wS;
+    vec3 cameraPos_wS;
     vec2 texCoord;
     vec4 fragPos_lS;
 } fs_in;
@@ -76,7 +78,8 @@ void main(){
 
     // shadow calcs
     float shadow = calcShadows(fs_in.fragPos_lS);
-    float viewDistance = length(fs_in.cameraPos_tS - fs_in.fragPos_tS);
+    // float viewDistance = length(fs_in.cameraPos_tS - fs_in.fragPos_tS);
+    float viewDistance = length(fs_in.cameraPos_wS - fs_in.fragPos_wS);
 
     //Directional light 
     result = calcDirLight(dirLight, norm, viewDir, color, specularIntensity, shadow) ;
@@ -134,7 +137,8 @@ vec3 calcPointLight(PointLight light, vec3 lightPos, vec3 normal, vec3 fragPos, 
     vec3 specular = light.specular * nDotHBP * spec;
 
     //shadow stuff
-    vec3 fragToLight = fragPos - lightPos;
+    // vec3 fragToLight = fragPos - lightPos;
+    vec3 fragToLight = fs_in.fragPos_wS - light.position;
 
     float shadow = calcPointLightShadows(light.depthMap, fragToLight, viewDistance);
     

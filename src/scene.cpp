@@ -150,7 +150,7 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
             ImGui::ColorEdit3(("Color" + number).c_str(), (float *)&(light->color));
             ImGui::InputFloat3(("Position"+ number).c_str(), (float*)&(light->position));
 
-            // mainSceneShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position); 
+            mainSceneShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position); 
             mainSceneShader->setVec3(("pointLight_wS[" + number + "]").c_str(), light->position); 
             mainSceneShader->setVec3(("pointLights[" + number + "].ambient").c_str(), light->ambient);
             mainSceneShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), light->strength * light->color * light->diffuse);

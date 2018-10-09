@@ -16,6 +16,8 @@ out VS_OUT{
     vec3 cameraPos_tS;
     vec3 dirLight_tS;
     vec3 pointLight_tS[4];
+    vec3 fragPos_wS;
+    vec3 cameraPos_wS;
     vec2 texCoord;
     vec4 fragPos_lS;
 } vs_out;
@@ -40,8 +42,9 @@ void main(){
     vs_out.texCoord = aTexCoord;
 
     //World space output    
-    vec3 fragPos_wS  =  vec3(M * vec4(vertexPos_mS, 1.0));
-    // vs_out.normal_wS   = mat3(M) * normal_mS ;
+    // vec3 fragPos_wS  =  vec3(M * vec4(vertexPos_mS, 1.0));
+    vs_out.fragPos_wS    =  vec3(M * vec4(vertexPos_mS, 1.0));
+    vs_out.cameraPos_wS  =  cameraPos_wS;
 
     //Generating tangent matrix
     vec3 T = normalize(mat3(M) * tangent_tS);
@@ -51,7 +54,8 @@ void main(){
     mat3 TBN = transpose(mat3(T, B, N));
 
     //TangentSpaceOutput
-    vs_out.fragPos_tS = TBN * fragPos_wS;
+    // vs_out.fragPos_tS = TBN * fragPos_wS;
+    vs_out.fragPos_tS = TBN * vs_out.fragPos_wS;
     vs_out.cameraPos_tS = TBN * cameraPos_wS;
     vs_out.dirLight_tS = TBN * dirLight_wS;
     for(int i = 0; i < 4; ++i){
@@ -59,5 +63,6 @@ void main(){
     }
     
     //Lights space output
-    vs_out.fragPos_lS  = lightSpaceMatrix * vec4(fragPos_wS, 1.0);
+    // vs_out.fragPos_lS  = lightSpaceMatrix * vec4(fragPos_wS, 1.0);
+    vs_out.fragPos_lS  = lightSpaceMatrix * vec4(vs_out.fragPos_wS, 1.0);
 }
