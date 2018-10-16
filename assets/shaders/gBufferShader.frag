@@ -20,14 +20,18 @@ uniform sampler2D specular1;
 uniform sampler2D normal1;
 
 void main(){
+    //Storing albedo values in the first three channels of the third texture buffer
+    albedoSpecBuffer = texture(diffuse1, fs_in.texCoords);
+    if(albedoSpecBuffer.a < 0.5){
+        discard;
+    }
+
     //Storing world space position in the first texture buffer
     positionBuffer = fs_in.fragPos_wS;
 
     //Storing normal in world space in second texture buffer
-    normalsBuffer = normalize(fs_in.TBN * texture(normal1, fs_in.texCoords).rgb);
-
-    //Storing albedo values in the first three channels of the thirds texture buffer
-    albedoSpecBuffer.rgb = texture(diffuse1, fs_in.texCoords).rgb;
+    vec3 normal   =  texture(normal1, fs_in.texCoords).rgb;
+    normalsBuffer = fs_in.TBN * normalize(normal * 2.0 - 1.0);
 
     //Storing specular intensity in the third buffer
     albedoSpecBuffer.a = texture(specular1, fs_in.texCoords).r;

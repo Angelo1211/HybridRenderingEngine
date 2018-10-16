@@ -34,5 +34,5 @@ void main(){
     vec3 N = normalize(mat3(M) * normal_mS);
     T = normalize(T - dot(T, N ) * N);
     vec3 B = cross(N, T);
-    vs_out.TBN = transpose(mat3(T, B, N));
+    vs_out.TBN = mat3(T, B, N);
 }

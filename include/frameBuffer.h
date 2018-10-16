@@ -30,7 +30,7 @@ struct ResolveBuffer : public FrameBuffer{
     unsigned int blurHighEnd;
 };
 
-struct PingPongBuffer : public FrameBuffer{
+struct QuadHDRBuffer : public FrameBuffer{
     bool setupFrameBuffer();
 };
 

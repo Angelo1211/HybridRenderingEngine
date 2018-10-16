@@ -177,7 +177,7 @@ void DepthBuffer::bind(){
 //-----------------------------------------------------------------------------------------------
 //Ping Pong class
 
-bool PingPongBuffer::setupFrameBuffer(){
+bool QuadHDRBuffer::setupFrameBuffer(){
     width = DisplayManager::SCREEN_WIDTH;
     height = DisplayManager::SCREEN_HEIGHT;
     glGenFramebuffers(1, &frameBufferID);

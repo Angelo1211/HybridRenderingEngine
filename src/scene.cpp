@@ -132,6 +132,65 @@ void Scene::drawGeometry(Shader *gBufferShader){
     }
 }
 
+void Scene::setupLightingShader(Shader *lightShader){
+    const unsigned int numTextures =  3;
+    lightShader->use();
+    //Setting up gBuffer texture uniform positions 
+    lightShader->setInt("position", 0);
+    lightShader->setInt("normals", 1);
+    lightShader->setInt("albedoSpec", 2);
+
+    if(ImGui::CollapsingHeader("Directional Light Settings")){
+        ImGui::TextColored(ImVec4(1,1,1,1), "Directional light Settings");
+        ImGui::ColorEdit3("Color", (float *)&dirLight.color);
+        ImGui::SliderFloat("Strength", &dirLight.strength, 0.1f, 200.0f);
+        ImGui::SliderFloat("BoxSize", &dirLight.orthoBoxSize, 0.1f, 500.0f);
+        ImGui::SliderFloat("Distance", &dirLight.distance, 0.1f, 500.0f);
+        ImGui::SliderFloat3("Direction", (float*)&dirLight.direction, -5.0f, 5.0f);
+        ImGui::InputFloat3("Camera Position", (float*)&mainCamera.position);
+    }
+
+    //Setting up directional light uniforms
+    lightShader->setVec3("dirLight.direction", dirLight.direction);
+    lightShader->setVec3("dirLight.ambient",   dirLight.ambient);
+    lightShader->setVec3("dirLight.diffuse",   dirLight.strength * dirLight.color * dirLight.diffuse);
+    lightShader->setVec3("dirLight.specular",  dirLight.specular);
+    lightShader->setMat4("dirLight.lightSpaceMatrix", dirLight.lightSpaceMatrix);
+    glActiveTexture(GL_TEXTURE0 + numTextures);
+    lightShader->setInt("shadowMap", numTextures);
+    glBindTexture(GL_TEXTURE_2D, dirLight.depthMapTextureID);
+
+    //Point lights
+    for (unsigned int i = 0; i < pointLightCount; ++i)
+    {
+        PointLight *light = &pointLights[i];
+        std::string number = std::to_string(i);
+
+        // //Point light Gui
+        // // static ImVec4 color = ImColor(light->color.r, light->color.g, light->color.b);
+        // ImGui::TextColored(ImVec4(1, 1, 1, 1), ("Light" + number).c_str());
+        // ImGui::SliderFloat(("Strength" + number).c_str(), &(light->strength), 0.1f, 200.0f);
+        // ImGui::ColorEdit3(("Color" + number).c_str(), (float *)&(light->color));
+        // ImGui::InputFloat3(("Position" + number).c_str(), (float *)&(light->position));
+
+        lightShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position);
+        lightShader->setVec3(("pointLights[" + number + "].ambient").c_str(), light->ambient);
+        lightShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), light->strength * light->color * light->diffuse);
+        lightShader->setVec3(("pointLights[" + number + "].specular").c_str(), light->specular);
+        lightShader->setFloat(("pointLights[" + number + "].constant").c_str(), light->attenuation[0]);
+        lightShader->setFloat(("pointLights[" + number + "].linear").c_str(), light->attenuation[1]);
+        lightShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), light->attenuation[2]);
+
+        //Change constants herer TODO TODO
+        glActiveTexture(GL_TEXTURE0 + numTextures + 1 + i);
+        lightShader->setInt(("pointLights[" + number + "].depthMap").c_str(), numTextures + 1 + i);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
+        lightShader->setFloat("far_plane", light->zFar);
+    }
+    //Camera Uniforms
+    lightShader->setVec3("cameraPos_wS", mainCamera.position);
+}
+
 void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);

@@ -30,8 +30,11 @@ class Scene{
         //Updates all models, lights and cameras
         void update(unsigned int deltaT);
 
-        //Scene drawing functions
+        //Deffered lighting drawing functions
         void drawGeometry(Shader *gBufferShader);
+        void setupLightingShader(Shader *lightShader);
+
+        //Old Forward renderer drawing functions
         void drawPointLightShadow(Shader *pointLightShader, unsigned int index, unsigned int cubeMapTarget);
         void drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID);
         void drawFullScene(Shader *mainSceneShader, Shader *skyboxShader);
