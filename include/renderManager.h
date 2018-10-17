@@ -55,6 +55,7 @@ class RenderManager{
         //Render pipeline FBO's
         GeometryBuffer gBuffer;
         QuadHDRBuffer lightingBuffer, pingPong1, pingPong2;
+        DepthBuffer depthPrePass;
         DepthBuffer  dirShadowFBO;
         DepthBuffer   *pointLightShadowFBOs;
 };

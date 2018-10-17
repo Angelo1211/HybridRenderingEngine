@@ -38,6 +38,7 @@ class Scene{
         void drawPointLightShadow(Shader *pointLightShader, unsigned int index, unsigned int cubeMapTarget);
         void drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID);
         void drawFullScene(Shader *mainSceneShader, Shader *skyboxShader);
+        void drawDepthPass(Shader *depthPassShader);
 
         //Getters used in the setup of the render queue
         std::vector<Model*>* getVisiblemodels();

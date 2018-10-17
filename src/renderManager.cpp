@@ -37,6 +37,22 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
     return true;
 }
 
+bool RenderManager::loadShaders(){
+    shaderAtlas[0] = new Shader("depthPassShader.vert", "depthPassShader.frag");
+    // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
+    // shaderAtlas[1] = new Shader("lightingShader.vert", "lightingShader.frag");
+    // shaderAtlas[2] = new Shader("shadowShader.vert", "shadowShader.frag");
+    // shaderAtlas[3] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
+    // shaderAtlas[4] = new Shader("splitHighShader.vert", "splitHighShader.frag");
+    // shaderAtlas[5] = new Shader("blurShader.vert", "blurShader.frag");
+    // shaderAtlas[6] = new Shader("screenShader.vert", "screenShader.frag");
+    // shaderAtlas[5] = new Shader("basicShader.vert", "basicShader.frag");
+    // shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
+
+    return true;
+    // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
+}
+
 void RenderManager::shutDown(){
     delete shaderAtlas[0];
     delete shaderAtlas[1];
@@ -55,23 +71,36 @@ void RenderManager::shutDown(){
 bool RenderManager::initFBOs(){
     numLights = currentScene->getLightCount();
     pointLightShadowFBOs = new DepthBuffer[numLights];
-    unsigned int shadowMapResolution = currentScene->getShadowRes();
+    bool initFBOFlag1 = depthPrePass.setupFrameBuffer(DisplayManager::SCREEN_WIDTH,
+                                                      DisplayManager::SCREEN_HEIGHT,
+                                                      false);
+    // unsigned int shadowMapResolution = currentScene->getShadowRes();
 
-    bool initFBOFlagPointLights = true;
-    for(unsigned int i = 0; i < 4; ++i ){
-        initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution, true);
-    }
+    // bool initFBOFlagPointLights = true;
+    // for(unsigned int i = 0; i < 4; ++i ){
+    //     initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution, true);
+    // }
 
-    bool initFBOFlag1 = gBuffer.setupFrameBuffer();
-    bool initFBOFLag2 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
-    bool initFBOFlag3 = pingPong1.setupFrameBuffer();
-    bool initFBOFlag4 = pingPong2.setupFrameBuffer();
-    bool initFBOFlag5 = lightingBuffer.setupFrameBuffer();
+    // bool initFBOFlag1 = gBuffer.setupFrameBuffer();
+    // bool initFBOFLag2 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
+    // bool initFBOFlag3 = pingPong1.setupFrameBuffer();
+    // bool initFBOFlag4 = pingPong2.setupFrameBuffer();
+    // bool initFBOFlag5 = lightingBuffer.setupFrameBuffer();
 
     return true;
     // return initFBOFlag1 && initFBOFLag2 && initFBOFlag3 && initFBOFlag4 && initFBOFlagPointLights;
 }
 
+/* This time using forward+
+Algorithm steps:
+//Initialization or view frustrum change
+0. Generate all sides of tile frustrum except near and far 
+//Every frame
+1. Depth-pre pass 
+2. Compute shader to update light frustrums to get near and far values
+3. Compute shader to cull lights
+4. Actually perform shading as usual 
+*/
 void RenderManager::render(const unsigned int start){
     //Initiating rendering gui
     ImGui::Begin("Rendering Controls");
@@ -83,32 +112,36 @@ void RenderManager::render(const unsigned int start){
     //Preps all the items that will be drawn in the scene
     buildRenderQueue();
 
-    //Shadow mapping
-    ImGui::Checkbox("Dynamic shadow Mapping", &hasMoved);
-    if(hasMoved){
-        //Populating depth cube maps for the point lights
-        for (unsigned int i = 0; i < 4; ++i){
-            pointLightShadowFBOs[i].bind();
-            currentScene->drawPointLightShadow(shaderAtlas[3], i, pointLightShadowFBOs[i].depthMap);
-        }
+    //Depth pre-pass
+    depthPrePass.bind();
+    currentScene->drawDepthPass(shaderAtlas[0]);
 
-        // Directional shadows
-        dirShadowFBO.bind();
-        currentScene->drawDirLightShadows(shaderAtlas[2], dirShadowFBO.depthMap);
-    }
+    // //Shadow mapping
+    // ImGui::Checkbox("Dynamic shadow Mapping", &hasMoved);
+    // if(hasMoved){
+    //     //Populating depth cube maps for the point lights
+    //     for (unsigned int i = 0; i < 4; ++i){
+    //         pointLightShadowFBOs[i].bind();
+    //         currentScene->drawPointLightShadow(shaderAtlas[3], i, pointLightShadowFBOs[i].depthMap);
+    //     }
 
-    //Deffered rendering 
-    //Filling the geometry buffer
-    gBuffer.bind();
-    currentScene->drawGeometry(shaderAtlas[0]);
+    //     // Directional shadows
+    //     dirShadowFBO.bind();
+    //     currentScene->drawDirLightShadows(shaderAtlas[2], dirShadowFBO.depthMap);
+    // }
 
-    //Lighting pass
-    lightingBuffer.bind();
-    currentScene->setupLightingShader(shaderAtlas[1]);
-    canvas.drawDeffered(gBuffer.positionBuffer, gBuffer.normalsBuffer, gBuffer.albedoSpecBuffer);
+    // //Deffered rendering 
+    // //Filling the geometry buffer
+    // gBuffer.bind();
+    // currentScene->drawGeometry(shaderAtlas[0]);
 
-    //Applying post processing step
-    postProcess(start);
+    // //Lighting pass
+    // lightingBuffer.bind();
+    // currentScene->setupLightingShader(shaderAtlas[1]);
+    // canvas.drawDeffered(gBuffer.positionBuffer, gBuffer.normalsBuffer, gBuffer.albedoSpecBuffer);
+
+    // //Applying post processing step
+    // postProcess(start);
 
     //Rendering gui scope ends here cannot be done later because the whole frame
     //is reset in the display buffer swap
@@ -119,20 +152,6 @@ void RenderManager::render(const unsigned int start){
     screen->swapDisplayBuffer();
 }
 
-bool RenderManager::loadShaders(){
-    shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
-    shaderAtlas[1] = new Shader("lightingShader.vert", "lightingShader.frag");
-    shaderAtlas[2] = new Shader("shadowShader.vert", "shadowShader.frag");
-    shaderAtlas[3] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
-    shaderAtlas[4] = new Shader("splitHighShader.vert", "splitHighShader.frag");
-    shaderAtlas[5] = new Shader("blurShader.vert", "blurShader.frag");
-    shaderAtlas[6] = new Shader("screenShader.vert", "screenShader.frag");
-    // shaderAtlas[5] = new Shader("basicShader.vert", "basicShader.frag");
-    // shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
-
-    return true;
-    // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
-}
 
 void RenderManager::postProcess(const unsigned int start){
     if(ImGui::CollapsingHeader("Post-processing")){

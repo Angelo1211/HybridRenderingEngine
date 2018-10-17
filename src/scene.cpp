@@ -275,6 +275,28 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     skyboxShader->setMat4("VP", VPCubeMap);
     mainSkyBox.draw();
 }
+
+void Scene::drawDepthPass(Shader *depthPassShader){
+    //Matrix Setup
+    glm::mat4 MVP = glm::mat4(1.0);
+    glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
+
+    //Drawing every object into the depth buffer
+    for(unsigned int i = 0; i < modelsInScene.size(); ++i){
+        Model * currentModel = modelsInScene[i];
+
+        //Matrix setup
+        MVP = VP * currentModel->getModelMatrix();
+
+        //Shader setup stuff that changes every frame
+        depthPassShader->use();
+        depthPassShader->setMat4("MVP", MVP);
+        
+        //Draw object
+        currentModel->draw(*depthPassShader, false);
+    }
+}
+
 //-----------------------------GETTERS----------------------------------------------
 std::vector<Model*>* Scene::getVisiblemodels(){
     return &visibleModels;
