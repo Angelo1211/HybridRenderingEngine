@@ -45,7 +45,7 @@ void RenderManager::shutDown(){
     delete shaderAtlas[4];
     delete shaderAtlas[5];
     delete shaderAtlas[6];
-
+    //something to push
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
     screen = nullptr;
