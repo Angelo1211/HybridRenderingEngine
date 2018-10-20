@@ -1,5 +1,4 @@
-#ifndef RENDERMANAGER_H
-#define RENDERMANAGER_H
+#ifndef RENDERMANAGER_H #define RENDERMANAGER_H
 
 // ===============================
 // AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
@@ -55,9 +54,10 @@ class RenderManager{
         unsigned int testTexture;
             
         //Render pipeline FBO's
+        FrameBuffer multiSampledFBO;
         GeometryBuffer gBuffer;
         QuadHDRBuffer lightingBuffer, pingPong1, pingPong2;
-        DepthBuffer depthPrePass;
+        // DepthBuffer depthPrePass;
         DepthBuffer  dirShadowFBO;
         DepthBuffer   *pointLightShadowFBOs;
 };

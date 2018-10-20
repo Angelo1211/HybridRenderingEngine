@@ -32,15 +32,15 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
         }
         else{
             canvas.setupQuad();
-            glGenTextures(1, &testTexture);
-            glBindTexture(GL_TEXTURE_2D, testTexture); 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, screen->SCREEN_WIDTH, screen->SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT,
-                         NULL);
-            glBindTexture(GL_TEXTURE_2D, 0); 
+            // glGenTextures(1, &testTexture);
+            // glBindTexture(GL_TEXTURE_2D, testTexture); 
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, screen->SCREEN_WIDTH, screen->SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT,
+            //              NULL);
+            // glBindTexture(GL_TEXTURE_2D, 0); 
         }
     }
     return true;
@@ -48,7 +48,8 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
 bool RenderManager::loadShaders(){
     shaderAtlas[0] = new Shader("depthPassShader.vert", "depthPassShader.frag");
-    shaderAtlas[1] = new Shader("testShader.vert", "testShader.frag");
+    shaderAtlas[1] = new Shader("basicShader.vert", "basicShader.frag");
+    // shaderAtlas[1] = new Shader("testShader.vert", "testShader.frag");
 
     testShader = new ComputeShader("testShader.comp");
     // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
@@ -58,7 +59,6 @@ bool RenderManager::loadShaders(){
     // shaderAtlas[4] = new Shader("splitHighShader.vert", "splitHighShader.frag");
     // shaderAtlas[5] = new Shader("blurShader.vert", "blurShader.frag");
     // shaderAtlas[6] = new Shader("screenShader.vert", "screenShader.frag");
-    // shaderAtlas[5] = new Shader("basicShader.vert", "basicShader.frag");
     // shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
 
     return true;
@@ -83,9 +83,10 @@ void RenderManager::shutDown(){
 bool RenderManager::initFBOs(){
     numLights = currentScene->getLightCount();
     pointLightShadowFBOs = new DepthBuffer[numLights];
-    bool initFBOFlag1 = depthPrePass.setupFrameBuffer(DisplayManager::SCREEN_WIDTH,
-                                                      DisplayManager::SCREEN_HEIGHT,
-                                                      false);
+    bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
+    // bool initFBOFlag1 = depthPrePass.setupFrameBuffer(DisplayManager::SCREEN_WIDTH,
+                                                    //   DisplayManager::SCREEN_HEIGHT,
+                                                    //   false);
     // unsigned int shadowMapResolution = currentScene->getShadowRes();
 
     // bool initFBOFlagPointLights = true;
@@ -124,28 +125,34 @@ void RenderManager::render(const unsigned int start){
     //Preps all the items that will be drawn in the scene
     buildRenderQueue();
 
-    //Depth pre-pass
-    depthPrePass.bind();
+    //1-Depth pre-pass
+    multiSampledFBO.bind();
     currentScene->drawDepthPass(shaderAtlas[0]);
 
-    //Compute Shader test
+    //2, 3 - Light culling in compute shader currently a stub
     testShader->use();
     glActiveTexture(GL_TEXTURE0);
     glBindImageTexture(0, testTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     unsigned int size = 31;
-    // glDispatchCompute((GLuint)screen->SCREEN_WIDTH, (GLuint)screen->SCREEN_HEIGHT, 1);
     glDispatchCompute((GLuint)screen->SCREEN_WIDTH / size, (GLuint)screen->SCREEN_HEIGHT / size, 1);
-    // glDispatchCompute(80, 45, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    //4 - Actual shading
+
+    //4.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
+
+    //4.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
+
+    //4.3 -postprocess
 
     //Drawing the final result of the compute shader to the screen to get an idea
     //of how well it worked
-    screen->bind();
-    shaderAtlas[1]->use();
-    glActiveTexture(GL_TEXTURE0);
-    shaderAtlas[1]->setInt("screenTexture", 0);
-    glBindTexture(GL_TEXTURE_2D, testTexture);
-    canvas.draw(testTexture);
+    // screen->bind();
+    // shaderAtlas[1]->use();
+    // glActiveTexture(GL_TEXTURE0);
+    // shaderAtlas[1]->setInt("screenTexture", 0);
+    // glBindTexture(GL_TEXTURE_2D, testTexture);
+    // canvas.draw(testTexture);
 
     // //Shadow mapping
     // ImGui::Checkbox("Dynamic shadow Mapping", &hasMoved);
