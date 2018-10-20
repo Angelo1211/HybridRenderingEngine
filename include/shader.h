@@ -33,4 +33,10 @@ struct Shader{
       
 };
 
+struct ComputeShader{
+    unsigned int ID;
+    void use();
+    ComputeShader(const std::string computePath);
+};
+
 #endif

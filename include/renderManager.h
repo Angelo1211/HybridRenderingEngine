@@ -43,6 +43,7 @@ class RenderManager{
         //Pointers to data important for rendering
         //Todo:: move this to scene class?
         Shader *shaderAtlas[7]; //The number is kind of arbitrary for now
+        ComputeShader *testShader;
         SceneManager   * sceneLocator;
         Scene  *currentScene;
         Camera *sceneCamera;
@@ -51,7 +52,8 @@ class RenderManager{
         unsigned int numLights;
         bool hasMoved = true;
         Quad canvas;
-
+        unsigned int testTexture;
+            
         //Render pipeline FBO's
         GeometryBuffer gBuffer;
         QuadHDRBuffer lightingBuffer, pingPong1, pingPong2;

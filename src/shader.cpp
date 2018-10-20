@@ -133,3 +133,60 @@ void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const {
 void Shader::setVec3(const std::string &name, const glm::vec3 &vec) const {
    glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &vec[0]);
 }
+
+//--------------------------------------------------------------------------------------------
+//ComputeShader
+
+ComputeShader::ComputeShader(const std::string computePath){
+    //Getting the vertex shader code from the text file at file path
+    std::string shaderFolderPath = "../assets/shaders/";
+    std::string computeCode;
+    std::ifstream cShaderFile(shaderFolderPath + computePath);
+    std::stringstream cShaderStream;
+    //Check if shader files exist
+    if(!cShaderFile.good()){
+        printf("Couldn't find compute shader file: %s in shaders folder.\n ", computePath.c_str());
+    }
+    else{ //Compute Shader Exists
+        cShaderStream << cShaderFile.rdbuf();
+
+        //Close Files
+        cShaderFile.close();
+
+        //Passing code from string stream to string
+        computeCode = cShaderStream.str();
+        const char *cShaderCode = computeCode.c_str();
+        
+        //OpenGL initialization
+        int computeShader = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(computeShader, 1, &cShaderCode, NULL);
+        glCompileShader(computeShader);
+        int success;
+        char infoLog[512];
+        glGetShaderiv(computeShader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(computeShader, 512, NULL, infoLog);
+            printf("Vertex shader compilation failed %s\n", infoLog);
+        }
+
+        //Linking shaders
+        ID = glCreateProgram();
+        glAttachShader(ID, computeShader);
+        glLinkProgram(ID);
+
+        glGetProgramiv(ID, GL_LINK_STATUS, &success);
+        if (!success)
+        {
+            glGetProgramInfoLog(ID, 512, NULL, infoLog);
+            printf("Shader Linking failed %s\n", infoLog);
+        }
+
+        //Deleting shaders
+        glDeleteShader(computeShader);
+    } 
+}
+
+void ComputeShader::use(){
+    glUseProgram(ID);
+}
