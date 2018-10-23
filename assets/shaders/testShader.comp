@@ -1,17 +1,81 @@
 #version 450 core
 layout(local_size_x = 32, local_size_y = 32) in;
-layout(rgba32f, binding = 0) uniform image2D img_output;
+// layout(rgba32f, binding = 0) uniform image2D img_output;
+
+layout (std430, binding = 3) buffer shader_data{
+    float data[];
+};
 
 void main(){
-    ivec2 coords  = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 texSize = imageSize(img_output);
+    ivec2 globalThreadID  = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 workGroupID = ivec2(gl_WorkGroupID.xy);
+    vec2 numTiles = vec2(gl_NumWorkGroups.xy);
+    vec2 pixelPerTile =  texSize / numTiles;
+    ivec2 coords = ivec2(0);
+    vec4 col = vec4(0.0);
+
+    for(int i = 0; i < pixelPerTile.x / gl_WorkGroupSize.x; ++i){
+        for(int j = 0; j < pixelPerTile.y / gl_WorkGroupSize.y; ++j){
+
+            coords = ivec2(gl_LocalInvocationID.x + gl_WorkGroupSize.x * i, gl_LocalInvocationID.y  + gl_WorkGroupSize.y * j  ) + ivec2(workGroupID * pixelPerTile);
+            col = vec4( gl_LocalInvocationID.xy / vec2(texSize.xy), 0.0, 1.0);
+            imageStore(img_output, coords, col);
+        }
+    }
+}
+
 
     // vec4 col = vec4(coords /(vec2(gl_NumWorkGroups.xy)), 0.0, 1.0);
-    // vec4 col = vec4(coords /( vec2(gl_NumWorkGroups.xy) * vec2(gl_WorkGroupSize.xy) ), 0.0, 1.0);
-    vec4 col = vec4(gl_LocalInvocationID.xy /vec2(gl_NumWorkGroups.xy), 0.0, 1.0);
+    // vec4 col = vec4(gl_LocalInvocationID.xy /vec2(gl_NumWorkGroups.xy), 0.0, 1.0);
     // vec4 col = vec4(gl_LocalInvocationID.xy, 0.0, 1.0);
 
     //in theory  returns the x,y position of the pixel in the global workgroup
 
 
-    imageStore(img_output, coords, col);
+/*  
+COMPUTE SHADER TESTS:
+
+Test 1: 4 work groups, 1 thread each
+    - Four threads total, subdividing the screen in 4 tiles
+    - One thread per tile to compute all of the pixels in that given tile
+    - Time: 32.4ms
+----------------------------------------------------------------------------------------------
+void main(){
+    ivec2 texSize = imageSize(img_output);
+    ivec2 globalThreadID  = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 workGroupID = ivec2(gl_WorkGroupID.xy);
+    vec2 numTiles = vec2(gl_NumWorkGroups.xy);
+    vec2 pixelPerTile =  texSize / numTiles;
+    ivec2 coords = ivec2(0);
+    vec4 col = vec4(0.0);
+
+    for(int i = 0; i < pixelPerTile.x; ++i ){
+        for(int j = 0; j < pixelPerTile.y; ++j){
+            coords = ivec2(i,j) + ivec2(workGroupID * pixelPerTile);
+            col = vec4( coords / vec2(texSize.xy), 0.0, 1.0);
+            imageStore(img_output, coords, col);
+        }
+    } 
 }
+Test 2: 4 work groups, 640 threads each
+    - 2560 threads total, 640 threads per tile 
+    - Iterates vertically down the whole tile 
+    - Time: 3.2ms
+---------------------------------------------------------------------------------------------
+void main(){
+    ivec2 texSize = imageSize(img_output);
+    ivec2 globalThreadID  = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 workGroupID = ivec2(gl_WorkGroupID.xy);
+    vec2 numTiles = vec2(gl_NumWorkGroups.xy);
+    vec2 pixelPerTile =  texSize / numTiles;
+    ivec2 coords = ivec2(0);
+    vec4 col = vec4(0.0);
+    
+    for(int j = 0; j < pixelPerTile.y; ++j){
+        coords = ivec2(gl_LocalInvocationID.x,j) + ivec2(workGroupID * pixelPerTile);
+        col = vec4( coords / vec2(texSize.xy), 0.0, 1.0);
+        imageStore(img_output, coords, col);
+    }
+}
+*/

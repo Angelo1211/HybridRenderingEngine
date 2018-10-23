@@ -130,6 +130,7 @@ void CubeMap::loadCubeMap(const int shadow_width, const int shadow_height){
 unsigned int Texture::loadDSFile(char const* Filename)
 {
 	gli::texture Texture = gli::load(Filename);
+	// Texture = gli::flip(Texture);
 	if(Texture.empty())
 		return 0;
 

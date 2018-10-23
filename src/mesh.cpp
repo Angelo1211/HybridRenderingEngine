@@ -133,7 +133,10 @@ void Quad::setupQuad(){
     glBindVertexArray(0);
 }
 
-void Quad::draw(const unsigned int readTexture1, const unsigned int readTexture2){
+void Quad::draw(const unsigned int readTexture1,
+                const unsigned int readTexture2,
+                const unsigned int computeTexture)
+{
     glBindVertexArray(VAO);
     glDisable(GL_DEPTH_TEST);
 
@@ -148,6 +151,14 @@ void Quad::draw(const unsigned int readTexture1, const unsigned int readTexture2
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, readTexture2);
     }
+
+    //It's starting to become somewhat cumbersome to do this now but it's going to be
+    //temporary too.
+    if(computeTexture != 0){
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, computeTexture);
+    }
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindVertexArray(0);

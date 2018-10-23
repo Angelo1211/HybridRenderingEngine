@@ -52,7 +52,7 @@ class Mesh {
 
 class Quad {
     public:
-        void draw(const unsigned int readTexture1, const unsigned int readTexture2 = 0);
+        void draw(const unsigned int readTexture1, const unsigned int readTexture2 = 0, const unsigned int computeTexture = 0);
         void drawDeffered(const unsigned int position,
                           const unsigned int normals,
                           const unsigned int albedoSpec);

@@ -32,6 +32,15 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
         }
         else{
             canvas.setupQuad();
+
+            float data[DisplayManager::SCREEN_HEIGHT * DisplayManager::SCREEN_WIDTH * 3];
+            glGenBuffers(1, &testSSBO);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, testSSBO);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(data),  &data, GL_DYNAMIC_COPY);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, testSSBO);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+
             // glGenTextures(1, &testTexture);
             // glBindTexture(GL_TEXTURE_2D, testTexture); 
             // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -40,7 +49,26 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, screen->SCREEN_WIDTH, screen->SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT,
             //              NULL);
-            // glBindTexture(GL_TEXTURE_2D, 0); 
+            // glBindTexture(GL_TEXTURE_2D, 0);
+
+            //Finding the max sizes for compute units
+            int work_grp_cnt[3];
+
+            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
+            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
+            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
+
+            printf("max global (total) work group size x:%i y:%i z:%i\n",
+                   work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
+
+            int work_grp_size[3];
+
+            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
+            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
+            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
+
+            printf("max local (in one shader) work group sizes x:%i y:%i z:%i\n",
+                   work_grp_size[0], work_grp_size[1], work_grp_size[2]);
         }
     }
     return true;
@@ -49,17 +77,18 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 bool RenderManager::loadShaders(){
     shaderAtlas[0] = new Shader("depthPassShader.vert", "depthPassShader.frag");
     shaderAtlas[1] = new Shader("basicShader.vert", "basicShader.frag");
+    shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
+    shaderAtlas[3] = new Shader("splitHighShader.vert", "splitHighShader.frag");
+    shaderAtlas[4] = new Shader("blurShader.vert", "blurShader.frag");
+    shaderAtlas[5] = new Shader("screenShader.vert", "screenShader.frag");
+    shaderAtlas[6] = new Shader("shadowShader.vert", "shadowShader.frag");
+    shaderAtlas[7] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
+
     // shaderAtlas[1] = new Shader("testShader.vert", "testShader.frag");
+    // shaderAtlas[5] = new Shader("lightingShader.vert", "lightingShader.frag");
+    // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
 
     testShader = new ComputeShader("testShader.comp");
-    // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
-    // shaderAtlas[1] = new Shader("lightingShader.vert", "lightingShader.frag");
-    // shaderAtlas[2] = new Shader("shadowShader.vert", "shadowShader.frag");
-    // shaderAtlas[3] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
-    // shaderAtlas[4] = new Shader("splitHighShader.vert", "splitHighShader.frag");
-    // shaderAtlas[5] = new Shader("blurShader.vert", "blurShader.frag");
-    // shaderAtlas[6] = new Shader("screenShader.vert", "screenShader.frag");
-    // shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
 
     return true;
     // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
@@ -83,16 +112,20 @@ void RenderManager::shutDown(){
 bool RenderManager::initFBOs(){
     numLights = currentScene->getLightCount();
     pointLightShadowFBOs = new DepthBuffer[numLights];
+    unsigned int shadowMapResolution = currentScene->getShadowRes();
+
     bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
+    bool initFBOFlag2 = pingPongFBO.setupFrameBuffer();
+    bool initFBOFlag3 = simpleFBO.setupFrameBuffer();
+    bool initFBOFLag4 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
     // bool initFBOFlag1 = depthPrePass.setupFrameBuffer(DisplayManager::SCREEN_WIDTH,
                                                     //   DisplayManager::SCREEN_HEIGHT,
                                                     //   false);
-    // unsigned int shadowMapResolution = currentScene->getShadowRes();
 
-    // bool initFBOFlagPointLights = true;
-    // for(unsigned int i = 0; i < 4; ++i ){
-    //     initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution, true);
-    // }
+    bool initFBOFlagPointLights = true;
+    for(unsigned int i = 0; i < numLights; ++i ){
+        initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution, true);
+    }
 
     // bool initFBOFlag1 = gBuffer.setupFrameBuffer();
     // bool initFBOFLag2 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
@@ -121,6 +154,23 @@ void RenderManager::render(const unsigned int start){
 
     //Making sure depth testing is enabled 
     glEnable(GL_DEPTH_TEST);
+    glDepthMask(true);
+
+    //Shadow mapping
+    ImGui::Checkbox("Dynamic shadow Mapping", &hasMoved);
+    if(hasMoved){
+        //Populating depth cube maps for the point lights
+        for (unsigned int i = 0; i < 4; ++i){
+            pointLightShadowFBOs[i].bind();
+            currentScene->drawPointLightShadow(shaderAtlas[7], i, pointLightShadowFBOs[i].depthMap);
+        }
+
+        // Directional shadows
+        dirShadowFBO.bind();
+        currentScene->drawDirLightShadows(shaderAtlas[6], dirShadowFBO.depthMap);
+        hasMoved = false;
+    }
+
     
     //Preps all the items that will be drawn in the scene
     buildRenderQueue();
@@ -131,19 +181,34 @@ void RenderManager::render(const unsigned int start){
 
     //2, 3 - Light culling in compute shader currently a stub
     testShader->use();
-    glActiveTexture(GL_TEXTURE0);
-    glBindImageTexture(0, testTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    //Compute shader grouping and thread subdivision specifications
+    unsigned int tileNumX = 2;
+    unsigned int tileNumY = 2;
     unsigned int size = 31;
-    glDispatchCompute((GLuint)screen->SCREEN_WIDTH / size, (GLuint)screen->SCREEN_HEIGHT / size, 1);
+
+    
+
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindImageTexture(0, testTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    glDispatchCompute(tileNumX, tileNumY, 1);
+
+    // glDispatchCompute((GLuint)screen->SCREEN_WIDTH / size, (GLuint)screen->SCREEN_HEIGHT / size, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     //4 - Actual shading
-
     //4.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
+    glDepthFunc(GL_EQUAL);
+    glDepthMask(false);
+    currentScene->drawFullScene(shaderAtlas[1], shaderAtlas[2]);
 
     //4.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
+    multiSampledFBO.blitTo(simpleFBO);
 
     //4.3 -postprocess
+    postProcess(start);
+
 
     //Drawing the final result of the compute shader to the screen to get an idea
     //of how well it worked
@@ -154,19 +219,6 @@ void RenderManager::render(const unsigned int start){
     // glBindTexture(GL_TEXTURE_2D, testTexture);
     // canvas.draw(testTexture);
 
-    // //Shadow mapping
-    // ImGui::Checkbox("Dynamic shadow Mapping", &hasMoved);
-    // if(hasMoved){
-    //     //Populating depth cube maps for the point lights
-    //     for (unsigned int i = 0; i < 4; ++i){
-    //         pointLightShadowFBOs[i].bind();
-    //         currentScene->drawPointLightShadow(shaderAtlas[3], i, pointLightShadowFBOs[i].depthMap);
-    //     }
-
-    //     // Directional shadows
-    //     dirShadowFBO.bind();
-    //     currentScene->drawDirLightShadows(shaderAtlas[2], dirShadowFBO.depthMap);
-    // }
 
     // //Deffered rendering 
     // //Filling the geometry buffer
@@ -177,9 +229,6 @@ void RenderManager::render(const unsigned int start){
     // lightingBuffer.bind();
     // currentScene->setupLightingShader(shaderAtlas[1]);
     // canvas.drawDeffered(gBuffer.positionBuffer, gBuffer.normalsBuffer, gBuffer.albedoSpecBuffer);
-
-    // //Applying post processing step
-    // postProcess(start);
 
     //Rendering gui scope ends here cannot be done later because the whole frame
     //is reset in the display buffer swap
@@ -196,40 +245,71 @@ void RenderManager::postProcess(const unsigned int start){
         ImGui::SliderInt("Blur", &sceneCamera->blurAmount, 0, 10);
         ImGui::SliderFloat("Exposure", &sceneCamera->exposure, 0.1f, 5.0f);
     }
-    // Separating the high exposure content to the pingpongbuffer
-    pingPong1.bind();
-    shaderAtlas[4]->use();
-    canvas.draw(lightingBuffer.texColorBuffer);
-
+    pingPongFBO.bind();
+    shaderAtlas[3]->use();
+    canvas.draw(simpleFBO.texColorBuffer);
     //Applying Gaussian blur in ping pong fashion
-    shaderAtlas[5]->use();
-
-    for(int i =0; i < sceneCamera->blurAmount; ++i){
-        //Horizontal pass 
-        glBindFramebuffer(GL_FRAMEBUFFER, pingPong2.frameBufferID);
-        // glDrawBuffer(GL_COLOR_ATTACHMENT1);
-        shaderAtlas[5]->setBool("horizontal", true);
-        canvas.draw(pingPong1.texColorBuffer);
-
-        //Vertical pass 
-        glBindFramebuffer(GL_FRAMEBUFFER, pingPong1.frameBufferID);
-        shaderAtlas[5]->setBool("horizontal", false);
-        canvas.draw(pingPong2.texColorBuffer);
+    shaderAtlas[4]->use();
+    for (int i = 0; i < sceneCamera->blurAmount; ++i)
+    {
+        //Horizontal pass
+        glBindFramebuffer(GL_FRAMEBUFFER, simpleFBO.frameBufferID);
+        glDrawBuffer(GL_COLOR_ATTACHMENT1);
+        shaderAtlas[4]->setBool("horizontal", true);
+        canvas.draw(pingPongFBO.texColorBuffer);
+        //Vertical pass
+        glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO.frameBufferID);
+        shaderAtlas[4]->setBool("horizontal", false);
+        canvas.draw(simpleFBO.blurHighEnd);
     }
-
     //Setting back to default framebuffer (screen) and clearing
     //No need for depth testing cause we're drawing to a flat quad
     screen->bind();
 
     //Shader setup for postprocessing
-    shaderAtlas[6]->use();
-    shaderAtlas[6]->setInt("offset", start);
-    shaderAtlas[6]->setFloat("exposure", sceneCamera->exposure);
-    shaderAtlas[6]->setInt("screenTexture", 0);
-    shaderAtlas[6]->setInt("bloomBlur", 1);
+    shaderAtlas[5]->use();
+    shaderAtlas[5]->setInt("offset", start);
+    shaderAtlas[5]->setFloat("exposure", sceneCamera->exposure);
+    shaderAtlas[5]->setInt("screenTexture", 0);
+    shaderAtlas[5]->setInt("bloomBlur", 1);
+    shaderAtlas[5]->setInt("computeTexture", 2);
+    //Convoluting both images
+    canvas.draw(pingPongFBO.texColorBuffer, simpleFBO.texColorBuffer, testTexture);
 
-    // //Convoluting both images
-    canvas.draw(pingPong2.texColorBuffer, lightingBuffer.texColorBuffer);
+    // Separating the high exposure content to the pingpongbuffer
+    // pingPong1.bind();
+    // shaderAtlas[4]->use();
+    // canvas.draw(lightingBuffer.texColorBuffer);
+
+    // //Applying Gaussian blur in ping pong fashion
+    // shaderAtlas[5]->use();
+
+    // for(int i =0; i < sceneCamera->blurAmount; ++i){
+    //     //Horizontal pass 
+    //     glBindFramebuffer(GL_FRAMEBUFFER, pingPong2.frameBufferID);
+    //     // glDrawBuffer(GL_COLOR_ATTACHMENT1);
+    //     shaderAtlas[5]->setBool("horizontal", true);
+    //     canvas.draw(pingPong1.texColorBuffer);
+
+    //     //Vertical pass 
+    //     glBindFramebuffer(GL_FRAMEBUFFER, pingPong1.frameBufferID);
+    //     shaderAtlas[5]->setBool("horizontal", false);
+    //     canvas.draw(pingPong2.texColorBuffer);
+    // }
+
+    // //Setting back to default framebuffer (screen) and clearing
+    // //No need for depth testing cause we're drawing to a flat quad
+    // screen->bind();
+
+    // //Shader setup for postprocessing
+    // shaderAtlas[6]->use();
+    // shaderAtlas[6]->setInt("offset", start);
+    // shaderAtlas[6]->setFloat("exposure", sceneCamera->exposure);
+    // shaderAtlas[6]->setInt("screenTexture", 0);
+    // shaderAtlas[6]->setInt("bloomBlur", 1);
+
+    // // //Convoluting both images
+    // canvas.draw(pingPong2.texColorBuffer, lightingBuffer.texColorBuffer);
 }
 
 //Done every frame in case scene changes
