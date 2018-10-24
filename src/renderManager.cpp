@@ -14,9 +14,15 @@
 RenderManager::RenderManager(){}
 RenderManager::~RenderManager(){}
 
+struct tiles{
+    glm::vec4 tiles[16][9];
+    // glm::vec4 data[DisplayManager::SCREEN_HEIGHT][DisplayManager::SCREEN_WIDTH];
+} tile_data;
+
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
 bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneManager ){
+    printf("Here!\n");
     screen = &displayManager;
     sceneLocator = &sceneManager;
     currentScene = sceneLocator->getCurrentScene();
@@ -32,14 +38,13 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
         }
         else{
             canvas.setupQuad();
-
-            float data[DisplayManager::SCREEN_HEIGHT * DisplayManager::SCREEN_WIDTH * 3];
+            //Array of pixel colors
             glGenBuffers(1, &testSSBO);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, testSSBO);
-            glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(data),  &data, GL_DYNAMIC_COPY);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct tiles),  &tile_data, GL_DYNAMIC_COPY);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, testSSBO);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
+            
 
             // glGenTextures(1, &testTexture);
             // glBindTexture(GL_TEXTURE_2D, testTexture); 
@@ -183,17 +188,14 @@ void RenderManager::render(const unsigned int start){
     testShader->use();
 
     //Compute shader grouping and thread subdivision specifications
-    unsigned int tileNumX = 2;
-    unsigned int tileNumY = 2;
-    unsigned int size = 31;
-
-    
-
+    unsigned int size = 80;
+    unsigned int tileNumX = DisplayManager::SCREEN_WIDTH  / size;
+    unsigned int tileNumY = DisplayManager::SCREEN_HEIGHT / size;
+    // printf("%u, %u \n", tileNumX, tileNumY);
     // glActiveTexture(GL_TEXTURE0);
     // glBindImageTexture(0, testTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     glDispatchCompute(tileNumX, tileNumY, 1);
-
     // glDispatchCompute((GLuint)screen->SCREEN_WIDTH / size, (GLuint)screen->SCREEN_HEIGHT / size, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -274,7 +276,7 @@ void RenderManager::postProcess(const unsigned int start){
     shaderAtlas[5]->setInt("bloomBlur", 1);
     shaderAtlas[5]->setInt("computeTexture", 2);
     //Convoluting both images
-    canvas.draw(pingPongFBO.texColorBuffer, simpleFBO.texColorBuffer, testTexture);
+    canvas.draw(pingPongFBO.texColorBuffer, simpleFBO.texColorBuffer);
 
     // Separating the high exposure content to the pingpongbuffer
     // pingPong1.bind();
