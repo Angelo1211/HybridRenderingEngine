@@ -34,34 +34,38 @@ class RenderManager{
     private:
         //Setup
         bool initFBOs();
+        bool initSSBOs();
         bool loadShaders();
 
         //Internal Rendering functions
         void postProcess(const unsigned int start);
         void buildRenderQueue();
 
-        //Pointers to data important for rendering
-        //Todo:: move this to scene class?
+        //Todo:: move shaders to this to scene class?
         Shader *shaderAtlas[8]; //The number is kind of arbitrary for now
-        ComputeShader *testShader;
+
+        //Pointers to data important for rendering
         SceneManager   * sceneLocator;
         Scene  *currentScene;
         Camera *sceneCamera;
         DisplayManager * screen;
 
-        unsigned int numLights;
+        //Rendering miscs
         bool hasMoved = true;
         Quad canvas;
-        unsigned int testSSBO;
-        // unsigned int testTexture;
-            
+
+        //Stuff related to forward+
+        ComputeShader *computeFrustrumPerTile;
+        unsigned int numLights;
+        unsigned int frustrumSSBO, screenToViewSSBO;
+        unsigned int size, tileNumX, tileNumY, numTiles;
+
         //Render pipeline FBO's
         FrameBuffer multiSampledFBO;
         ResolveBuffer simpleFBO;
         QuadHDRBuffer pingPongFBO;
         DepthBuffer  dirShadowFBO;
         DepthBuffer   *pointLightShadowFBOs;
-
 
         //Old Framebuffers
         // GeometryBuffer gBuffer;

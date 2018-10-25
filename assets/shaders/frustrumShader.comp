@@ -1,0 +1,78 @@
+/*
+Code based on 3dgep formard+ tiling system, but with less tiles
+*/
+#version 450 core
+layout(local_size_x = 1, local_size_y = 1) in;
+
+#define PLANES_IN_A_TILE  4
+#define TILE_SIZE_IN_PIXELS 80
+
+layout (std430, binding = 3) buffer tile_frustrum{
+    vec4 plane[ ];
+};
+
+layout (std430, binding = 4) buffer screenToView{
+    mat4 inverseProjection;
+    vec4 screenDimensions;
+};
+
+vec4 computePlane(vec3 p0, vec3 p1, vec3 p2){
+    vec3 v0 = p1 - p0;
+    vec3 v1 = p2 - p0;
+
+    vec3 normal = normalize(cross(v0, v1));
+
+    float D = dot(normal, p0);
+
+    return vec4(normal, D);
+}
+
+vec4 clipToView(vec4 clip){
+    //View space transform
+    vec4 view = inverseProjection * clip;
+
+    //Perspective projection
+    view = view / view.w;
+    
+    return view;
+}
+
+vec4 screen2View(vec4 screen){
+    //Convert to NDC
+    vec2 texCoord = screen.xy / screenDimensions.xy;
+
+    //Convert to clipSpace
+    // vec4 clip = vec4(vec2(texCoord.x, 1.0 - texCoord.y)* 2.0 - 1.0, screen.z, screen.w);
+    vec4 clip = vec4(vec2(texCoord.x, texCoord.y)* 2.0 - 1.0, screen.z, screen.w);
+    //Not sure which of the two it is just yet
+
+    return clipToView(clip);
+}
+
+void main(){
+    // uint planeID = gl_LocalInvocationIndex;
+    ivec2 workGroupID = ivec2(gl_WorkGroupID.xy);
+
+    //Eye position is zero in view space
+    const vec3 eyePos = vec3(0, 0, 0);
+
+    //Calculating points in screen space 
+    vec4 screenSpace[4];
+    screenSpace[0] = vec4(vec2(gl_WorkGroupID.x, gl_WorkGroupID.y + 1) * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Top left
+    screenSpace[1] = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Top Right
+    screenSpace[2] = vec4(gl_WorkGroupID.xy * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Bottom left
+    screenSpace[3] = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y) * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Bottom Right
+
+    //Passing them to view space
+    vec3 viewSpace[4];
+    for (int i = 0; i < PLANES_IN_A_TILE; i++){
+        viewSpace[i] = screen2View(screenSpace[i]).xyz;
+    }
+
+    //Actually calculating the planes by first finding the first plane of the current tile in memory
+    uint linearIndex = PLANES_IN_A_TILE * (workGroupID.x  + workGroupID.y * gl_NumWorkGroups.x);
+    plane[linearIndex]   = computePlane(eyePos, viewSpace[2], viewSpace[0]); // left plane
+    plane[++linearIndex] = computePlane(eyePos, viewSpace[1], viewSpace[3]); // Right plane
+    plane[++linearIndex] = computePlane(eyePos, viewSpace[0], viewSpace[1]); // Top plane
+    plane[++linearIndex] = computePlane(eyePos, viewSpace[3], viewSpace[2]); // Bottom plane
+}

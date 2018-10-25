@@ -9,10 +9,6 @@ uniform sampler2D computeTexture;
 uniform int offset; 
 uniform float exposure;
 
-layout (std430, binding = 3) buffer tile_data{
-    vec4 tiles[16][9];
-};
-
 void main(){
     // float frequency = 100;
     // float amplitude = 0.001;
@@ -25,9 +21,10 @@ void main(){
     vec3 bloomCol = texture(bloomBlur, TexCoords).rgb;
     vec3 computeCol = texture(computeTexture, TexCoords).rgb;
     ivec2 linCoords = ivec2(TexCoords.x * 16, TexCoords.y * 8);
-    vec3 tileColor = tiles[linCoords.x][linCoords.y].rgb;
+    // vec3 tileColor = tiles[linCoords.x][linCoords.y].rgb;
 
-    hdrCol += bloomCol + tileColor;
+    // hdrCol += bloomCol + tileColor;
+    hdrCol += bloomCol;
 
     //Exposure tone mapping
     vec3 toneMappedResult = vec3(1.0) - exp(-hdrCol * exposure);

@@ -14,10 +14,19 @@
 RenderManager::RenderManager(){}
 RenderManager::~RenderManager(){}
 
-struct tiles{
-    glm::vec4 tiles[16][9];
-    // glm::vec4 data[DisplayManager::SCREEN_HEIGHT][DisplayManager::SCREEN_WIDTH];
-} tile_data;
+struct TileFrustrum{
+    //Contains the normal as xyz and the D constant as W
+    //Follows the following convention:
+    // enum planes{
+    // TOP = 0, BOTTOM, LEFT,
+    // RIGHT, NEARP, FARP};
+    glm::vec4 plane[4];
+} frustrum;
+
+struct ScreenToView{
+    glm::mat4 inverseProjectionMat;
+    glm::vec4 screenDimensions;
+}screen2View;
 
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
@@ -37,45 +46,48 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             return false;
         }
         else{
+            //Setup of other important rendering items
+            //TODO:: not everything should be here
+            buildRenderQueue();
             canvas.setupQuad();
-            //Array of pixel colors
-            glGenBuffers(1, &testSSBO);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, testSSBO);
-            glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct tiles),  &tile_data, GL_DYNAMIC_COPY);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, testSSBO);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-            
+            initSSBOs();
 
-            // glGenTextures(1, &testTexture);
-            // glBindTexture(GL_TEXTURE_2D, testTexture); 
-            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, screen->SCREEN_WIDTH, screen->SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT,
-            //              NULL);
-            // glBindTexture(GL_TEXTURE_2D, 0);
-
-            //Finding the max sizes for compute units
-            int work_grp_cnt[3];
-
-            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
-            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
-            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
-
-            printf("max global (total) work group size x:%i y:%i z:%i\n",
-                   work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
-
-            int work_grp_size[3];
-
-            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
-            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
-            glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
-
-            printf("max local (in one shader) work group sizes x:%i y:%i z:%i\n",
-                   work_grp_size[0], work_grp_size[1], work_grp_size[2]);
         }
     }
+    return true;
+}
+
+bool RenderManager::initSSBOs(){
+    //Setting up tile size
+    size = 80;
+    tileNumX = DisplayManager::SCREEN_WIDTH / size;
+    tileNumY = DisplayManager::SCREEN_HEIGHT / size;
+    numTiles = tileNumX * tileNumY;
+    
+    //Setting up the frustrum SSBO
+    glGenBuffers(1, &frustrumSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, frustrumSSBO);
+
+    //We generate the buffer but don't populate it yet.
+    //In fact we don't populate it at all!
+    //We're okay with the initialized values
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numTiles * sizeof(struct TileFrustrum), NULL, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, frustrumSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    //Setting up screen2View ssbo
+    glGenBuffers(1, &screenToViewSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, screenToViewSSBO);
+
+    //Setting up contents of buffer
+    screen2View.inverseProjectionMat = glm::inverse(sceneCamera->projectionMatrix);
+    screen2View.screenDimensions = glm::vec4(DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT, 0.0, 0.0);
+
+    //Generating and copying data to memory in GPU
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct ScreenToView), &screen2View, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, screenToViewSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
     return true;
 }
 
@@ -93,7 +105,7 @@ bool RenderManager::loadShaders(){
     // shaderAtlas[5] = new Shader("lightingShader.vert", "lightingShader.frag");
     // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
 
-    testShader = new ComputeShader("testShader.comp");
+    computeFrustrumPerTile = new ComputeShader("frustrumShader.comp");
 
     return true;
     // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
@@ -185,18 +197,8 @@ void RenderManager::render(const unsigned int start){
     currentScene->drawDepthPass(shaderAtlas[0]);
 
     //2, 3 - Light culling in compute shader currently a stub
-    testShader->use();
-
-    //Compute shader grouping and thread subdivision specifications
-    unsigned int size = 80;
-    unsigned int tileNumX = DisplayManager::SCREEN_WIDTH  / size;
-    unsigned int tileNumY = DisplayManager::SCREEN_HEIGHT / size;
-    // printf("%u, %u \n", tileNumX, tileNumY);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindImageTexture(0, testTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
+    computeFrustrumPerTile->use();
     glDispatchCompute(tileNumX, tileNumY, 1);
-    // glDispatchCompute((GLuint)screen->SCREEN_WIDTH / size, (GLuint)screen->SCREEN_HEIGHT / size, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     //4 - Actual shading
@@ -322,3 +324,25 @@ void RenderManager::buildRenderQueue(){
     //Set renderer camera
     sceneCamera = currentScene->getCurrentCamera();
 }
+
+
+
+
+// //Finding the max sizes for compute units
+// int work_grp_cnt[3];
+
+// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
+// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
+// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
+
+// printf("max global (total) work group size x:%i y:%i z:%i\n",
+//        work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
+
+// int work_grp_size[3];
+
+// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
+// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
+// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
+
+// printf("max local (in one shader) work group sizes x:%i y:%i z:%i\n",
+//        work_grp_size[0], work_grp_size[1], work_grp_size[2]);
