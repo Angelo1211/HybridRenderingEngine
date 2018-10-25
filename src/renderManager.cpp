@@ -65,35 +65,62 @@ bool RenderManager::initSSBOs(){
     numTiles = tileNumX * tileNumY;
     
     //Setting up the frustrum SSBO
-    glGenBuffers(1, &frustrumSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, frustrumSSBO);
+    {
+        glGenBuffers(1, &frustrumSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, frustrumSSBO);
 
-    //We generate the buffer but don't populate it yet.
-    //In fact we don't populate it at all!
-    //We're okay with the initialized values
-    glBufferData(GL_SHADER_STORAGE_BUFFER, numTiles * sizeof(struct TileFrustrum), NULL, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, frustrumSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        //We generate the buffer but don't populate it yet.
+        //In fact we don't populate it at all!
+        //We're okay with the initialized values
+        glBufferData(GL_SHADER_STORAGE_BUFFER, numTiles * sizeof(struct TileFrustrum), NULL, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, frustrumSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
 
     //Setting up screen2View ssbo
-    glGenBuffers(1, &screenToViewSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, screenToViewSSBO);
+    {
+        glGenBuffers(1, &screenToViewSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, screenToViewSSBO);
 
-    //Setting up contents of buffer
-    screen2View.inverseProjectionMat = glm::inverse(sceneCamera->projectionMatrix);
-    screen2View.screenDimensions = glm::vec4(DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT, 0.0, 0.0);
+        //Setting up contents of buffer
+        screen2View.inverseProjectionMat = glm::inverse(sceneCamera->projectionMatrix);
+        screen2View.screenDimensions = glm::vec4(DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT, 0.0, 0.0);
 
-    //Generating and copying data to memory in GPU
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct ScreenToView), &screen2View, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, screenToViewSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        //Generating and copying data to memory in GPU
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct ScreenToView), &screen2View, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, screenToViewSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
 
+    //Setting up lights buffer
+    {
+        glGenBuffers(1, &lightSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, maxLights * sizeof(struct GPULight), NULL, GL_DYNAMIC_COPY);
+
+        GLint bufMask = GL_READ_WRITE;
+
+        struct GPULight *lights = (struct GPULight *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, bufMask);
+        PointLight *light;
+        for(unsigned int i = 0; i < numLights; ++i ){
+            //Fetching the light from the current scene
+            light = currentScene->getPointLight(i);
+            lights[i].position  = glm::vec4(light->position, 1.0f);
+            lights[i].color     = glm::vec4(light->color, 1.0f);
+            lights[i].enabled   = true; 
+            lights[i].intensity = 1.0f;
+            lights[i].range     = 1.0f;
+        }
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, lightSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
     return true;
 }
 
 bool RenderManager::loadShaders(){
     shaderAtlas[0] = new Shader("depthPassShader.vert", "depthPassShader.frag");
-    shaderAtlas[1] = new Shader("basicShader.vert", "basicShader.frag");
+    shaderAtlas[1] = new Shader("forwardPlusShader.vert", "forwardPlusShader.frag");
     shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
     shaderAtlas[3] = new Shader("splitHighShader.vert", "splitHighShader.frag");
     shaderAtlas[4] = new Shader("blurShader.vert", "blurShader.frag");
@@ -102,6 +129,7 @@ bool RenderManager::loadShaders(){
     shaderAtlas[7] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
 
     // shaderAtlas[1] = new Shader("testShader.vert", "testShader.frag");
+    // shaderAtlas[1] = new Shader("basicShader.vert", "basicShader.frag");
     // shaderAtlas[5] = new Shader("lightingShader.vert", "lightingShader.frag");
     // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
 

@@ -56,8 +56,9 @@ class RenderManager{
 
         //Stuff related to forward+
         ComputeShader *computeFrustrumPerTile;
+        const unsigned int maxLights = 10000; // pretty overkill for sponza, but ok for testing
         unsigned int numLights;
-        unsigned int frustrumSSBO, screenToViewSSBO;
+        unsigned int frustrumSSBO, screenToViewSSBO, lightSSBO;
         unsigned int size, tileNumX, tileNumY, numTiles;
 
         //Render pipeline FBO's

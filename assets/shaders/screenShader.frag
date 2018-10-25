@@ -19,8 +19,8 @@ void main(){
 
     vec3 hdrCol = texture(screenTexture, TexCoords).rgb;
     vec3 bloomCol = texture(bloomBlur, TexCoords).rgb;
-    vec3 computeCol = texture(computeTexture, TexCoords).rgb;
-    ivec2 linCoords = ivec2(TexCoords.x * 16, TexCoords.y * 8);
+    // vec3 computeCol = texture(computeTexture, TexCoords).rgb;
+    // ivec2 linCoords = ivec2(TexCoords.x * 16, TexCoords.y * 8);
     // vec3 tileColor = tiles[linCoords.x][linCoords.y].rgb;
 
     // hdrCol += bloomCol + tileColor;

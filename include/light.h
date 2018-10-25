@@ -43,4 +43,13 @@ struct PointLight : public BaseLight{
     glm::mat4 lookAtPerFace[numFaces];
 };
 
+struct GPULight{
+    glm::vec4 position;
+    glm::vec4 color;
+    bool enabled;
+    float intensity;
+    float range;
+    float padding;
+};
+
 #endif

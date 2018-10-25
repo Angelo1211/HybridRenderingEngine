@@ -44,7 +44,9 @@ class Scene{
         std::vector<Model*>* getVisiblemodels();
         Camera * getCurrentCamera();
         unsigned int getLightCount();
+        PointLight *getPointLight(unsigned int index);
         unsigned int getShadowRes();
+
 
         //Signals issues to scene Manager
         bool checkIfEmpty();  

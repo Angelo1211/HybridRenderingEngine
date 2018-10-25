@@ -213,10 +213,8 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     }
 
     mainSceneShader->use();
-    mainSceneShader->setVec3("dirLight_wS", dirLight.direction);
-    mainSceneShader->setVec3("dirLight.ambient",   dirLight.ambient);
-    mainSceneShader->setVec3("dirLight.diffuse",   dirLight.strength * dirLight.color * dirLight.diffuse);
-    mainSceneShader->setVec3("dirLight.specular",  dirLight.specular);
+    mainSceneShader->setVec3("dirLight.direction", dirLight.direction);
+    mainSceneShader->setVec3("dirLight.color",   dirLight.strength * dirLight.color);
     mainSceneShader->setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
     mainSceneShader->setVec3("cameraPos_wS", mainCamera.position);
 
@@ -228,26 +226,26 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
 
             //Point light Gui
             // static ImVec4 color = ImColor(light->color.r, light->color.g, light->color.b);
-            ImGui::TextColored(ImVec4(1, 1, 1, 1), ("Light" + number).c_str());
-            ImGui::SliderFloat(("Strength" + number).c_str(), &(light->strength), 0.1f, 200.0f);
-            ImGui::ColorEdit3(("Color" + number).c_str(), (float *)&(light->color));
-            ImGui::InputFloat3(("Position"+ number).c_str(), (float*)&(light->position));
+            // ImGui::TextColored(ImVec4(1, 1, 1, 1), ("Light" + number).c_str());
+            // ImGui::SliderFloat(("Strength" + number).c_str(), &(light->strength), 0.1f, 200.0f);
+            // ImGui::ColorEdit3(("Color" + number).c_str(), (float *)&(light->color));
+            // ImGui::InputFloat3(("Position"+ number).c_str(), (float*)&(light->position));
 
-            mainSceneShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position); 
-            mainSceneShader->setVec3(("pointLight_wS[" + number + "]").c_str(), light->position); 
-            mainSceneShader->setVec3(("pointLights[" + number + "].ambient").c_str(), light->ambient);
-            mainSceneShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), light->strength * light->color * light->diffuse);
-            mainSceneShader->setVec3(("pointLights[" + number + "].specular").c_str(), light->specular);
-            mainSceneShader->setFloat(("pointLights[" + number + "].constant").c_str(), light->attenuation[0]);
-            mainSceneShader->setFloat(("pointLights[" + number + "].linear").c_str(), light->attenuation[1]);
-            mainSceneShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), light->attenuation[2]);
+            // mainSceneShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position); 
+            // mainSceneShader->setVec3(("pointLight_wS[" + number + "]").c_str(), light->position); 
+            // mainSceneShader->setVec3(("pointLights[" + number + "].ambient").c_str(), light->ambient);
+            // mainSceneShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), light->strength * light->color * light->diffuse);
+            // mainSceneShader->setVec3(("pointLights[" + number + "].specular").c_str(), light->specular);
+            // mainSceneShader->setFloat(("pointLights[" + number + "].constant").c_str(), light->attenuation[0]);
+            // mainSceneShader->setFloat(("pointLights[" + number + "].linear").c_str(), light->attenuation[1]);
+            // mainSceneShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), light->attenuation[2]);
 
 
             //Change constants herer TODO TODO  
-            glActiveTexture(GL_TEXTURE0 + numTextures + i); 
-            mainSceneShader->setInt(("pointLights[" + number + "].depthMap").c_str(), numTextures + i);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
-            mainSceneShader->setFloat("far_plane", light->zFar);
+            // glActiveTexture(GL_TEXTURE0 + numTextures + i); 
+            // mainSceneShader->setInt(("pointLights[" + number + "].depthMap").c_str(), numTextures + i);
+            // glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
+            // mainSceneShader->setFloat("far_plane", light->zFar);
         }   
     }    
     //Setting directional shadow depth map textures
@@ -312,6 +310,10 @@ unsigned int Scene::getLightCount(){
 
 unsigned int Scene::getShadowRes(){
     return dirLight.shadowRes;
+}
+
+PointLight *Scene::getPointLight(unsigned int index){
+    return &pointLights[index];
 }
 //----------------------------------------------------------------
 bool Scene::checkIfEmpty(){
