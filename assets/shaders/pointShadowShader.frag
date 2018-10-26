@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 in vec4 FragPos;
 
 uniform vec3 lightPos;

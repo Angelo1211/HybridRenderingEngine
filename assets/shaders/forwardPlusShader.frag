@@ -1,9 +1,12 @@
-#version 450 core
+#version 460 core
 //Naming scheme clarification
 // mS = model Space
 // vS = view Space
 // wS = world Space
 // tS = tangent Space
+
+layout(early_fragment_tests) in;
+
 out vec4 FragColor;
 
 // flat in mat3 TBN;
@@ -31,6 +34,9 @@ uniform sampler2D normal1;
 //Misc Uniforms
 uniform vec3 cameraPos_wS;
 
+//To be changed in the future..
+#define BLOCK_SIZE 80
+#define POINT_LIGHTS 4 
 //PointLight buffer in GPU
 struct PointLight{
     vec4 position;
@@ -39,15 +45,36 @@ struct PointLight{
     float intensity;
     float range;
 };
+
+struct LightGrid{
+    uint offset;
+    uint count;
+};
+
+layout (std430, binding = 4) buffer screenToView{
+    mat4 inverseProjection;
+    vec4 screenDimensions;
+};
+
 layout (std430, binding = 5) buffer lightSSBO{
     PointLight pointLight[];
 };
-//To be changed in the future..
-#define POINT_LIGHTS 4 
+
+layout (std430, binding = 6) buffer lightIndexSSBO{
+    uint globalLightIndexList[];
+};
+
+layout (std430, binding = 7) buffer lightGridSSBO{
+    LightGrid lightGrid[];
+};
+
+uniform samplerCube depthMaps[POINT_LIGHTS];
+uniform float far_plane;
 
 //Function prototypes
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec, float shadow);
-vec3  calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, vec3 spec, float viewDistance);
+vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, vec3 spec, float viewDistance);
+float calcPointLightShadows(samplerCube depthMap, vec3 fragPos, float viewDistance);
 float calcDirShadow(vec4 fragPosLightSpace);
 
 //TODO:: Probably should be a buffer...
@@ -68,8 +95,10 @@ void main(){
 
     //Components common to all light types
     vec3 norm    = normalize(fs_in.TBN * normalize(normal_tS * 2.0 - 1.0)); //going -1 to 1
-    // vec3 norm    = TBN * normalize(normal_tS * 2.0 - 1.0); //going -1 to 1
     vec3 viewDir = normalize(cameraPos_wS - fs_in.fragPos_wS);
+    uvec2 tiles    = uvec2( floor( gl_FragCoord.xy / BLOCK_SIZE ) );
+    uvec2 maxTiles    = uvec2( floor( screenDimensions.xy / BLOCK_SIZE ) );
+    uint tileIndex = tiles.x + maxTiles.x * tiles.y;
     vec3 result  = vec3(0.0);
 
     // shadow calcs
@@ -77,11 +106,15 @@ void main(){
     float viewDistance = length(cameraPos_wS - fs_in.fragPos_wS);
 
     //Directional light 
-    // result = calcDirLight(dirLight, norm, viewDir, color, specularIntensity, shadow) ;
+    result = calcDirLight(dirLight, norm, viewDir, color, specularIntensity, shadow) ;
 
     // Point lights
-    for(uint i = 0; i < POINT_LIGHTS; i++){
-        result += calcPointLight(i, norm, fs_in.fragPos_wS, viewDir, color, specularIntensity, viewDistance);
+    uint lightCount       = lightGrid[tileIndex].count;
+    uint lightIndexOffset = lightGrid[tileIndex].offset;
+
+    for(uint i = 0; i < lightCount; i++){
+        uint bigAssLightVectorIndex = globalLightIndexList[lightIndexOffset + i];
+        result += calcPointLight(bigAssLightVectorIndex, norm, fs_in.fragPos_wS, viewDir, color, specularIntensity, viewDistance);
     }
 
     FragColor = vec4(result, 1.0);
@@ -129,8 +162,7 @@ vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 co
     // //shadow stuff
     vec3 fragToLight = fragPos - position;
 
-    // float shadow = calcPointLightShadows(light.depthMap, fragToLight, viewDistance);
-    float shadow = 0.0; 
+    float shadow = calcPointLightShadows(depthMaps[index], fragToLight, viewDistance);
     
     //total contibution 
     return  attenuation * (ambient + (1.0 - shadow) * (diffuse + specular));
@@ -151,6 +183,25 @@ float calcDirShadow(vec4 fragPosLightSpace){
     }
     
     shadow /= 9.0;
+
+    return shadow;
+}
+
+float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDistance){
+    float shadow      = 0.0;
+    float bias        = 0.0;
+    int   samples     = 20;
+    float diskRadius  = (1.0 + (viewDistance / far_plane)) / 25.0;
+    float currentDepth = length(fragToLight);
+
+    for(int i = 0; i < samples; ++i){
+        float closestDepth = texture(depthMap, fragToLight + sampleOffsetDirections[i], diskRadius).r;
+        closestDepth *= far_plane;
+        if(currentDepth - bias > closestDepth){
+            shadow += 1;
+        }
+    }
+    shadow /= float(samples);
 
     return shadow;
 }

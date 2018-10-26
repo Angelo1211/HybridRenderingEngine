@@ -46,7 +46,7 @@ struct PointLight : public BaseLight{
 struct GPULight{
     glm::vec4 position;
     glm::vec4 color;
-    bool enabled;
+    unsigned int enabled;
     float intensity;
     float range;
     float padding;

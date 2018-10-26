@@ -1,0 +1,84 @@
+#version 460 core
+layout(local_size_x = 256, local_size_y = 1) in;
+
+struct PointLight{
+    vec4 position;
+    vec4 color;
+    uint enabled;
+    float intensity;
+    float range;
+};
+
+struct LightGrid{
+    uint offset;
+    uint count;
+};
+
+layout (std430, binding = 5) buffer lightSSBO{
+    PointLight pointLight[];
+};
+
+layout (std430, binding = 6) buffer lightIndexSSBO{
+    uint globalLightIndexList[];
+};
+
+layout (std430, binding = 7) buffer lightGridSSBO{
+    LightGrid lightGrid[];
+};
+
+layout (std430, binding = 8) buffer globalIndexCountSSBO{
+    uint globalIndexCount;
+};
+
+//Shared variables 
+shared uint visibleLightCount;
+shared uint visibleLightIndices[1024];
+
+//Taken mostly from rendering in battlefield 3 presentation 
+//https://www.slideshare.net/DICEStudio/directx-11-rendering-in-battlefield-3
+void main(){
+    uint threadCount = gl_WorkGroupSize.x;
+    uint lightCount  = pointLight.length();
+    uint numBatches = (lightCount + threadCount -1) / threadCount;
+    uint tileIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
+
+    if(gl_LocalInvocationIndex == 0){
+        visibleLightCount = 0;
+        atomicExchange(globalIndexCount, 0);
+    }
+
+    barrier();
+
+    for( int batch = 0; batch < numBatches; ++batch){
+       uint lightIndex =  threadCount * batch + gl_LocalInvocationIndex;
+
+        //Prevent overflow by clamping to last light which is always null
+        lightIndex = min(lightIndex, lightCount);
+
+        //TODO: Add actual culling, for now it just checks if it is enabled
+        if( pointLight[lightIndex].enabled  == 1){
+            uint offset = atomicAdd(visibleLightCount, 1);
+            visibleLightIndices[offset] = lightIndex;
+        }
+    }
+
+    //We want all thread groups to have completed the light tests before continuing
+    barrier();
+
+    //Only one thread per group will do this
+    if(gl_LocalInvocationIndex == 0){
+        uint offset = atomicAdd(globalIndexCount, visibleLightCount);
+
+        //need to be sure all adds have been done( although not entirely sure of that )
+        //TODO: test with and without
+        barrier();
+
+        for(uint i = 0; i < visibleLightCount; ++i){
+            globalLightIndexList[offset + i] = visibleLightIndices[i];
+        }
+
+        lightGrid[tileIndex].offset = offset;
+        lightGrid[tileIndex].count = visibleLightCount;
+
+    }
+}

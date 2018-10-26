@@ -75,6 +75,7 @@ void DisplayManager::swapDisplayBuffer(){
     //Actual buffer swap
     SDL_GL_SwapWindow(mWindow);
 
+
     //Signaling beginning of frame to gui
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(mWindow);
@@ -106,7 +107,7 @@ bool DisplayManager::startOpenGL(){
         // Request an OpenGL 4.5 context (should be core)
         SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
         // No point in having a deplth buffer if you're using the default 
         // buffer for post processing
@@ -114,7 +115,7 @@ bool DisplayManager::startOpenGL(){
 
         //Also set the default buffer to be sRGB 
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-        // SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+        SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
     }
     return true;
 }

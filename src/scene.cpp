@@ -240,12 +240,10 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
             // mainSceneShader->setFloat(("pointLights[" + number + "].linear").c_str(), light->attenuation[1]);
             // mainSceneShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), light->attenuation[2]);
 
-
-            //Change constants herer TODO TODO  
-            // glActiveTexture(GL_TEXTURE0 + numTextures + i); 
-            // mainSceneShader->setInt(("pointLights[" + number + "].depthMap").c_str(), numTextures + i);
-            // glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
-            // mainSceneShader->setFloat("far_plane", light->zFar);
+            glActiveTexture(GL_TEXTURE0 + numTextures + i); 
+            mainSceneShader->setInt(("depthMaps[" + number + "]").c_str(), numTextures + i);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
+            mainSceneShader->setFloat("far_plane", light->zFar);
         }   
     }    
     //Setting directional shadow depth map textures

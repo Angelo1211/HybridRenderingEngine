@@ -92,7 +92,7 @@ bool RenderManager::initSSBOs(){
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-    //Setting up lights buffer
+    //Setting up lights buffer that contains all the lights in the scene
     {
         glGenBuffers(1, &lightSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
@@ -107,7 +107,7 @@ bool RenderManager::initSSBOs(){
             light = currentScene->getPointLight(i);
             lights[i].position  = glm::vec4(light->position, 1.0f);
             lights[i].color     = glm::vec4(light->color, 1.0f);
-            lights[i].enabled   = true; 
+            lights[i].enabled   = 1; 
             lights[i].intensity = 1.0f;
             lights[i].range     = 1.0f;
         }
@@ -115,6 +115,46 @@ bool RenderManager::initSSBOs(){
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, lightSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
+
+    //Setting up light index list
+    {
+        unsigned int totalNumLights = tileNumX * tileNumY * maxLightsPerTile; //100 lights per tile max
+        glGenBuffers(1, &lightIndexList);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexList);
+
+        //We generate the buffer but don't populate it yet.
+        //In fact we don't populate it at all!
+        //We're okay with the initialized values
+        glBufferData(GL_SHADER_STORAGE_BUFFER,  totalNumLights * sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, lightIndexList);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    //Setting up light grid 
+    {
+        glGenBuffers(1, &lightGrid);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightGrid);
+
+        //Every tile takes two unsigned ints one to represent the number of lights in that grid
+        //Another to represent the offset 
+        glBufferData(GL_SHADER_STORAGE_BUFFER,  tileNumX * tileNumY * 2 * sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, lightGrid);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    //Setting up simplest ssbo in the world
+    {
+        unsigned int count = 0;
+        glGenBuffers(1, &lightIndexGlobalCount);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexGlobalCount);
+
+        //Every tile takes two unsigned ints one to represent the number of lights in that grid
+        //Another to represent the offset 
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), &count, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightIndexGlobalCount);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+   
     return true;
 }
 
@@ -134,6 +174,7 @@ bool RenderManager::loadShaders(){
     // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
 
     computeFrustrumPerTile = new ComputeShader("frustrumShader.comp");
+    cullLights = new ComputeShader("cullLightsShader.comp");
 
     return true;
     // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
@@ -213,7 +254,6 @@ void RenderManager::render(const unsigned int start){
         // Directional shadows
         dirShadowFBO.bind();
         currentScene->drawDirLightShadows(shaderAtlas[6], dirShadowFBO.depthMap);
-        hasMoved = false;
     }
 
     
@@ -224,10 +264,15 @@ void RenderManager::render(const unsigned int start){
     multiSampledFBO.bind();
     currentScene->drawDepthPass(shaderAtlas[0]);
 
-    //2, 3 - Light culling in compute shader currently a stub
+    //2-Frustrum updates 
     computeFrustrumPerTile->use();
     glDispatchCompute(tileNumX, tileNumY, 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    //3-Light culling
+    cullLights->use();
+    glDispatchCompute(tileNumX, tileNumY, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     //4 - Actual shading
     //4.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early

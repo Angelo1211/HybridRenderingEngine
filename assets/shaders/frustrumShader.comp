@@ -1,7 +1,9 @@
 /*
-Code based on 3dgep formard+ tiling system, but with less tiles
+Code based on 3dgep formard+ tiling system, but with less tiles for now
+Since I am not sure of what benefit it would be to have more threads or tiles for now
+Need to profile for that!
 */
-#version 450 core
+#version 460 core
 layout(local_size_x = 1, local_size_y = 1) in;
 
 #define PLANES_IN_A_TILE  4
