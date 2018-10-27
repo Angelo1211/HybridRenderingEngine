@@ -190,3 +190,7 @@ ComputeShader::ComputeShader(const std::string computePath){
 void ComputeShader::use(){
     glUseProgram(ID);
 }
+
+void ComputeShader::setInt(const std::string &name, int  value) const {
+    glUniform1i(glGetUniformLocation(ID,name.c_str()), value);
+}

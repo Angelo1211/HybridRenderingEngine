@@ -1,5 +1,6 @@
 #version 460 core
-layout(local_size_x = 256, local_size_y = 1) in;
+// layout(local_size_x = 256, local_size_y = 1) in;
+layout(local_size_x = 16, local_size_y = 16) in;
 
 struct PointLight{
     vec4 position;
@@ -12,6 +13,11 @@ struct PointLight{
 struct LightGrid{
     uint offset;
     uint count;
+};
+
+layout (std430, binding = 4) buffer screenToView{
+    mat4 inverseProjection;
+    vec4 screenDimensions;
 };
 
 layout (std430, binding = 5) buffer lightSSBO{
@@ -31,47 +37,49 @@ layout (std430, binding = 8) buffer globalIndexCountSSBO{
 };
 
 //Shared variables 
-shared uint visibleLightCount;
-shared uint visibleLightIndices[1024];
+// shared uint visibleLightCount;
+// shared uint visibleLightIndices[1024];
+shared PointLight sharedLights[256];
+
+//Uniform variables
+uniform int activeLightCount; 
 
 //Taken mostly from rendering in battlefield 3 presentation 
 //https://www.slideshare.net/DICEStudio/directx-11-rendering-in-battlefield-3
 void main(){
-    uint threadCount = gl_WorkGroupSize.x;
+    uint threadCount = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
     uint lightCount  = pointLight.length();
     uint numBatches = (lightCount + threadCount -1) / threadCount;
-    uint tileIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
+    uint tileIndex = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * uint(screenDimensions.z);
+    uint visibleLightCount = 0;
+    uint visibleLightIndices[100];
 
-    if(gl_LocalInvocationIndex == 0){
-        visibleLightCount = 0;
-        atomicExchange(globalIndexCount, 0);
-    }
+    //Iterating per batch of lights
+    if(gl_GlobalInvocationID.x < uint(screenDimensions.z) && gl_GlobalInvocationID.y < uint(screenDimensions.w)  ){
+        for( uint batch = 0; batch < numBatches; ++batch){
+            uint lightIndex = batch * threadCount + gl_LocalInvocationIndex;
 
-    barrier();
+            //Prevent overflow by clamping to last light which is always null
+            lightIndex = min(lightIndex, lightCount);
 
-    for( int batch = 0; batch < numBatches; ++batch){
-       uint lightIndex =  threadCount * batch + gl_LocalInvocationIndex;
+            //Populating shared light array
+            sharedLights[gl_LocalInvocationIndex] = pointLight[lightIndex];
+            barrier();
 
-        //Prevent overflow by clamping to last light which is always null
-        lightIndex = min(lightIndex, lightCount);
-
-        //TODO: Add actual culling, for now it just checks if it is enabled
-        if( pointLight[lightIndex].enabled  == 1){
-            uint offset = atomicAdd(visibleLightCount, 1);
-            visibleLightIndices[offset] = lightIndex;
+            //Iterating within the current batch of lights
+            for( uint light = 0; light < threadCount; ++light){
+                //TODO: Add actual culling, for now it just checks if it is enabled
+                if( sharedLights[light].enabled  == 1){
+                    visibleLightIndices[visibleLightCount] = batch * threadCount + light;
+                    visibleLightCount += 1;
+                }
+            }
         }
-    }
 
-    //We want all thread groups to have completed the light tests before continuing
-    barrier();
-
-    //Only one thread per group will do this
-    if(gl_LocalInvocationIndex == 0){
-        uint offset = atomicAdd(globalIndexCount, visibleLightCount);
-
-        //need to be sure all adds have been done( although not entirely sure of that )
-        //TODO: test with and without
+        //We want all thread groups to have completed the light tests before continuing
         barrier();
+        
+        uint offset = atomicAdd(globalIndexCount, visibleLightCount);
 
         for(uint i = 0; i < visibleLightCount; ++i){
             globalLightIndexList[offset + i] = visibleLightIndices[i];
@@ -82,3 +90,48 @@ void main(){
 
     }
 }
+// void main(){
+//     uint threadCount = gl_WorkGroupSize.x;
+//     // uint lightCount  = pointLight.length();
+//     uint numBatches = (activeLightCount + threadCount -1) / threadCount;
+//     uint tileIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
+
+//     if(gl_LocalInvocationIndex == 0){
+//         visibleLightCount = 0;
+//     }
+
+//     barrier();
+
+//     for( int batch = 0; batch < numBatches; ++batch){
+//        uint lightIndex =  threadCount * batch + gl_LocalInvocationIndex;
+
+//         //Prevent overflow by clamping to last light which is always null
+//         lightIndex = min(lightIndex, activeLightCount);
+
+//         //TODO: Add actual culling, for now it just checks if it is enabled
+//         if( pointLight[lightIndex].enabled  == 1){
+//             uint offset = atomicAdd(visibleLightCount, 1);
+//             visibleLightIndices[offset] = lightIndex;
+//         }
+//     }
+
+//     //We want all thread groups to have completed the light tests before continuing
+//     barrier();
+
+//     //Only one thread per group will do this
+//     if(gl_LocalInvocationIndex == 0){
+//         uint offset = atomicAdd(globalIndexCount, visibleLightCount);
+
+//         //need to be sure all adds have been done( although not entirely sure of that )
+//         //TODO: test with and without
+//         // barrier();
+
+//         for(uint i = 0; i < visibleLightCount; ++i){
+//             globalLightIndexList[offset + i] = visibleLightIndices[i];
+//         }
+
+//         lightGrid[tileIndex].offset = offset;
+//         lightGrid[tileIndex].count = visibleLightCount;
+
+//     }
+// }

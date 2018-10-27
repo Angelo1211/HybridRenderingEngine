@@ -1,13 +1,7 @@
-/*
-Code based on 3dgep formard+ tiling system, but with less tiles for now
-Since I am not sure of what benefit it would be to have more threads or tiles for now
-Need to profile for that!
-*/
 #version 460 core
 layout(local_size_x = 1, local_size_y = 1) in;
 
 #define PLANES_IN_A_TILE  4
-#define TILE_SIZE_IN_PIXELS 80
 
 layout (std430, binding = 3) buffer tile_frustrum{
     vec4 plane[ ];
@@ -16,6 +10,10 @@ layout (std430, binding = 3) buffer tile_frustrum{
 layout (std430, binding = 4) buffer screenToView{
     mat4 inverseProjection;
     vec4 screenDimensions;
+};
+
+layout (std430, binding = 8) buffer globalIndexCountSSBO{
+    uint globalIndexCount;
 };
 
 vec4 computePlane(vec3 p0, vec3 p1, vec3 p2){
@@ -52,6 +50,7 @@ vec4 screen2View(vec4 screen){
 }
 
 void main(){
+    uint tileSizePx = uint( (screenDimensions.x + screenDimensions.z - 1 ) / screenDimensions.z) ;
     // uint planeID = gl_LocalInvocationIndex;
     ivec2 workGroupID = ivec2(gl_WorkGroupID.xy);
 
@@ -60,10 +59,10 @@ void main(){
 
     //Calculating points in screen space 
     vec4 screenSpace[4];
-    screenSpace[0] = vec4(vec2(gl_WorkGroupID.x, gl_WorkGroupID.y + 1) * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Top left
-    screenSpace[1] = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Top Right
-    screenSpace[2] = vec4(gl_WorkGroupID.xy * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Bottom left
-    screenSpace[3] = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y) * TILE_SIZE_IN_PIXELS, -1.0, 1.0); // Bottom Right
+    screenSpace[0] = vec4(vec2(gl_WorkGroupID.x, gl_WorkGroupID.y + 1) * tileSizePx, -1.0, 1.0); // Top left
+    screenSpace[1] = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) * tileSizePx, -1.0, 1.0); // Top Right
+    screenSpace[2] = vec4(gl_WorkGroupID.xy * tileSizePx, -1.0, 1.0); // Bottom left
+    screenSpace[3] = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y) * tileSizePx, -1.0, 1.0); // Bottom Right
 
     //Passing them to view space
     vec3 viewSpace[4];
@@ -77,4 +76,8 @@ void main(){
     plane[++linearIndex] = computePlane(eyePos, viewSpace[1], viewSpace[3]); // Right plane
     plane[++linearIndex] = computePlane(eyePos, viewSpace[0], viewSpace[1]); // Top plane
     plane[++linearIndex] = computePlane(eyePos, viewSpace[3], viewSpace[2]); // Bottom plane
+
+    if( gl_GlobalInvocationID.x == 0 && gl_GlobalInvocationID.y == 0) {
+        globalIndexCount = 0;
+    }
 }

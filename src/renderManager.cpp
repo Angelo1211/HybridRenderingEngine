@@ -9,6 +9,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "imgui/imgui.h"
 #include "debugUtils.h"
+#include "cmath"
 
 //Dummy constructors / Destructors
 RenderManager::RenderManager(){}
@@ -59,9 +60,9 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
 bool RenderManager::initSSBOs(){
     //Setting up tile size
-    size = 80;
-    tileNumX = DisplayManager::SCREEN_WIDTH / size;
-    tileNumY = DisplayManager::SCREEN_HEIGHT / size;
+    size = 16;
+    tileNumX = (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)size);
+    tileNumY = (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)size);
     numTiles = tileNumX * tileNumY;
     
     //Setting up the frustrum SSBO
@@ -84,7 +85,7 @@ bool RenderManager::initSSBOs(){
 
         //Setting up contents of buffer
         screen2View.inverseProjectionMat = glm::inverse(sceneCamera->projectionMatrix);
-        screen2View.screenDimensions = glm::vec4(DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT, 0.0, 0.0);
+        screen2View.screenDimensions = glm::vec4(DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT, tileNumX, tileNumY);
 
         //Generating and copying data to memory in GPU
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct ScreenToView), &screen2View, GL_DYNAMIC_COPY);
@@ -118,7 +119,7 @@ bool RenderManager::initSSBOs(){
 
     //Setting up light index list
     {
-        unsigned int totalNumLights = tileNumX * tileNumY * maxLightsPerTile; //100 lights per tile max
+        unsigned int totalNumLights =  numTiles * maxLightsPerTile; //100 lights per tile max
         glGenBuffers(1, &lightIndexList);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexList);
 
@@ -137,20 +138,19 @@ bool RenderManager::initSSBOs(){
 
         //Every tile takes two unsigned ints one to represent the number of lights in that grid
         //Another to represent the offset 
-        glBufferData(GL_SHADER_STORAGE_BUFFER,  tileNumX * tileNumY * 2 * sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, numTiles * 2 * sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, lightGrid);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     //Setting up simplest ssbo in the world
     {
-        unsigned int count = 0;
         glGenBuffers(1, &lightIndexGlobalCount);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexGlobalCount);
 
         //Every tile takes two unsigned ints one to represent the number of lights in that grid
         //Another to represent the offset 
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), &count, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightIndexGlobalCount);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
@@ -256,7 +256,6 @@ void RenderManager::render(const unsigned int start){
         currentScene->drawDirLightShadows(shaderAtlas[6], dirShadowFBO.depthMap);
     }
 
-    
     //Preps all the items that will be drawn in the scene
     buildRenderQueue();
 
@@ -271,7 +270,9 @@ void RenderManager::render(const unsigned int start){
 
     //3-Light culling
     cullLights->use();
-    glDispatchCompute(tileNumX, tileNumY, 1);
+    // cullLights->setInt("activeLightCount", numLights);
+    // glDispatchCompute(tileNumX, tileNumY, 1);
+    glDispatchCompute(5, 3, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     //4 - Actual shading

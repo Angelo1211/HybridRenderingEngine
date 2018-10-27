@@ -35,8 +35,7 @@ uniform sampler2D normal1;
 uniform vec3 cameraPos_wS;
 
 //To be changed in the future..
-#define BLOCK_SIZE 80
-#define POINT_LIGHTS 4 
+#define SHADOW_CASTING_POINT_LIGHTS 4 
 //PointLight buffer in GPU
 struct PointLight{
     vec4 position;
@@ -53,7 +52,7 @@ struct LightGrid{
 
 layout (std430, binding = 4) buffer screenToView{
     mat4 inverseProjection;
-    vec4 screenDimensions;
+    vec4 screenDimensions; // xy: width and height zw: tilenum in x and y
 };
 
 layout (std430, binding = 5) buffer lightSSBO{
@@ -68,7 +67,7 @@ layout (std430, binding = 7) buffer lightGridSSBO{
     LightGrid lightGrid[];
 };
 
-uniform samplerCube depthMaps[POINT_LIGHTS];
+uniform samplerCube depthMaps[SHADOW_CASTING_POINT_LIGHTS];
 uniform float far_plane;
 
 //Function prototypes
@@ -88,6 +87,7 @@ vec3 sampleOffsetDirections[20] = vec3[]
 );
 
 void main(){
+    uint tileSizePx = uint( (screenDimensions.x + screenDimensions.z - 1 ) / screenDimensions.z) ;
     //Texture Reads
     vec3 color =  texture(diffuse1, fs_in.texCoords).rgb;
     vec3 specularIntensity =  vec3(texture(specular1, fs_in.texCoords).r);
@@ -96,9 +96,8 @@ void main(){
     //Components common to all light types
     vec3 norm    = normalize(fs_in.TBN * normalize(normal_tS * 2.0 - 1.0)); //going -1 to 1
     vec3 viewDir = normalize(cameraPos_wS - fs_in.fragPos_wS);
-    uvec2 tiles    = uvec2( floor( gl_FragCoord.xy / BLOCK_SIZE ) );
-    uvec2 maxTiles    = uvec2( floor( screenDimensions.xy / BLOCK_SIZE ) );
-    uint tileIndex = tiles.x + maxTiles.x * tiles.y;
+    uvec2 tiles    = uvec2( floor( gl_FragCoord.xy / tileSizePx ) );
+    uint tileIndex = tiles.x + uint(screenDimensions[2]) * tiles.y;  
     vec3 result  = vec3(0.0);
 
     // shadow calcs

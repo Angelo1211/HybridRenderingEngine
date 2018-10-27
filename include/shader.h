@@ -37,6 +37,7 @@ struct ComputeShader{
     unsigned int ID;
     void use();
     ComputeShader(const std::string computePath);
+    void setInt(const std::string &name, int value) const;
 };
 
 #endif
