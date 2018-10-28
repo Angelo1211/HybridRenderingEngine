@@ -12,12 +12,13 @@ kind of buffer. TODO?
 */
 
 #include "texture.h"
+#include "glad/glad.h"
 
 struct ResolveBuffer;
 
 struct FrameBuffer{
     void bind();
-    void blitTo(const ResolveBuffer &FBO);
+    void blitTo(const ResolveBuffer &FBO, GLbitfield mask);
     bool setupFrameBuffer(bool isMultiSampled);
 
     bool multiSampled;

@@ -15,6 +15,7 @@
 RenderManager::RenderManager(){}
 RenderManager::~RenderManager(){}
 
+//Temporarily here will move them later
 struct TileFrustrum{
     //Contains the normal as xyz and the D constant as W
     //Follows the following convention:
@@ -22,11 +23,15 @@ struct TileFrustrum{
     // TOP = 0, BOTTOM, LEFT,
     // RIGHT, NEARP, FARP};
     glm::vec4 plane[4];
+    glm::vec4 nearFar;
 } frustrum;
 
 struct ScreenToView{
     glm::mat4 inverseProjectionMat;
-    glm::vec4 screenDimensions;
+    unsigned int screenWidth;
+    unsigned int screenHeight;
+    unsigned int tileNumX;
+    unsigned int tileNumY;
 }screen2View;
 
 //Sets the internal pointers to the screen and the current scene and inits the software
@@ -63,6 +68,8 @@ bool RenderManager::initSSBOs(){
     size = 16;
     tileNumX = (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)size);
     tileNumY = (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)size);
+    cullDispatchX = (unsigned int)std::ceilf(tileNumX / (float)size);
+    cullDispatchY = (unsigned int)std::ceilf(tileNumY / (float)size);
     numTiles = tileNumX * tileNumY;
     
     //Setting up the frustrum SSBO
@@ -85,7 +92,10 @@ bool RenderManager::initSSBOs(){
 
         //Setting up contents of buffer
         screen2View.inverseProjectionMat = glm::inverse(sceneCamera->projectionMatrix);
-        screen2View.screenDimensions = glm::vec4(DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT, tileNumX, tileNumY);
+        screen2View.screenWidth  = DisplayManager::SCREEN_WIDTH;
+        screen2View.screenHeight = DisplayManager::SCREEN_HEIGHT;
+        screen2View.tileNumX     = tileNumX;
+        screen2View.tileNumY     = tileNumY;
 
         //Generating and copying data to memory in GPU
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct ScreenToView), &screen2View, GL_DYNAMIC_COPY);
@@ -175,6 +185,7 @@ bool RenderManager::loadShaders(){
 
     computeFrustrumPerTile = new ComputeShader("frustrumShader.comp");
     cullLights = new ComputeShader("cullLightsShader.comp");
+    computeDepths = new ComputeShader("depthBoundShader.comp");
 
     return true;
     // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
@@ -228,10 +239,10 @@ Algorithm steps:
 //Initialization or view frustrum change
 0. Generate all sides of tile frustrum except near and far 
 //Every frame
-1. Depth-pre pass 
-2. Compute shader to update light frustrums to get near and far values
+1. Depth-pre pass
+2. Compute shader to update light frustrums and get near and far values 
 3. Compute shader to cull lights
-4. Actually perform shading as usual 
+4. Actually perform shading as usual DONE
 */
 void RenderManager::render(const unsigned int start){
     //Initiating rendering gui
@@ -259,20 +270,34 @@ void RenderManager::render(const unsigned int start){
     //Preps all the items that will be drawn in the scene
     buildRenderQueue();
 
-    //1-Depth pre-pass
+    //1.1- Multisampled Depth pre-pass
     multiSampledFBO.bind();
     currentScene->drawDepthPass(shaderAtlas[0]);
 
-    //2-Frustrum updates 
+    //1.2- Multisampled blitting to depth texture
+    multiSampledFBO.blitTo(simpleFBO, GL_DEPTH_BUFFER_BIT);
+
+    //2.1- Side planes of Frustrum //Technically could be done only once per change in 
+    // view frustum!
     computeFrustrumPerTile->use();
     glDispatchCompute(tileNumX, tileNumY, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+    //2.2- Near and far plane update
+    computeDepths->use();
+    computeDepths->setFloat("zNear", sceneCamera->cameraFrustrum.nearPlane);
+    computeDepths->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
+
+    glActiveTexture(GL_TEXTURE0);
+    computeDepths->setInt("depthMap", 0);
+    glBindTexture(GL_TEXTURE_2D, simpleFBO.renderBufferObject);
+
+    glDispatchCompute(cullDispatchX, cullDispatchY, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
     //3-Light culling
     cullLights->use();
-    // cullLights->setInt("activeLightCount", numLights);
-    // glDispatchCompute(tileNumX, tileNumY, 1);
-    glDispatchCompute(5, 3, 1);
+    glDispatchCompute(cullDispatchX, cullDispatchY, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     //4 - Actual shading
@@ -282,7 +307,7 @@ void RenderManager::render(const unsigned int start){
     currentScene->drawFullScene(shaderAtlas[1], shaderAtlas[2]);
 
     //4.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
-    multiSampledFBO.blitTo(simpleFBO);
+    multiSampledFBO.blitTo(simpleFBO, GL_COLOR_BUFFER_BIT);
 
     //4.3 -postprocess
     postProcess(start);

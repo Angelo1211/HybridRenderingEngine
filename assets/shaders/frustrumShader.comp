@@ -3,13 +3,26 @@ layout(local_size_x = 1, local_size_y = 1) in;
 
 #define PLANES_IN_A_TILE  4
 
+struct TileFrustrum{
+    //Contains the normal as xyz and the D constant as W
+    //Follows the following convention:
+    // enum planes{
+    // TOP = 0, BOTTOM, LEFT,
+    // RIGHT, NEARP, FARP};
+    vec4 plane[4];
+    float nearPlane;
+    float farPlane;
+};
+
 layout (std430, binding = 3) buffer tile_frustrum{
-    vec4 plane[ ];
+    TileFrustrum frustums[ ];
 };
 
 layout (std430, binding = 4) buffer screenToView{
     mat4 inverseProjection;
-    vec4 screenDimensions;
+    uvec2 screenDimensions;
+    uint tileNumX;
+    uint tileNumY;
 };
 
 layout (std430, binding = 8) buffer globalIndexCountSSBO{
@@ -50,7 +63,7 @@ vec4 screen2View(vec4 screen){
 }
 
 void main(){
-    uint tileSizePx = uint( (screenDimensions.x + screenDimensions.z - 1 ) / screenDimensions.z) ;
+    uint tileSizePx = uint( (screenDimensions.x + tileNumX - 1 ) / tileNumX) ;
     // uint planeID = gl_LocalInvocationIndex;
     ivec2 workGroupID = ivec2(gl_WorkGroupID.xy);
 
@@ -71,11 +84,11 @@ void main(){
     }
 
     //Actually calculating the planes by first finding the first plane of the current tile in memory
-    uint linearIndex = PLANES_IN_A_TILE * (workGroupID.x  + workGroupID.y * gl_NumWorkGroups.x);
-    plane[linearIndex]   = computePlane(eyePos, viewSpace[2], viewSpace[0]); // left plane
-    plane[++linearIndex] = computePlane(eyePos, viewSpace[1], viewSpace[3]); // Right plane
-    plane[++linearIndex] = computePlane(eyePos, viewSpace[0], viewSpace[1]); // Top plane
-    plane[++linearIndex] = computePlane(eyePos, viewSpace[3], viewSpace[2]); // Bottom plane
+    uint linearIndex = (workGroupID.x  + workGroupID.y * gl_NumWorkGroups.x);
+    frustums[linearIndex].plane[0]   = computePlane(eyePos, viewSpace[2], viewSpace[0]); // left plane
+    frustums[linearIndex].plane[1] = computePlane(eyePos, viewSpace[1], viewSpace[3]); // Right plane
+    frustums[linearIndex].plane[2] = computePlane(eyePos, viewSpace[0], viewSpace[1]); // Top plane
+    frustums[linearIndex].plane[3] = computePlane(eyePos, viewSpace[3], viewSpace[2]); // Bottom plane
 
     if( gl_GlobalInvocationID.x == 0 && gl_GlobalInvocationID.y == 0) {
         globalIndexCount = 0;

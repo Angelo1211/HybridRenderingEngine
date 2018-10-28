@@ -140,33 +140,33 @@ void InputManager::handleEvent(SDL_Event * event, bool &done, unsigned int delta
     }
     // Handling mouse wheel movement
     // Changes zoom levels in increments of 5 degrees (2.5 really cause FOV is half angle)
-    if (event->type == SDL_MOUSEWHEEL)
-    {
+    // if (event->type == SDL_MOUSEWHEEL)
+    // {
 
-        float zoom = 5.0f;
-        float fov = sceneCamera->cameraFrustrum.fov;
-        if (event->wheel.y > 0)
-        { // scroll up
-            fov -= zoom;
-        }
-        else if (event->wheel.y < 0)
-        { // scroll down
-            fov += zoom;
-        }
+    //     float zoom = 5.0f;
+    //     float fov = sceneCamera->cameraFrustrum.fov;
+    //     if (event->wheel.y > 0)
+    //     { // scroll up
+    //         fov -= zoom;
+    //     }
+    //     else if (event->wheel.y < 0)
+    //     { // scroll down
+    //         fov += zoom;
+    //     }
 
-        //Limiting the FOV range to avoid low FPS values or weird distortion
-        if (fov < 20)
-        {
-            fov = 20;
-        }
-        else if (fov > 120)
-        {
-            fov = 120;
-        }
+    //     //Limiting the FOV range to avoid low FPS values or weird distortion
+    //     if (fov < 20)
+    //     {
+    //         fov = 20;
+    //     }
+    //     else if (fov > 120)
+    //     {
+    //         fov = 120;
+    //     }
 
-        //Updating the camera frustrum
-        sceneCamera->cameraFrustrum.fov = fov;
-    }
+    //     //Updating the camera frustrum
+    //     sceneCamera->cameraFrustrum.fov = fov;
+    // }
 }
         //1. User requested quits
         //2. Keyboard presses

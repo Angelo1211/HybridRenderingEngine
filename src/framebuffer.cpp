@@ -1,6 +1,5 @@
 #include "frameBuffer.h"
 #include "displayManager.h"
-#include "glad/glad.h"
 #include <stdio.h>
 
 //-----------------------------------------------------------------------------------------------
@@ -15,14 +14,16 @@ void FrameBuffer::bind(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void FrameBuffer::blitTo(const ResolveBuffer &FBO){
-    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+void FrameBuffer::blitTo(const ResolveBuffer &FBO, GLbitfield mask){
     glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBufferID);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO.frameBufferID);
-    // glReadBuffer(GL_COLOR_ATTACHMENT0);
-    // glDrawBuffers(2, attachments);  
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+    if(mask == GL_COLOR_BUFFER_BIT){
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    }
+    else{
+        // glDrawBuffer(GL_NONE);
+    }
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, mask, GL_NEAREST );
 }
 
 bool FrameBuffer::setupFrameBuffer(bool isMultiSampled){
@@ -110,6 +111,18 @@ bool ResolveBuffer::setupFrameBuffer(){
 
     //We now add the attachment to the framebuffer object
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, blurHighEnd, 0);
+
+    //We generate a render buffer object for the stencil and depth buffer
+    glGenTextures(1, &renderBufferObject);
+    glBindTexture(GL_TEXTURE_2D, renderBufferObject);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    //Actually attaching to the frame buffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderBufferObject, 0);
 
     //Check if frame buffer is complete or not
     if( glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){

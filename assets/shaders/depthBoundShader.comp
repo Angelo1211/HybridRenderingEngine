@@ -1,0 +1,74 @@
+#version 460 core
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout (std430, binding = 4) buffer screenToView{
+    mat4 inverseProjection;
+    uvec2 screenDimensions;
+    uint tileNumX;
+    uint tileNumY;
+};
+
+#define PLANES_IN_A_TILE  4
+
+struct TileFrustrum{
+    //Contains the normal as xyz and the D constant as W
+    //Follows the following convention:
+    // enum planes{
+    // TOP = 0, BOTTOM, LEFT,
+    // RIGHT, NEARP, FARP};
+    vec4 plane[4];
+    float nearPlane;
+    float farPlane;
+};
+
+layout (std430, binding = 3) buffer tile_frustrum{
+    TileFrustrum frustums[ ];
+};
+
+//Shared between all tiles
+uniform sampler2D depthMap;
+uniform float zNear;
+uniform float zFar;
+
+//Per tile shared
+shared uint minDepth;
+shared uint maxDepth;
+
+float linearDepth(float depthSample){
+    depthSample = 2.0 * depthSample - 1.0;
+    // Near... Far... wherever you are...
+    return 2.0 * zNear * zFar / (zFar + zNear - depthSample * (zFar - zNear));
+}
+
+void main(){
+    uint threadCount = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    uint tileIndex   = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * tileNumX;
+    vec2 texCoords   = vec2(gl_GlobalInvocationID.xy) / screenDimensions.xy;
+
+    // if(gl_LocalInvocationIndex == 0){
+    //     minDepth = 0xFFFFFFFF;
+	// 	maxDepth = 0;
+    // }
+
+    // barrier();
+
+    if(gl_GlobalInvocationID.x < tileNumX && gl_GlobalInvocationID.y < tileNumY ){
+        float pixelMaxDepth, pixelMinDepth; 
+        float depth = texture(depthMap, texCoords).r;
+        //Gotta linearize because we will later compare in view space
+        depth = linearDepth(depth);
+
+        //Atomics only allow uints... :( 
+        uint depthInt = floatBitsToUint(depth);
+        atomicMin(minDepth, depthInt);
+        atomicMax(maxDepth, depthInt);
+
+        barrier();
+
+        //Only one thread per tile should update the tile values
+        if(gl_LocalInvocationIndex == 0){
+            frustums[tileIndex].nearPlane = uintBitsToFloat(minDepth);
+            frustums[tileIndex].farPlane  = uintBitsToFloat(maxDepth);
+        }
+    }
+}

@@ -55,14 +55,13 @@ class RenderManager{
         Quad canvas;
 
         //Stuff related to forward+
-        ComputeShader *computeFrustrumPerTile;
-        ComputeShader *cullLights;
+        ComputeShader *computeFrustrumPerTile, *cullLights, *computeDepths;
         const unsigned int maxLights = 10000; // pretty overkill for sponza, but ok for testing
         const unsigned int maxLightsPerTile = 100;
         unsigned int numLights;
         unsigned int frustrumSSBO, screenToViewSSBO;
         unsigned int lightSSBO, lightIndexList, lightGrid, lightIndexGlobalCount;
-        unsigned int size, tileNumX, tileNumY, numTiles;
+        unsigned int size, tileNumX, tileNumY, numTiles, cullDispatchX, cullDispatchY;
 
         //Render pipeline FBO's
         FrameBuffer multiSampledFBO;

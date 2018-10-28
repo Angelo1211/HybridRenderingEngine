@@ -52,7 +52,9 @@ struct LightGrid{
 
 layout (std430, binding = 4) buffer screenToView{
     mat4 inverseProjection;
-    vec4 screenDimensions; // xy: width and height zw: tilenum in x and y
+    uvec2 screenDimensions;
+    uint tileNumX;
+    uint tileNumY;
 };
 
 layout (std430, binding = 5) buffer lightSSBO{
@@ -87,7 +89,7 @@ vec3 sampleOffsetDirections[20] = vec3[]
 );
 
 void main(){
-    uint tileSizePx = uint( (screenDimensions.x + screenDimensions.z - 1 ) / screenDimensions.z) ;
+    uint tileSizePx = uint( (screenDimensions.x + tileNumX - 1 ) / tileNumX) ;
     //Texture Reads
     vec3 color =  texture(diffuse1, fs_in.texCoords).rgb;
     vec3 specularIntensity =  vec3(texture(specular1, fs_in.texCoords).r);
@@ -97,7 +99,7 @@ void main(){
     vec3 norm    = normalize(fs_in.TBN * normalize(normal_tS * 2.0 - 1.0)); //going -1 to 1
     vec3 viewDir = normalize(cameraPos_wS - fs_in.fragPos_wS);
     uvec2 tiles    = uvec2( floor( gl_FragCoord.xy / tileSizePx ) );
-    uint tileIndex = tiles.x + uint(screenDimensions[2]) * tiles.y;  
+    uint tileIndex = tiles.x + tileNumX * tiles.y;  
     vec3 result  = vec3(0.0);
 
     // shadow calcs
