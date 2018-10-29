@@ -73,6 +73,7 @@ void main(){
             for( uint light = 0; light < threadCount; ++light){
                 //TODO: Add actual culling, for now it just checks if it is enabled
                 if( sharedLights[light].enabled  == 1){
+                    if ()
                     visibleLightIndices[visibleLightCount] = batch * threadCount + light;
                     visibleLightCount += 1;
                 }

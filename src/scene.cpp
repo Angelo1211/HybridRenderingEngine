@@ -277,6 +277,7 @@ void Scene::drawDepthPass(Shader *depthPassShader){
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
 
+    glColorMask(0,0,0,0);
     //Drawing every object into the depth buffer
     for(unsigned int i = 0; i < modelsInScene.size(); ++i){
         Model * currentModel = modelsInScene[i];
@@ -291,6 +292,7 @@ void Scene::drawDepthPass(Shader *depthPassShader){
         //Draw object
         currentModel->draw(*depthPassShader, false);
     }
+    glColorMask(1,1,1,1);
 }
 
 //-----------------------------GETTERS----------------------------------------------

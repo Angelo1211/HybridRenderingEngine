@@ -5,7 +5,7 @@
 // wS = world Space
 // tS = tangent Space
 
-layout(early_fragment_tests) in;
+// layout(early_fragment_tests) in;
 
 out vec4 FragColor;
 
@@ -119,6 +119,7 @@ void main(){
     }
 
     FragColor = vec4(result, 1.0);
+    // FragColor = vec4(0.0,0.0,1.0, 1.0);
 }
 
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec, float shadow){

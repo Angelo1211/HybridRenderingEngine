@@ -283,16 +283,18 @@ void RenderManager::render(const unsigned int start){
     glDispatchCompute(tileNumX, tileNumY, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-    //2.2- Near and far plane update
+    // //2.2- Near and far plane update
     computeDepths->use();
     computeDepths->setFloat("zNear", sceneCamera->cameraFrustrum.nearPlane);
     computeDepths->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
 
+    // glBindImageTexture(0, simpleFBO.depthBuffer, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, simpleFBO.depthBuffer);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     computeDepths->setInt("depthMap", 0);
-    glBindTexture(GL_TEXTURE_2D, simpleFBO.renderBufferObject);
 
-    glDispatchCompute(cullDispatchX, cullDispatchY, 1);
+    glDispatchCompute(tileNumX, tileNumY, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     //3-Light culling
@@ -303,6 +305,7 @@ void RenderManager::render(const unsigned int start){
     //4 - Actual shading
     //4.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
     glDepthFunc(GL_EQUAL);
+    // glDepthFunc(GL_EQUAL);
     glDepthMask(false);
     currentScene->drawFullScene(shaderAtlas[1], shaderAtlas[2]);
 
@@ -311,27 +314,6 @@ void RenderManager::render(const unsigned int start){
 
     //4.3 -postprocess
     postProcess(start);
-
-
-    //Drawing the final result of the compute shader to the screen to get an idea
-    //of how well it worked
-    // screen->bind();
-    // shaderAtlas[1]->use();
-    // glActiveTexture(GL_TEXTURE0);
-    // shaderAtlas[1]->setInt("screenTexture", 0);
-    // glBindTexture(GL_TEXTURE_2D, testTexture);
-    // canvas.draw(testTexture);
-
-
-    // //Deffered rendering 
-    // //Filling the geometry buffer
-    // gBuffer.bind();
-    // currentScene->drawGeometry(shaderAtlas[0]);
-
-    // //Lighting pass
-    // lightingBuffer.bind();
-    // currentScene->setupLightingShader(shaderAtlas[1]);
-    // canvas.drawDeffered(gBuffer.positionBuffer, gBuffer.normalsBuffer, gBuffer.albedoSpecBuffer);
 
     //Rendering gui scope ends here cannot be done later because the whole frame
     //is reset in the display buffer swap
@@ -424,24 +406,22 @@ void RenderManager::buildRenderQueue(){
     sceneCamera = currentScene->getCurrentCamera();
 }
 
+//Drawing the final result of the compute shader to the screen to get an idea
+//of how well it worked
+// screen->bind();
+// shaderAtlas[1]->use();
+// glActiveTexture(GL_TEXTURE0);
+// shaderAtlas[1]->setInt("screenTexture", 0);
+// glBindTexture(GL_TEXTURE_2D, testTexture);
+// canvas.draw(testTexture);
 
 
+// //Deffered rendering 
+// //Filling the geometry buffer
+// gBuffer.bind();
+// currentScene->drawGeometry(shaderAtlas[0]);
 
-// //Finding the max sizes for compute units
-// int work_grp_cnt[3];
-
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
-
-// printf("max global (total) work group size x:%i y:%i z:%i\n",
-//        work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
-
-// int work_grp_size[3];
-
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
-
-// printf("max local (in one shader) work group sizes x:%i y:%i z:%i\n",
-//        work_grp_size[0], work_grp_size[1], work_grp_size[2]);
+// //Lighting pass
+// lightingBuffer.bind();
+// currentScene->setupLightingShader(shaderAtlas[1]);
+// canvas.drawDeffered(gBuffer.positionBuffer, gBuffer.normalsBuffer, gBuffer.albedoSpecBuffer);

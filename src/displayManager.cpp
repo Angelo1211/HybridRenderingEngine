@@ -75,7 +75,6 @@ void DisplayManager::swapDisplayBuffer(){
     //Actual buffer swap
     SDL_GL_SwapWindow(mWindow);
 
-
     //Signaling beginning of frame to gui
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(mWindow);
@@ -154,6 +153,7 @@ bool DisplayManager::createGLContext(){
             SDL_GL_SetSwapInterval(0);
             // glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
+            glEnable(GL_MULTISAMPLE);
             glEnable(GL_FRAMEBUFFER_SRGB);
             int w, h;
             SDL_GetWindowSize(mWindow, &w, &h);

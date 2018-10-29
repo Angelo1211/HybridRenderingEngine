@@ -22,7 +22,7 @@ struct FrameBuffer{
     bool setupFrameBuffer(bool isMultiSampled);
 
     bool multiSampled;
-    unsigned int frameBufferID, texColorBuffer, renderBufferObject;
+    unsigned int frameBufferID, texColorBuffer, depthBuffer;
     int width, height;
 };
 

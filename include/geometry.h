@@ -45,9 +45,9 @@ class Frustrum{
         float fov, nearPlane, farPlane, AR, nearH, nearW;
         Plane pl[6];
         Frustrum(float ratio)
-        : fov(50.0f),
-          nearPlane(2.0f),
-          farPlane(350.0f),
+        : fov(60.0f),
+          nearPlane(5.0f),
+          farPlane(300.0f),
           AR(ratio) 
         { }
 
