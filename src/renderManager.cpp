@@ -120,7 +120,7 @@ bool RenderManager::initSSBOs(){
             lights[i].color     = glm::vec4(light->color, 1.0f);
             lights[i].enabled   = 1; 
             lights[i].intensity = 1.0f;
-            lights[i].range     = 1.0f;
+            lights[i].range     = 65.0f;
         }
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, lightSSBO);
@@ -299,6 +299,7 @@ void RenderManager::render(const unsigned int start){
 
     //3-Light culling
     cullLights->use();
+    cullLights->setMat4("viewMatrix", sceneCamera->viewMatrix);
     glDispatchCompute(cullDispatchX, cullDispatchY, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 

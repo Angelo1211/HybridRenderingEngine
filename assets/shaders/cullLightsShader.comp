@@ -2,6 +2,18 @@
 // layout(local_size_x = 256, local_size_y = 1) in;
 layout(local_size_x = 16, local_size_y = 16) in;
 
+#define PLANES_IN_A_TILE  4
+struct TileFrustrum{
+    //Contains the normal as xyz and the D constant as W
+    //Follows the following convention:
+    // enum planes{
+    // TOP = 0, BOTTOM, LEFT,
+    // RIGHT, NEARP, FARP};
+    vec4 plane[4];
+    float nearPlane;
+    float farPlane;
+};
+
 struct PointLight{
     vec4 position;
     vec4 color;
@@ -13,6 +25,10 @@ struct PointLight{
 struct LightGrid{
     uint offset;
     uint count;
+};
+
+layout (std430, binding = 3) buffer tile_frustrum{
+    TileFrustrum frustums[ ];
 };
 
 layout (std430, binding = 4) buffer screenToView{
@@ -46,7 +62,10 @@ shared PointLight sharedLights[256];
 
 //Uniform variables
 uniform int activeLightCount; 
+uniform mat4 viewMatrix;
 
+bool lightSphereInsideFrustum(uint light, uint tile);
+bool sphereInsidePlane(float radius, vec3 center, vec4 plane);
 //Taken mostly from rendering in battlefield 3 presentation 
 //https://www.slideshare.net/DICEStudio/directx-11-rendering-in-battlefield-3
 void main(){
@@ -73,9 +92,10 @@ void main(){
             for( uint light = 0; light < threadCount; ++light){
                 //TODO: Add actual culling, for now it just checks if it is enabled
                 if( sharedLights[light].enabled  == 1){
-                    if ()
-                    visibleLightIndices[visibleLightCount] = batch * threadCount + light;
-                    visibleLightCount += 1;
+                    if (lightSphereInsideFrustum(light, tileIndex)){
+                        visibleLightIndices[visibleLightCount] = batch * threadCount + light;
+                        visibleLightCount += 1;
+                    }
                 }
             }
         }
@@ -95,7 +115,35 @@ void main(){
     }
 }
 
+bool lightSphereInsideFrustum(uint light, uint tile){
+    bool result = true;
 
+    PointLight currentLight = pointLight[light];
+    vec3 center  = vec3(viewMatrix * currentLight.position);
+    float radius = currentLight.range;
+
+    float zNear = -frustums[tile].nearPlane;
+    float zFar  = -frustums[tile].farPlane;
+
+    //First check depth
+    if(center.z - radius > zNear || center.z + radius < zFar){
+        result = false;
+    }
+
+    for(uint i = 0 ; i < PLANES_IN_A_TILE; ++i){
+        if( sphereInsidePlane(radius, center, frustums[tile].plane[i])){
+            result = false;
+        }
+    }
+
+    return result;
+}
+
+bool sphereInsidePlane(float radius, vec3 center, vec4 plane){
+    vec3  N = plane.xyz;
+    float D = plane.w;
+    return dot(N, center) - D < -radius;
+}
 /* ---------------------------------------------------------------------------------------------
 This used to be the main function tha would have each thread be a light and each work-group a
 a tile. It's nice in that it's a much more easy and simple algorithm to read but it does not 
