@@ -16,22 +16,20 @@ RenderManager::RenderManager(){}
 RenderManager::~RenderManager(){}
 
 //Temporarily here will move them later
-struct TileFrustrum{
-    //Contains the normal as xyz and the D constant as W
-    //Follows the following convention:
-    // enum planes{
-    // TOP = 0, BOTTOM, LEFT,
-    // RIGHT, NEARP, FARP};
-    glm::vec4 plane[4];
-    glm::vec4 nearFar;
+struct VolumeTileAABB{
+    glm::vec4 minPoint;
+    glm::vec4 maxPoint;
 } frustrum;
 
 struct ScreenToView{
     glm::mat4 inverseProjectionMat;
+
+    unsigned int tileSizes[4];
+
     unsigned int screenWidth;
     unsigned int screenHeight;
-    unsigned int tileNumX;
-    unsigned int tileNumY;
+    float sliceScalingFactor;
+    float sliceBiasFactor;
 }screen2View;
 
 //Sets the internal pointers to the screen and the current scene and inits the software
@@ -58,30 +56,38 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             canvas.setupQuad();
             initSSBOs();
 
+            //TODO:: not everything should be here
+            computeGridAABB->use();
+            computeGridAABB->setFloat("zNear", sceneCamera->cameraFrustrum.nearPlane);
+            computeGridAABB->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
+            glDispatchCompute(gridSizeX, gridSizeY, gridSizeZ);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         }
     }
     return true;
 }
 
 bool RenderManager::initSSBOs(){
-    //Setting up tile size
-    size = 16;
-    tileNumX = (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)size);
-    tileNumY = (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)size);
-    cullDispatchX = (unsigned int)std::ceilf(tileNumX / (float)size);
-    cullDispatchY = (unsigned int)std::ceilf(tileNumY / (float)size);
-    numTiles = tileNumX * tileNumY;
+    //Setting up tile size on both X and Y 
+    sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
+    sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)gridSizeY);
+
+    float zFar    =  sceneCamera->cameraFrustrum.farPlane;
+    float zNear   =  sceneCamera->cameraFrustrum.nearPlane;
+
+    // tileNumZ = (unsigned int)std::floorf( num / denom);
+
+    // cullDispatchX = (unsigned int)std::ceilf(tileNumX / (float)size);
+    // cullDispatchY = (unsigned int)std::ceilf(tileNumY / (float)size);
     
-    //Setting up the frustrum SSBO
+    //Setting up the AABB volume grid
     {
-        glGenBuffers(1, &frustrumSSBO);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, frustrumSSBO);
+        glGenBuffers(1, &volumeGridAABB_SSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, volumeGridAABB_SSBO);
 
         //We generate the buffer but don't populate it yet.
-        //In fact we don't populate it at all!
-        //We're okay with the initialized values
-        glBufferData(GL_SHADER_STORAGE_BUFFER, numTiles * sizeof(struct TileFrustrum), NULL, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, frustrumSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, numClusters * sizeof(struct VolumeTileAABB), NULL, GL_STATIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, volumeGridAABB_SSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -92,14 +98,17 @@ bool RenderManager::initSSBOs(){
 
         //Setting up contents of buffer
         screen2View.inverseProjectionMat = glm::inverse(sceneCamera->projectionMatrix);
+        screen2View.tileSizes[0] = gridSizeX;
+        screen2View.tileSizes[1] = gridSizeY;
+        screen2View.tileSizes[2] = gridSizeZ;
         screen2View.screenWidth  = DisplayManager::SCREEN_WIDTH;
         screen2View.screenHeight = DisplayManager::SCREEN_HEIGHT;
-        screen2View.tileNumX     = tileNumX;
-        screen2View.tileNumY     = tileNumY;
+        screen2View.sliceScalingFactor = (float)gridSizeZ / std::log2f(zFar / zNear) ;
+        screen2View.sliceBiasFactor    = -((float)gridSizeZ * std::log2f(zNear) / std::log2f(zFar / zNear)) ;
 
         //Generating and copying data to memory in GPU
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct ScreenToView), &screen2View, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, screenToViewSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct ScreenToView), &screen2View, GL_STATIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, screenToViewSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -107,7 +116,7 @@ bool RenderManager::initSSBOs(){
     {
         glGenBuffers(1, &lightSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, maxLights * sizeof(struct GPULight), NULL, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, maxLights * sizeof(struct GPULight), NULL, GL_DYNAMIC_DRAW);
 
         GLint bufMask = GL_READ_WRITE;
 
@@ -123,21 +132,19 @@ bool RenderManager::initSSBOs(){
             lights[i].range     = 65.0f;
         }
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, lightSSBO);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lightSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     //Setting up light index list
     {
-        unsigned int totalNumLights =  numTiles * maxLightsPerTile; //100 lights per tile max
+        unsigned int totalNumLights =  numClusters * maxLightsPerTile; //100 lights per tile max
         glGenBuffers(1, &lightIndexList);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexList);
 
         //We generate the buffer but don't populate it yet.
-        //In fact we don't populate it at all!
-        //We're okay with the initialized values
-        glBufferData(GL_SHADER_STORAGE_BUFFER,  totalNumLights * sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, lightIndexList);
+        glBufferData(GL_SHADER_STORAGE_BUFFER,  totalNumLights * sizeof(unsigned int), NULL, GL_STATIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightIndexList);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -148,8 +155,8 @@ bool RenderManager::initSSBOs(){
 
         //Every tile takes two unsigned ints one to represent the number of lights in that grid
         //Another to represent the offset 
-        glBufferData(GL_SHADER_STORAGE_BUFFER, numTiles * 2 * sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, lightGrid);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, numClusters * 2 * sizeof(unsigned int), NULL, GL_STATIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, lightGrid);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -160,8 +167,8 @@ bool RenderManager::initSSBOs(){
 
         //Every tile takes two unsigned ints one to represent the number of lights in that grid
         //Another to represent the offset 
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), NULL, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightIndexGlobalCount);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), NULL, GL_STATIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, lightIndexGlobalCount);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
    
@@ -170,7 +177,7 @@ bool RenderManager::initSSBOs(){
 
 bool RenderManager::loadShaders(){
     shaderAtlas[0] = new Shader("depthPassShader.vert", "depthPassShader.frag");
-    shaderAtlas[1] = new Shader("forwardPlusShader.vert", "forwardPlusShader.frag");
+    shaderAtlas[1] = new Shader("clusteredForwardShader.vert", "clusteredForwardShader.frag");
     shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
     shaderAtlas[3] = new Shader("splitHighShader.vert", "splitHighShader.frag");
     shaderAtlas[4] = new Shader("blurShader.vert", "blurShader.frag");
@@ -178,14 +185,9 @@ bool RenderManager::loadShaders(){
     shaderAtlas[6] = new Shader("shadowShader.vert", "shadowShader.frag");
     shaderAtlas[7] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
 
-    // shaderAtlas[1] = new Shader("testShader.vert", "testShader.frag");
-    // shaderAtlas[1] = new Shader("basicShader.vert", "basicShader.frag");
-    // shaderAtlas[5] = new Shader("lightingShader.vert", "lightingShader.frag");
-    // shaderAtlas[0] = new Shader("gBufferShader.vert", "gBufferShader.frag");
-
-    computeFrustrumPerTile = new ComputeShader("frustrumShader.comp");
-    cullLights = new ComputeShader("cullLightsShader.comp");
-    computeDepths = new ComputeShader("depthBoundShader.comp");
+    computeGridAABB = new ComputeShader("clusterShader.comp");
+    cullLightsAABB  = new ComputeShader("clusterCullLightShader.comp");
+    // computeDepths = new ComputeShader("depthBoundShader.comp");
 
     return true;
     // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
@@ -234,15 +236,16 @@ bool RenderManager::initFBOs(){
     // return initFBOFlag1 && initFBOFLag2 && initFBOFlag3 && initFBOFlag4 && initFBOFlagPointLights;
 }
 
-/* This time using forward+
+/* This time using volume tiled forward
 Algorithm steps:
 //Initialization or view frustrum change
-0. Generate all sides of tile frustrum except near and far 
-//Every frame
-1. Depth-pre pass
-2. Compute shader to update light frustrums and get near and far values 
-3. Compute shader to cull lights
-4. Actually perform shading as usual DONE
+0. Determine AABB's for each volume 
+//Update Every frame
+1. Depth-pre pass :: DONE
+2. Mark Active tiles :: POSTPONED AS OPTIMIZATION
+3. Build Tile list ::  POSTPONED AS OPTIMIZATION
+4. Assign lights to tiles 
+5. Actually perform shading as usual 
 */
 void RenderManager::render(const unsigned int start){
     //Initiating rendering gui
@@ -277,30 +280,24 @@ void RenderManager::render(const unsigned int start){
     //1.2- Multisampled blitting to depth texture
     multiSampledFBO.blitTo(simpleFBO, GL_DEPTH_BUFFER_BIT);
 
-    //2.1- Side planes of Frustrum //Technically could be done only once per change in 
-    // view frustum!
-    computeFrustrumPerTile->use();
-    glDispatchCompute(tileNumX, tileNumY, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
     // //2.2- Near and far plane update
-    computeDepths->use();
-    computeDepths->setFloat("zNear", sceneCamera->cameraFrustrum.nearPlane);
-    computeDepths->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
+    // computeDepths->use();
+    // computeDepths->setFloat("zNear", sceneCamera->cameraFrustrum.nearPlane);
+    // computeDepths->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
 
     // glBindImageTexture(0, simpleFBO.depthBuffer, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, simpleFBO.depthBuffer);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    computeDepths->setInt("depthMap", 0);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, simpleFBO.depthBuffer);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    // computeDepths->setInt("depthMap", 0);
 
-    glDispatchCompute(tileNumX, tileNumY, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    // glDispatchCompute(tileNumX, tileNumY, 1);
+    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-    //3-Light culling
-    cullLights->use();
-    cullLights->setMat4("viewMatrix", sceneCamera->viewMatrix);
-    glDispatchCompute(cullDispatchX, cullDispatchY, 1);
+    //4-Light culling
+    cullLightsAABB->use();
+    // cullLights->setMat4("viewMatrix", sceneCamera->viewMatrix);
+    glDispatchCompute(1, 1, 6);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     //4 - Actual shading

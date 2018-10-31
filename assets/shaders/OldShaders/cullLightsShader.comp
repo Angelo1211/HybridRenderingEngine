@@ -90,7 +90,6 @@ void main(){
 
             //Iterating within the current batch of lights
             for( uint light = 0; light < threadCount; ++light){
-                //TODO: Add actual culling, for now it just checks if it is enabled
                 if( sharedLights[light].enabled  == 1){
                     if (lightSphereInsideFrustum(light, tileIndex)){
                         visibleLightIndices[visibleLightCount] = batch * threadCount + light;

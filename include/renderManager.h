@@ -44,6 +44,7 @@ class RenderManager{
         //Todo:: move shaders to this to scene class?
         Shader *shaderAtlas[8]; //The number is kind of arbitrary for now
 
+
         //Pointers to data important for rendering
         SceneManager   * sceneLocator;
         Scene  *currentScene;
@@ -54,14 +55,24 @@ class RenderManager{
         bool hasMoved = true;
         Quad canvas;
 
-        //Stuff related to forward+
-        ComputeShader *computeFrustrumPerTile, *cullLights, *computeDepths;
+
+        //Light initialization values
         const unsigned int maxLights = 10000; // pretty overkill for sponza, but ok for testing
         const unsigned int maxLightsPerTile = 100;
         unsigned int numLights;
-        unsigned int frustrumSSBO, screenToViewSSBO;
+
+        //Clustered Forward Setup
+        ComputeShader *computeGridAABB, *cullLightsAABB, *computeDepths;
+        const unsigned int gridSizeX = 16;
+        const unsigned int gridSizeY =  9;
+        const unsigned int gridSizeZ = 24;
+
+        const unsigned int numClusters = gridSizeX * gridSizeY * gridSizeZ; 
+        unsigned int sizeX, sizeY, cullDispatchX, cullDispatchY;
+
+        //Buffer Setup
+        unsigned int volumeGridAABB_SSBO, screenToViewSSBO;
         unsigned int lightSSBO, lightIndexList, lightGrid, lightIndexGlobalCount;
-        unsigned int size, tileNumX, tileNumY, numTiles, cullDispatchX, cullDispatchY;
 
         //Render pipeline FBO's
         FrameBuffer multiSampledFBO;
@@ -74,5 +85,8 @@ class RenderManager{
         // GeometryBuffer gBuffer;
         // QuadHDRBuffer lightingBuffer, pingPong1, pingPong2;
         // DepthBuffer depthPrePass;
+
+        //Stuff related to forward+
+        // ComputeShader *computeFrustrumPerTile, *cullLights, *computeDepths;
 };
 #endif

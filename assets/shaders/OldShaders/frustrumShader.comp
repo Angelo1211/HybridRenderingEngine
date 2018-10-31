@@ -68,7 +68,7 @@ void main(){
     ivec2 workGroupID = ivec2(gl_WorkGroupID.xy);
 
     //Eye position is zero in view space
-    const vec3 eyePos = vec3(0, 0, 0);
+    const vec3 eyePos = vec3(0.0);
 
     //Calculating points in screen space 
     vec4 screenSpace[4];
@@ -85,7 +85,7 @@ void main(){
 
     //Actually calculating the planes by first finding the first plane of the current tile in memory
     uint linearIndex = (workGroupID.x  + workGroupID.y * gl_NumWorkGroups.x);
-    frustums[linearIndex].plane[0]   = computePlane(eyePos, viewSpace[2], viewSpace[0]); // left plane
+    frustums[linearIndex].plane[0]  = computePlane(eyePos, viewSpace[2], viewSpace[0]); // left plane
     frustums[linearIndex].plane[1] = computePlane(eyePos, viewSpace[1], viewSpace[3]); // Right plane
     frustums[linearIndex].plane[2] = computePlane(eyePos, viewSpace[0], viewSpace[1]); // Top plane
     frustums[linearIndex].plane[3] = computePlane(eyePos, viewSpace[3], viewSpace[2]); // Bottom plane
