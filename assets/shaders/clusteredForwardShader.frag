@@ -105,7 +105,9 @@ void main(){
     //Locating which cluster you are a part of
     uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0));
     uvec3 tiles    = uvec3( floor( gl_FragCoord.xy / tileSizePx ), zTile);
-    uint tileIndex = tiles.x + tileSizes.x * tiles.y;  
+    uint tileIndex = tiles.x +
+                     tileSizes.x * tiles.y +
+                     (tileSizes.x * tileSizes.y) * tiles.z;  
 
     // shadow calcs
     float shadow = calcDirShadow(fs_in.fragPos_lS);

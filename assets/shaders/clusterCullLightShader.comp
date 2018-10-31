@@ -14,6 +14,15 @@ struct LightGrid{
     uint count;
 };
 
+struct VolumeTileAABB{
+    vec4 minPoint;
+    vec4 maxPoint;
+};
+
+layout (std430, binding = 1) buffer clusterAABB{
+    VolumeTileAABB cluster[ ];
+};
+
 layout (std430, binding = 2) buffer screenToView{
     mat4 inverseProjection;
     uvec4 tileSizes;
@@ -38,6 +47,11 @@ layout (std430, binding = 6) buffer globalIndexCountSSBO{
 
 //Shared variables 
 shared PointLight sharedLights[16*9*4];
+
+uniform mat4 viewMatrix;
+
+bool testSphereAABB(uint light, uint tile);
+float sqDistPointAABB(vec3 point, uint tile);
 
 void main(){
     globalIndexCount = 0;
@@ -64,10 +78,11 @@ void main(){
 
         //Iterating within the current batch of lights
         for( uint light = 0; light < threadCount; ++light){
-            //TODO: Add actual culling, for now it just checks if it is enabled
             if( sharedLights[light].enabled  == 1){
+                if( testSphereAABB(light, tileIndex) ){
                     visibleLightIndices[visibleLightCount] = batch * threadCount + light;
                     visibleLightCount += 1;
+                }
             }
         }
     }
@@ -83,4 +98,29 @@ void main(){
 
     lightGrid[tileIndex].offset = offset;
     lightGrid[tileIndex].count = visibleLightCount;
+}
+
+bool testSphereAABB(uint light, uint tile){
+    float radius = sharedLights[light].range;
+    vec3 center  = vec3(viewMatrix * sharedLights[light].position);
+    float squaredDistance = sqDistPointAABB(center, tile);
+
+    return squaredDistance <= (radius * radius);
+}
+
+float sqDistPointAABB(vec3 point, uint tile){
+    float sqDist = 0.0;
+    VolumeTileAABB currentCell = cluster[tile];
+
+    for(int i =0; i < 3; i++){
+        float v = point[i];
+        if(v < currentCell.minPoint[i]){
+            sqDist += (currentCell.minPoint[i] - v) * (currentCell.minPoint[i] - v);
+        }
+        if(v > currentCell.maxPoint[i]){
+            sqDist += (v - currentCell.maxPoint[i]) * (v - currentCell.maxPoint[i]);
+        }
+    }
+
+    return sqDist;
 }

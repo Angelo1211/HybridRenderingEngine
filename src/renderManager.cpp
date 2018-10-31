@@ -296,7 +296,7 @@ void RenderManager::render(const unsigned int start){
 
     //4-Light culling
     cullLightsAABB->use();
-    // cullLights->setMat4("viewMatrix", sceneCamera->viewMatrix);
+    cullLightsAABB->setMat4("viewMatrix", sceneCamera->viewMatrix);
     glDispatchCompute(1, 1, 6);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
