@@ -70,7 +70,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 bool RenderManager::initSSBOs(){
     //Setting up tile size on both X and Y 
     sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
-    sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)gridSizeY);
+    // sizeY =  (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)gridSizeY);
 
     float zFar    =  sceneCamera->cameraFrustrum.farPlane;
     float zNear   =  sceneCamera->cameraFrustrum.nearPlane;
@@ -101,6 +101,7 @@ bool RenderManager::initSSBOs(){
         screen2View.tileSizes[0] = gridSizeX;
         screen2View.tileSizes[1] = gridSizeY;
         screen2View.tileSizes[2] = gridSizeZ;
+        screen2View.tileSizes[3] = sizeX;
         screen2View.screenWidth  = DisplayManager::SCREEN_WIDTH;
         screen2View.screenHeight = DisplayManager::SCREEN_HEIGHT;
         screen2View.sliceScalingFactor = (float)gridSizeZ / std::log2f(zFar / zNear) ;

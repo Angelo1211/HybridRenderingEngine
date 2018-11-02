@@ -30,7 +30,8 @@ void main(){
     const vec3 eyePos = vec3(0.0);
 
     //Per Tile variables
-    uint tileSizePx = uint( (screenDimensions.x + tileSizes.x - 1 ) / tileSizes.x);
+    // uint tileSizePx = uint( (screenDimensions.x + tileSizes.x - 1 ) / tileSizes.x);
+    uint tileSizePx = tileSizes[3];
     uint tileIndex = gl_WorkGroupID.x +
                      gl_WorkGroupID.y * gl_NumWorkGroups.x +
                      gl_WorkGroupID.z * (gl_NumWorkGroups.x * gl_NumWorkGroups.y);
@@ -57,7 +58,7 @@ void main(){
     vec3 maxPointAABB = max(max(minPointNear, minPointFar),max(maxPointNear, maxPointFar));
 
     //Getting the 
-    cluster[tileIndex].minPoint  = vec4(minPointAABB , tileIndex);
+    cluster[tileIndex].minPoint  = vec4(minPointAABB , 0.0);
     cluster[tileIndex].maxPoint  = vec4(maxPointAABB , 0.0);
 }
 
