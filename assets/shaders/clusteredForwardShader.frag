@@ -82,6 +82,7 @@ uniform samplerCube depthMaps[SHADOW_CASTING_POINT_LIGHTS];
 uniform float far_plane;
 uniform float zFar;
 uniform float zNear;
+
 //Function prototypes
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, vec3 spec, float shadow);
 vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, vec3 spec, float viewDistance);

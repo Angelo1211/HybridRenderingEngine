@@ -217,6 +217,8 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     mainSceneShader->setVec3("dirLight.color",   dirLight.strength * dirLight.color);
     mainSceneShader->setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
     mainSceneShader->setVec3("cameraPos_wS", mainCamera.position);
+    mainSceneShader->setFloat("zFar", mainCamera.cameraFrustrum.farPlane);
+    mainSceneShader->setFloat("zNear", mainCamera.cameraFrustrum.nearPlane);
 
     if(ImGui::CollapsingHeader("PointLights", ImGuiTreeNodeFlags_DefaultOpen)){
         for (unsigned int i = 0; i < pointLightCount; ++i)

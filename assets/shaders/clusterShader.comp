@@ -31,8 +31,9 @@ void main(){
 
     //Per Tile variables
     uint tileSizePx = uint( (screenDimensions.x + tileSizes.x - 1 ) / tileSizes.x);
-    uint tileIndex = gl_WorkGroupID.x + gl_WorkGroupID.y *
-                    gl_NumWorkGroups.x + gl_WorkGroupID.z * (gl_NumWorkGroups.x * gl_NumWorkGroups.y);
+    uint tileIndex = gl_WorkGroupID.x +
+                     gl_WorkGroupID.y * gl_NumWorkGroups.x +
+                     gl_WorkGroupID.z * (gl_NumWorkGroups.x * gl_NumWorkGroups.y);
 
     //Calculating the min and max point in screen space
     vec4 maxPoint_sS = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) * tileSizePx, -1.0, 1.0); // Top Right
@@ -44,7 +45,7 @@ void main(){
 
     //Near and far values of the cluster in view space
     float tileNear  = -zNear * pow(zFar/ zNear, gl_WorkGroupID.z/float(gl_NumWorkGroups.z));
-    float tileFar    = -zNear * pow(zFar/ zNear, (gl_WorkGroupID.z + 1) /float(gl_NumWorkGroups.z));
+    float tileFar   = -zNear * pow(zFar/ zNear, (gl_WorkGroupID.z + 1) /float(gl_NumWorkGroups.z));
 
     //Finding the 4 intersection points made from the maxPoint to the cluster near/far plane
     vec3 minPointNear = lineIntersectionToZPlane(eyePos, minPoint_vS, tileNear );
@@ -56,7 +57,7 @@ void main(){
     vec3 maxPointAABB = max(max(minPointNear, minPointFar),max(maxPointNear, maxPointFar));
 
     //Getting the 
-    cluster[tileIndex].minPoint  = vec4(minPointAABB , 0.0);
+    cluster[tileIndex].minPoint  = vec4(minPointAABB , tileIndex);
     cluster[tileIndex].maxPoint  = vec4(maxPointAABB , 0.0);
 }
 

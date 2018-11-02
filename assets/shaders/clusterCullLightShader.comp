@@ -59,9 +59,11 @@ void main(){
     uint lightCount  = pointLight.length();
     uint numBatches = (lightCount + threadCount -1) / threadCount;
 
-    uint tileIndex = gl_GlobalInvocationID.x  +
-                     gl_GlobalInvocationID.y  * gl_WorkGroupSize.x  +
-                     gl_GlobalInvocationID.z  * (gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+    // uint tileIndex = gl_GlobalInvocationID.x  +
+    //                  gl_GlobalInvocationID.y  * gl_WorkGroupSize.x  +
+    //                  gl_GlobalInvocationID.z  * (gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+
+    uint tileIndex = gl_LocalInvocationIndex + gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z * gl_WorkGroupID.z;
     
     uint visibleLightCount = 0;
     uint visibleLightIndices[100];
@@ -111,8 +113,8 @@ bool testSphereAABB(uint light, uint tile){
 float sqDistPointAABB(vec3 point, uint tile){
     float sqDist = 0.0;
     VolumeTileAABB currentCell = cluster[tile];
-
-    for(int i =0; i < 3; i++){
+    cluster[tile].maxPoint[3] = tile;
+    for(int i = 0; i < 3; ++i){
         float v = point[i];
         if(v < currentCell.minPoint[i]){
             sqDist += (currentCell.minPoint[i] - v) * (currentCell.minPoint[i] - v);
