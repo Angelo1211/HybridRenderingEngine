@@ -13,6 +13,9 @@ in VS_OUT{
     vec3 fragPos_wS;
     vec2 texCoords;
     vec4 fragPos_lS;
+    vec3 T;
+    vec3 B;
+    vec3 N;
     mat3 TBN;
 } fs_in;
 
@@ -97,11 +100,15 @@ void main(){
     vec3 color =  texture(diffuse1, fs_in.texCoords).rgb;
     float specularIntensity =  texture(specular1, fs_in.texCoords).r;
     // vec3 normal_tS   = texture(normal1, fs_in.texCoords).rgb;
-    vec3 norm   = texture(normal1, fs_in.texCoords).rgb;
+    // vec3 norm   = normalize(texture(normal1, fs_in.texCoords).rgb);
+    vec3 norm   = normalize(texture(normal1, fs_in.texCoords).rgb);
+    // vec3 norm   = fs_in.N;
 
     //Components common to all light types
+    // mat3 TBN = mat3(normalize(fs_in.T), normalize(fs_in.B), normalize(fs_in.N));
     // vec3 norm      = normalize(fs_in.TBN * normalize(normal_tS * 2.0 - 1.0)); //going -1 to 1
-    norm      = normalize(fs_in.TBN * normalize(norm * 2.0 - 1.0)); //going -1 to 1
+    norm           = normalize(fs_in.TBN * normalize(norm * 2.0 - 1.0)); //going -1 to 1
+    // norm           = normalize(TBN * normalize(norm * 2.0 - 1.0)); //going -1 to 1
     vec3 viewDir   = normalize(cameraPos_wS - fs_in.fragPos_wS);
     vec3 result    = vec3(0.0);
 
@@ -128,6 +135,7 @@ void main(){
         result += calcPointLight(bigAssLightVectorIndex, norm, fs_in.fragPos_wS, viewDir, color, specularIntensity, viewDistance);
     }
 
+    // FragColor = vec4(norm, 1.0);
     FragColor = vec4(result, 1.0);
 }
 
@@ -170,13 +178,11 @@ vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 co
     //diffuse component
     vec3 lightDir = normalize(position - fragPos);
     float nDotL   = clamp(dot(lightDir, normal), 0.0, 1.0);
-    // vec3 diffuse  = color * nDotL * col ;
     float diffuse  = nDotL ;
 
     //specular component
     vec3 halfway  = normalize(lightDir + viewDir);
     float nDotHBP = pow(max(dot(normal, halfway), 0.0), 128.0); //N dot H using blinn phong
-    // vec3 specular = color * nDotHBP * spec;
     float specular = nDotHBP * spec;
 
     // //shadow stuff

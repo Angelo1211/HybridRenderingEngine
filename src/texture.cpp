@@ -5,6 +5,7 @@
 
 #include "texture.h"
 #include <glad/glad.h>
+#include <algorithm>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "gli/gli.hpp"
@@ -12,11 +13,12 @@
 
 void Texture::setupTexture(const std::string &filePath, bool sRGB){
     path = filePath;
+	std::replace(path.begin(), path.end(), '\\', '/');
     std::string fileExtension = FLOAD::getFileExtension(filePath);
 
     //GLI path for dds and ktx files
     if( fileExtension == "dds"){
-        textureID = loadDSFile(filePath.c_str());
+        textureID = loadDSFile(path.c_str());
     }
     //STBI path for any other normal files
     else{
@@ -24,7 +26,7 @@ void Texture::setupTexture(const std::string &filePath, bool sRGB){
         glGenTextures(1, &ID);
         int width, height, nComponents;
         // stbi_set_flip_vertically_on_load(true);
-        unsigned char *data = stbi_load(filePath.c_str(), &width, &height, &nComponents, 0);
+        unsigned char *data = stbi_load(path.c_str(), &width, &height, &nComponents, 0);
         if (data){
             GLenum format;
             GLenum internalFormat;
@@ -63,7 +65,7 @@ void Texture::setupTexture(const std::string &filePath, bool sRGB){
             stbi_image_free(data);
         }
         else{
-            printf("Texture failed to load at path: %s \n", filePath.c_str());
+            printf("Texture failed to load at path: %s \n", path.c_str());
             stbi_image_free(data);
         }
         textureID = ID;

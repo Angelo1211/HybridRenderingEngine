@@ -12,11 +12,12 @@
 void Model::loadModel(std::string path){
     Assimp::Importer importer;
     const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate |aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
+    // const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 
     directory = path.substr(0, path.find_last_of('/'));
     // directory += "/";
-
     processNode(scene->mRootNode, scene);
+
 }
 
 void Model::draw(const Shader &shader, const  bool textured){
@@ -73,6 +74,12 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         vector.z = mesh->mTangents[i].z;
         vertex.tangent = vector;
 
+        //Process tangent
+        vector.x = mesh->mBitangents[i].x;
+        vector.y = mesh->mBitangents[i].y;
+        vector.z = mesh->mBitangents[i].z;
+        vertex.biTangent = vector;
+
         //Process normals
         vector.x = mesh->mNormals[i].x;
         vector.y = mesh->mNormals[i].y;
@@ -119,7 +126,7 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     //Loading textures one type at a time
     //Diffuse textures 
     type = aiTextureType_DIFFUSE;
-    fullTexturePath = directory;
+    fullTexturePath = directory + "/";
     if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
@@ -132,7 +139,7 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     if (textureAtlas.count(fullTexturePath) == 0){
         Texture texture;
         texture.type = "diffuse";
-        texture.setupTexture(fullTexturePath, true);
+        texture.setupTexture(fullTexturePath, false);
         textureAtlas.insert({fullTexturePath, texture});
     }
 
@@ -141,7 +148,7 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
 
     //Specular textures 
     type = aiTextureType_SPECULAR;
-    fullTexturePath = directory;
+    fullTexturePath = directory + "/";
     if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
@@ -154,7 +161,7 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     if (textureAtlas.count(fullTexturePath) == 0){
         Texture texture;
         texture.type = "specular";
-        texture.setupTexture(fullTexturePath, true);
+        texture.setupTexture(fullTexturePath, false);
         textureAtlas.insert({fullTexturePath, texture});
     }
 
@@ -162,8 +169,8 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
     //normal textures TODO DO DO 
-    type = aiTextureType_NORMALS;
-    fullTexturePath = directory;
+    type = aiTextureType_HEIGHT;
+    fullTexturePath = directory + "/";
     if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);

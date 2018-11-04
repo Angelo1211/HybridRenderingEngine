@@ -10,11 +10,15 @@ layout (location = 0) in vec3 vertexPos_mS; // the position variable has attribu
 layout (location = 1) in vec3 normal_mS;
 layout (location = 2) in vec2 aTexCoord;
 layout (location = 3) in vec3 tangent_tS;
+layout (location = 4) in vec3 biTangent_tS;
 
 out VS_OUT{
     vec3 fragPos_wS;
     vec2 texCoords;
     vec4 fragPos_lS;
+    vec3 T;
+    vec3 B;
+    vec3 N;
     mat3 TBN;
 } vs_out;
 
@@ -36,9 +40,19 @@ void main(){
 
     //Generating tangent matrix
     vec3 T = normalize(mat3(M) * tangent_tS);
+    vec3 B = normalize(mat3(M) * biTangent_tS);
+    // vec3 B = normalize(biTangent_tS);
     vec3 N = normalize(mat3(M) * normal_mS);
-    T = normalize(T - dot(T, N ) * N);
-    vec3 B = cross(N, T);
+
+    if (dot(cross(N, T), B) < 0.0){
+        T = T * -1.0;
+    }
+
+    vs_out.T = T;
+    vs_out.B = B;
+    vs_out.N = N;
+    // T = normalize(T - dot(T, N ) * N);
+    // vs_out.TBN = transpose(mat3(T, B, N));
     vs_out.TBN = mat3(T, B, N);
 
     //Lights space output
