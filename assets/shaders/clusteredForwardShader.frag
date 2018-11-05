@@ -101,14 +101,18 @@ void main(){
     float specularIntensity =  texture(specular1, fs_in.texCoords).r;
     // vec3 normal_tS   = texture(normal1, fs_in.texCoords).rgb;
     // vec3 norm   = normalize(texture(normal1, fs_in.texCoords).rgb);
-    vec3 norm   = normalize(texture(normal1, fs_in.texCoords).rgb);
-    // vec3 norm   = fs_in.N;
+    // vec3 norm   = (texture(normal1, fs_in.texCoords).rgb);
+    // vec3 norm   =  2.0 * texture(normal1, fs_in.texCoords).rgb - 1.0;
+    vec3 norm   =  normalize(2.0 * texture(normal1, fs_in.texCoords).rgb - 1.0);
+    // vec3 norm   = normalize(fs_in.B);
 
     //Components common to all light types
-    // mat3 TBN = mat3(normalize(fs_in.T), normalize(fs_in.B), normalize(fs_in.N));
+    mat3 TBN = mat3(fs_in.T, fs_in.B, fs_in.N);
+    // mat3 TBN = transpose(mat3(fs_in.T, fs_in.B, fs_in.N));
     // vec3 norm      = normalize(fs_in.TBN * normalize(normal_tS * 2.0 - 1.0)); //going -1 to 1
-    norm           = normalize(fs_in.TBN * normalize(norm * 2.0 - 1.0)); //going -1 to 1
-    // norm           = normalize(TBN * normalize(norm * 2.0 - 1.0)); //going -1 to 1
+    // norm           = normalize(fs_in.TBN * normalize(norm * 2.0 - 1.0)); //going -1 to 1
+    // norm          = normalize(fs_in.TBN * norm ); //going -1 to 1
+    norm          = normalize(TBN * norm ); //going -1 to 1
     vec3 viewDir   = normalize(cameraPos_wS - fs_in.fragPos_wS);
     vec3 result    = vec3(0.0);
 
@@ -135,8 +139,8 @@ void main(){
         result += calcPointLight(bigAssLightVectorIndex, norm, fs_in.fragPos_wS, viewDir, color, specularIntensity, viewDistance);
     }
 
-    // FragColor = vec4(norm, 1.0);
-    FragColor = vec4(result, 1.0);
+    FragColor = vec4(norm, 1.0);
+    // FragColor = vec4(result, 1.0);
 }
 
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, float spec, float shadow){

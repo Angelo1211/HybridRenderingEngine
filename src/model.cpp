@@ -97,6 +97,12 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
             vertex.texCoords = glm::vec2(0.0f, 0.0f);
         }
 
+        //Checking handedness of tangent vectors
+        // if( glm::dot(glm::cross(vertex.normal, vertex.tangent), vertex.biTangent) < 0.0f) {
+            // vertex.tangent  = vertex.tangent * -1.0f;
+            // vertex.biTangent  = vertex.biTangent * -1.0f;
+        // }
+
         vertices.push_back(vertex);
     }
     //Process indices
@@ -170,6 +176,7 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
 
     //normal textures TODO DO DO 
     type = aiTextureType_HEIGHT;
+    // type = aiTextureType_NORMALS;
     fullTexturePath = directory + "/";
     if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
@@ -183,7 +190,7 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     if (textureAtlas.count(fullTexturePath) == 0){
         Texture texture;
         texture.type = "normal";
-        texture.setupTexture(fullTexturePath, true);
+        texture.setupTexture(fullTexturePath, false);
         textureAtlas.insert({fullTexturePath, texture});
     }
 
