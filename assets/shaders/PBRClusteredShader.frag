@@ -89,18 +89,18 @@ uniform float zFar;
 uniform float zNear;
 
 //Function prototypes
-vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 col, float rough, float shadow);
-// vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, float spec, float viewDistance);
-float calcPointLightShadows(samplerCube depthMap, vec3 fragPos, float viewDistance);
+vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float metal, float shadow, vec3 F0);
 float calcDirShadow(vec4 fragPosLightSpace);
+vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 albedo, float rough, float metal, vec3 F0,  float viewDistance);
+float calcPointLightShadows(samplerCube depthMap, vec3 fragPos, float viewDistance);
 float linearDepth(float depthSample);
-uint  findSlice(float depth);
+// uint  findSlice(float depth);
 
 //PBR Functions
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
 float distributionGGX(vec3 N, vec3 H, float rough);
 float geometrySchlickGGX(float nDotV, float rough);
-float geometrySmith(vec3 N, vec3 V, vec3 L, float rough);
+float geometrySmith(float nDotV, float nDotL, float rough);
 
 void main(){
     //Texture Reads
@@ -119,112 +119,64 @@ void main(){
     F0 = mix(F0, albedo, metallic);
 
     //Locating which cluster you are a part of
-    // uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0));
-    // uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy / tileSizes[3] ), zTile);
-    // uint tileIndex = tiles.x +
-    //                  tileSizes.x * tiles.y +
-    //                  (tileSizes.x * tileSizes.y) * tiles.z;  
+    uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0));
+    uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy / tileSizes[3] ), zTile);
+    uint tileIndex = tiles.x +
+                     tileSizes.x * tiles.y +
+                     (tileSizes.x * tileSizes.y) * tiles.z;  
 
     //Solving outgoing reflectance of fragment
     vec3 radianceOut = vec3(0.0);
 
     // shadow calcs
     float shadow = calcDirShadow(fs_in.fragPos_lS);
-    // float viewDistance = length(cameraPos_wS - fs_in.fragPos_wS);
+    float viewDistance = length(cameraPos_wS - fs_in.fragPos_wS);
 
     //Directional light 
-    vec3 lightDir = normalize(-dirLight.direction);
-    vec3 halfway  = normalize(lightDir + viewDir);
-
-    vec3 radianceIn = dirLight.color;
-
-    //Cook-Torrance BRDF
-    float NDF = distributionGGX(norm, halfway, roughness);
-    float G   = geometrySmith(norm, viewDir, lightDir, roughness);
-    vec3  F   = fresnelSchlick(max(dot(halfway,viewDir), 0.0), F0);
-
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;
-
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot( norm, viewDir), 0.0) * max(dot(norm, lightDir), 0.0);
-    vec3 specular = numerator / max (denominator, 0.0001);
-
-    float nDotL = max(dot(norm, lightDir), 0.0);
-    radianceOut = (kD * (albedo / M_PI) + specular ) * radianceIn * nDotL;
-    radianceOut *= (1.0 - shadow);
-
-    vec3 ambient = vec3(0.01)* albedo;
-    radianceOut += ambient;
-    // radianceOut = calcDirLight(dirLight, norm, viewDir, albedo, roughness, shadow) ;
+    radianceOut = calcDirLight(dirLight, norm, viewDir, albedo, roughness, metallic, shadow, F0) ;
 
     // Point lights
-    // uint lightCount       = lightGrid[tileIndex].count;
-    // uint lightIndexOffset = lightGrid[tileIndex].offset;
+    uint lightCount       = lightGrid[tileIndex].count;
+    uint lightIndexOffset = lightGrid[tileIndex].offset;
 
-    // for(uint i = 0; i < lightCount; i++){
-    //     uint bigAssLightVectorIndex = globalLightIndexList[lightIndexOffset + i];
-    //     result += calcPointLight(bigAssLightVectorIndex, norm, fs_in.fragPos_wS, viewDir, albedo, roughness, viewDistance);
-    // }
+    for(uint i = 0; i < lightCount; i++){
+        uint bigAssLightVectorIndex = globalLightIndexList[lightIndexOffset + i];
+        radianceOut += calcPointLight(bigAssLightVectorIndex, norm, fs_in.fragPos_wS, viewDir, albedo, roughness, metallic, F0, viewDistance);
+    }
+
+    //Ambient term for the fragment    
+    vec3 ambient = vec3(0.01)* albedo;
+    radianceOut += ambient;
 
     FragColor = vec4(radianceOut, 1.0);
 }
 
-// vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float shadow){
-
-
-    //Ambient component 
-    // // vec3 ambient  = 0.05 * col;
-    // float ambient  = 0.05;
-
-    // //Diffuse component
-    // float diff    = max(dot(lightDir, normal), 0.0);
-    // // vec3 diffuse  = light.color * diff;
-    // // float diffuse  =  diff;
-
-    // //Specular component
-    // // float nDotHBP = max(dot(normal, halfway), 0.0); //N dot H using blinn phong
-    // float nDotHBP = pow(max(dot(normal, halfway), 0.0), 128.0); //N dot H using blinn phong
-    // // float nDotHBP = pow(max(dot(normal, halfway), 0.0), 128.0); //N dot H using blinn phong
-    // // vec3 specular = light.color * nDotHBP * spec;
-    // float specular =  nDotHBP * spec;
-
-    // // vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
-    // vec3 lighting = (ambient + (1.0 - shadow) * light.color *  (diff + specular)) * col;
-    
-    //Total contribution
-    // return lighting;
-// }
-
-vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 col, float spec, float viewDistance){
-    vec3 position = pointLight[index].position.xyz;
-    vec3 color    = pointLight[index].color.rgb;
-    //Attenuation calculation that is applied to all
-    float distance = length(position - fragPos);
-    float attenuation = 1.0 / (1.0 + 0.07 * distance + 0.017 * (distance * distance));
-    //ambient component
-    // vec3 ambient = 0.005 * col;
-    float ambient = 0.005;
-
-    //diffuse component
-    vec3 lightDir = normalize(position - fragPos);
-    float nDotL   = clamp(dot(lightDir, normal), 0.0, 1.0);
-    float diffuse  = nDotL ;
-
-    //specular component
+vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float metal, float shadow, vec3 F0){
+    //Variables common to BRDFs
+    vec3 lightDir = normalize(-light.direction);
     vec3 halfway  = normalize(lightDir + viewDir);
-    float nDotHBP = pow(max(dot(normal, halfway), 0.0), 128.0); //N dot H using blinn phong
-    float specular = nDotHBP * spec;
+    float nDotV = max(dot(normal, viewDir), 0.0);
+    float nDotL = max(dot(normal, lightDir), 0.0);
+    vec3 radianceIn = dirLight.color;
 
-    // //shadow stuff
-    vec3 fragToLight = fragPos - position;
+    //Cook-Torrance BRDF
+    float NDF = distributionGGX(normal, halfway, rough);
+    float G   = geometrySmith(nDotV, nDotL, rough);
+    vec3  F   = fresnelSchlick(max(dot(halfway,viewDir), 0.0), F0);
 
-    float shadow = calcPointLightShadows(depthMaps[index], fragToLight, viewDistance);
-    
-    //total contibution 
-    // return  attenuation * (ambient + (1.0 - shadow) * (diffuse + specular));
-    return  attenuation * (ambient + (1.0 - shadow) * color * (diffuse + specular)) * col;
+    //Finding specular and diffuse component
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metal;
+
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * nDotV * nDotL;
+    vec3 specular = numerator / max (denominator, 0.0001);
+
+    vec3 radiance = (kD * (albedo / M_PI) + specular ) * radianceIn * nDotL;
+    radiance *= (1.0 - shadow);
+
+    return radiance;
 }
 
 float calcDirShadow(vec4 fragPosLightSpace){
@@ -240,17 +192,54 @@ float calcDirShadow(vec4 fragPosLightSpace){
         float pcfDepth = texture(shadowMap, projCoords.xy + sampleOffsetDirections[i].xy * texelSize).r;
         shadow += projCoords.z - bias > pcfDepth ? 0.111111 : 0.0;
     }
-    // for(int x = -1; x <= 1; ++x){
-    //     for(int y = -1; y <= 1; ++y){
-    //         float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x,y) * texelSize).r;
-    //         shadow += projCoords.z - bias > pcfDepth ? 0.111111 : 0.0;
-    //     }
-    // }
-    
-    // shadow /= 9.0;
 
     return shadow;
 }
+
+vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos,
+                    vec3 viewDir, vec3 albedo, float rough,
+                    float metal, vec3 F0,  float viewDistance){
+    //Point light basics
+    vec3 position = pointLight[index].position.xyz;
+    vec3 color    = 100.0 * pointLight[index].color.rgb;
+    float radius  = pointLight[index].range;
+
+    //Stuff common to the BRDF subfunctions 
+    vec3 lightDir = normalize(position - fragPos);
+    vec3 halfway  = normalize(lightDir + viewDir);
+    float nDotV = max(dot(normal, viewDir), 0.0);
+    float nDotL = max(dot(normal, lightDir), 0.0);
+
+    //Attenuation calculation that is applied to all
+    float distance    = length(position - fragPos);
+    float attenuation = pow(clamp(1 - pow((distance / radius), 4.0), 0.0, 1.0), 2.0)/(1.0  + (distance * distance) );
+    vec3 radianceIn   = color * attenuation;
+
+    //Cook-Torrance BRDF
+    float NDF = distributionGGX(normal, halfway, rough);
+    float G   = geometrySmith(nDotV, nDotL, rough);
+    vec3  F   = fresnelSchlick(max(dot(halfway,viewDir), 0.0), F0);
+
+    //Finding specular and diffuse component
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metal;
+
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * nDotV * nDotL;
+    vec3 specular = numerator / max (denominator, 0.0001);
+
+    vec3 radiance = (kD * (albedo / M_PI) + specular ) * radianceIn * nDotL;
+
+    //shadow stuff
+    vec3 fragToLight = fragPos - position;
+    float shadow = calcPointLightShadows(depthMaps[index], fragToLight, viewDistance);
+    
+    radiance *= (1.0 - shadow);
+
+    return radiance;
+}
+
 
 float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDistance){
     float shadow      = 0.0;
@@ -267,7 +256,6 @@ float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDi
             shadow += fraction;
         }
     }
-    // shadow /= float(samples);
 
     return shadow;
 }
@@ -279,7 +267,6 @@ float linearDepth(float depthSample){
     // float linear = 2.0; 
     return linear;
 }
-
 
 
 // PBR functions
@@ -312,9 +299,7 @@ float geometrySchlickGGX(float nDotV, float rough){
     return num * denom;
 }
 
-float geometrySmith(vec3 N, vec3 V, vec3 L, float rough){
-    float nDotV = max(dot(N,V), 0.0);
-    float nDotL = max(dot(N, L), 0.0);
+float geometrySmith(float nDotV, float nDotL, float rough){
     float ggx2  = geometrySchlickGGX(nDotV, rough);
     float ggx1  = geometrySchlickGGX(nDotL, rough);
 
