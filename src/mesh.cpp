@@ -8,49 +8,27 @@
 #include <string>
 
 void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured){
-    //TODO: texture managing 
-    unsigned int nDiffuse  = 0;
-    unsigned int nSpecular = 0;
     if(textured){
             //Diffuse
             glActiveTexture(GL_TEXTURE0);
             shader.setInt("diffuse1", 0);
             glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-            // Specular
+            //Roughness
             glActiveTexture(GL_TEXTURE1);
             shader.setInt("specular1", 1);
             glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-            // normal
+            //Normal
             glActiveTexture(GL_TEXTURE2);
             shader.setInt("normal1", 2);
             glBindTexture(GL_TEXTURE_2D, textures[2]);
 
-            // for (unsigned int i = 0; i < textures.size(); ++i)
-            // {
-            //     //Activate next texture unit
-            //     glActiveTexture(GL_TEXTURE0 + i);
-            //     currentTex = textureAtlas.at(textures[i]);
+            //Metallic
+            glActiveTexture(GL_TEXTURE3);
+            shader.setInt("metallic1", 3);
+            glBindTexture(GL_TEXTURE_2D, textures[3]);
 
-            //     //Check the type of hte texture to increment counter accordingly
-            //     std::string name = currentTex.type;
-            //     std::string number;
-            //     if (name == "diffuse")
-            //     {
-            //         ++nDiffuse;
-            //         number = std::to_string(nDiffuse);
-            //     }
-            //     else if (name == "specular")
-            //     {
-            //         ++nSpecular;
-            //         number = std::to_string(nSpecular);
-            //     }
-            //     shader.setInt((name + number).c_str(), i);
-
-            //     //Actually binding the texture now
-            //     glBindTexture(GL_TEXTURE_2D, currentTex.textureID);
-            // }
             glActiveTexture(GL_TEXTURE0);
     }
 

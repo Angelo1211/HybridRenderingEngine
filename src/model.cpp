@@ -7,15 +7,18 @@
 #include "model.h"
 #include "geometry.h"
 #include "glm/glm.hpp"
+#include "fileManager.h"
 #include <string>
 
 void Model::loadModel(std::string path){
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate |aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
-    // const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    // const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate |aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
+    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_OptimizeMeshes |aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
+
+    fileExtension = FLOAD::getFileExtension(path);
 
     directory = path.substr(0, path.find_last_of('/'));
-    // directory += "/";
+    directory += "/";
     processNode(scene->mRootNode, scene);
 
 }
@@ -74,7 +77,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         vector.z = mesh->mTangents[i].z;
         vertex.tangent = vector;
 
-        //Process tangent
+        //Process biTangent
         vector.x = mesh->mBitangents[i].x;
         vector.y = mesh->mBitangents[i].y;
         vector.z = mesh->mBitangents[i].z;
@@ -97,12 +100,6 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
             vertex.texCoords = glm::vec2(0.0f, 0.0f);
         }
 
-        //Checking handedness of tangent vectors
-        // if( glm::dot(glm::cross(vertex.normal, vertex.tangent), vertex.biTangent) < 0.0f) {
-            // vertex.tangent  = vertex.tangent * -1.0f;
-            // vertex.biTangent  = vertex.biTangent * -1.0f;
-        // }
-
         vertices.push_back(vertex);
     }
     //Process indices
@@ -113,14 +110,18 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         }
     }
     //Process material and texture info
-    //TODO ALSO CHECK PBR HERE LATER
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
     textures = processTextures(material);
 
     return Mesh(vertices, indices, textures);
 }
-
+/*
+    This whole section needs to be remade badly
+    I am kind of rushing here so I know this is bad
+    But I have deadlines
+    I must finish the PBR part before I can go back and fix this mesh
+  */
 std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     std::vector<unsigned int> textures;
 
@@ -130,9 +131,10 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     std::string fullTexturePath;
 
     //Loading textures one type at a time
+
     //Diffuse textures 
     type = aiTextureType_DIFFUSE;
-    fullTexturePath = directory + "/";
+    fullTexturePath = directory;
     if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
@@ -152,9 +154,9 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     //No matter what, you push it to the vector of texures id's
     textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
-    //Specular textures 
+    //Roughness textures 
     type = aiTextureType_SPECULAR;
-    fullTexturePath = directory + "/";
+    fullTexturePath = directory;
     if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
@@ -166,7 +168,7 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     //Checking if this is hte first tiem we are loading this texture 
     if (textureAtlas.count(fullTexturePath) == 0){
         Texture texture;
-        texture.type = "specular";
+        texture.type = "roughness";
         texture.setupTexture(fullTexturePath, false);
         textureAtlas.insert({fullTexturePath, texture});
     }
@@ -174,10 +176,12 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     //No matter what, you push it to the vector of texures id's
     textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
-    //normal textures TODO DO DO 
+
+    //TODO: Make this either height or normals depending on the model
     type = aiTextureType_HEIGHT;
     // type = aiTextureType_NORMALS;
-    fullTexturePath = directory + "/";
+
+    fullTexturePath = directory;
     if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
         material->GetTexture(type, 0, &texturePath);
@@ -195,6 +199,30 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     }
 
     //No matter what, you push it to the vector of texures id's
+    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+
+    ///--------------------------------------------------------------------------------------
+    // New pbr stuff
+
+    //Metallic texture 
+    type = aiTextureType_AMBIENT;
+    fullTexturePath = directory;
+    if( material->GetTextureCount(type) > 0 ){
+        //We only care about the first texture assigned we don't expect multiple to be assigned
+        material->GetTexture(type, 0, &texturePath);
+        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+    }
+    else{
+        fullTexturePath = fullTexturePath + "dummy.dds";
+    }
+    //Checking if this is hte first tiem we are loading this texture 
+    if (textureAtlas.count(fullTexturePath) == 0){
+        Texture texture;
+        texture.type = "metallic";
+        texture.setupTexture(fullTexturePath, false);
+        textureAtlas.insert({fullTexturePath, texture});
+    }
+
     textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
     return textures;

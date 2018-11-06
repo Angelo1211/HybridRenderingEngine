@@ -31,23 +31,30 @@ struct TransformParameters{
 
 class Model {
     public:
-        Model(const std::string meshPath, const std::string materialPath, const TransformParameters initParameters){
+        Model(const std::string meshPath, const bool PBR, const TransformParameters initParameters){
+            if(PBR){
+               pbrMaterial = true; 
+               numTextures = 4;
+            }
             loadModel(meshPath);
             modelParameters = initParameters;
         }
+
         void draw(const Shader &shader, const bool textured);
-        
         void update( const unsigned int deltaT);
 
         glm::mat4 getModelMatrix();
-        static const unsigned int numTextures = 3;
+
+        unsigned int numTextures = 3;
+        bool pbrMaterial = false;
     private:
         TransformParameters modelParameters;
         glm::mat4 modelMatrix;
 
         std::vector<Mesh> meshes;        
         std::unordered_map<std::string, Texture> textureAtlas; 
-        std::string directory;
+
+        std::string directory, fileExtension;
 
         void loadModel(std::string path);
         void processNode(aiNode *node, const aiScene *scene);

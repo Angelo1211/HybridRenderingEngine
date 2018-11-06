@@ -178,7 +178,7 @@ bool RenderManager::initSSBOs(){
 
 bool RenderManager::loadShaders(){
     shaderAtlas[0] = new Shader("depthPassShader.vert", "depthPassShader.frag");
-    shaderAtlas[1] = new Shader("clusteredForwardShader.vert", "clusteredForwardShader.frag");
+    shaderAtlas[1] = new Shader("PBRClusteredShader.vert", "PBRClusteredShader.frag");
     shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
     shaderAtlas[3] = new Shader("splitHighShader.vert", "splitHighShader.frag");
     shaderAtlas[4] = new Shader("blurShader.vert", "blurShader.frag");

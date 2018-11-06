@@ -12,7 +12,6 @@
 
 Scene::Scene(const std::string &sceneName){
     sceneID = sceneName;
-    // if( !checkFileValidity(folderPath + sceneName + fileExtension) ){
     if( !FLOAD::checkFileValidity(folderPath + sceneName + fileExtension) ){
         //If you do not find the scene file set the quit flag to true 
         printf("Cannot find scene descriptor file for %s \n", sceneID.c_str());
@@ -199,7 +198,7 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     glm::mat4 VPCubeMap = mainCamera.projectionMatrix *glm::mat4(glm::mat3(mainCamera.viewMatrix));
 
     //Just to avoid magic constants
-    const unsigned int numTextures =  Model::numTextures;
+    const unsigned int numTextures =  4;
 
     //Setting colors in the gui
     if(ImGui::CollapsingHeader("Directional Light Settings")){
@@ -457,7 +456,8 @@ void Scene::loadSkyBox(const json &sceneConfigJson){
 
 void Scene::loadSceneModels(const json &sceneConfigJson ){
     //model setup
-    std::string modelMesh, modelMaterial;
+    std::string modelMesh;
+    bool pbrEnabled;
     TransformParameters initParameters;
     unsigned int modelCount = (unsigned int)sceneConfigJson["models"].size();
 
@@ -465,7 +465,7 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
         //get model mesh and material info
         json currentModel = sceneConfigJson["models"][i];
         modelMesh = currentModel["mesh"];
-        modelMaterial = currentModel["material"];
+        pbrEnabled = currentModel["pbr"];
 
         //position
         json position = currentModel["position"];
@@ -487,8 +487,8 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
             printf("Error! Mesh: %s does not exist.\n", modelMesh.c_str());
         }
         else{
-            modelMaterial = "../assets/models/" + modelMaterial;
-            modelsInScene.push_back(new Model(modelMesh, modelMaterial, initParameters));
+            // modelMaterial = "../assets/models/" + modelMaterial;
+            modelsInScene.push_back(new Model(modelMesh, pbrEnabled, initParameters));
         }
     }
 }
