@@ -227,7 +227,8 @@ vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos,
 
     vec3 numerator = NDF * G * F;
     float denominator = 4.0 * nDotV * nDotL;
-    vec3 specular = numerator / max (denominator, 0.0001);
+    vec3 specular = numerator / max(denominator, 0.0000001);
+    // vec3 specular = numerator / denominator;
 
     vec3 radiance = (kD * (albedo / M_PI) + specular ) * radianceIn * nDotL;
 
