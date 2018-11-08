@@ -5,7 +5,7 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	
 if(WIN32)
-	set(ASSIMP_ROOT_DIR CACHE PATH "ASSIMP root directory")
+	# set(ASSIMP_ROOT_DIR CACHE PATH "ASSIMP root directory")
 
 	# Find path of each library
 	find_path(ASSIMP_INCLUDE_DIR

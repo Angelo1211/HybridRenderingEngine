@@ -10,7 +10,7 @@ if(WIN32)
     # using Intel C++ (Does nothing yet)
   elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(SDL2_PATH "C:\\vs_dev_lib\\SDL2-2.0.8-MSVC")
-    set(ASSIMP_PATH "C:\\vs_dev_lib\\ASSIMP-MSVC")
+    set(ASSIMP_ROOT_DIR "${CMAKE_SOURCE_DIR}/libs/assimp")
   endif()
 endif()
 # Picking correct sdl2 lib for each compiler for the windwos version
@@ -21,7 +21,7 @@ find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR} include libs)
 
 find_package(ASSIMP REQUIRED)
-include_directories(${ASSIMP_INCLUDE_DIR} )
+include_directories(${ASSIMP_INCLUDE_DIR} include libs )
 
 # Some useful compiler flags
 #-fopt-info-vec-all -xCORE-AVX2 -no-prec-sqrt -g -ffast-math -static -static-libgcc -static-libstdc++ 
