@@ -26,12 +26,13 @@ struct DirLight{
 };
 uniform DirLight dirLight;
 
-//Textures to sample from
+//PBR Textures to sample from
+uniform sampler2D albedoMap;
+uniform sampler2D emissiveMap;
+uniform sampler2D normalsMap;
+uniform sampler2D lightMap;
+uniform sampler2D metalRoughMap;
 uniform sampler2D shadowMap;
-uniform sampler2D diffuse1;
-uniform sampler2D specular1;
-uniform sampler2D normal1;
-uniform sampler2D metallic1;
 
 //Misc Uniforms
 uniform vec3 cameraPos_wS;
@@ -102,12 +103,17 @@ float distributionGGX(vec3 N, vec3 H, float rough);
 float geometrySchlickGGX(float nDotV, float rough);
 float geometrySmith(float nDotV, float nDotL, float rough);
 
+// uniform sampler2D metalRoughMap;
+
 void main(){
     //Texture Reads
-    vec3 albedo     =  texture(diffuse1, fs_in.texCoords).rgb;
-    vec3 normal     =  normalize(2.0 * texture(normal1, fs_in.texCoords).rgb - 1.0);
-    float roughness =  texture(specular1, fs_in.texCoords).r;
-    float metallic  =  texture(metallic1, fs_in.texCoords).r;
+    vec3 albedo     =  texture(albedoMap, fs_in.texCoords).rgb;
+    vec3 emissive   =  texture(emissiveMap, fs_in.texCoords).rgb;
+    vec3 normal     =  normalize(2.0 * texture(normalsMap, fs_in.texCoords).rgb - 1.0);
+    float ao        =  texture(lightMap, fs_in.texCoords).r;
+    vec2 metalRough =  texture(metalRoughMap, fs_in.texCoords).yz;
+    float metallic  =  metalRough.x;
+    float roughness =  metalRough.y;
 
     //Components common to all light types
     mat3 TBN  = mat3(fs_in.T, fs_in.B, fs_in.N);
@@ -145,8 +151,11 @@ void main(){
     }
 
     //Ambient term for the fragment    
-    vec3 ambient = vec3(0.01)* albedo;
+    vec3 ambient = vec3(0.01)* albedo * ao;
     radianceOut += ambient;
+
+    //Adding any emissive
+    radianceOut += emissive;
 
     FragColor = vec4(radianceOut, 1.0);
 }

@@ -25,7 +25,8 @@
 struct TransformParameters{
     TransformParameters(): scaling(glm::vec3(1.0f)) {};
     glm::vec3 translation;
-    glm::vec3 rotation;
+    float angle;
+    glm::vec3 rotationAxis;
     glm::vec3 scaling;
 };
 

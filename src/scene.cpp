@@ -198,7 +198,7 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     glm::mat4 VPCubeMap = mainCamera.projectionMatrix *glm::mat4(glm::mat3(mainCamera.viewMatrix));
 
     //Just to avoid magic constants
-    const unsigned int numTextures =  4;
+    const unsigned int numTextures =  5;
 
     //Setting colors in the gui
     if(ImGui::CollapsingHeader("Directional Light Settings")){
@@ -476,9 +476,10 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
 
         //rotation
         json rotation = currentModel["rotation"];
-        initParameters.rotation = glm::vec3(glm::radians((float)rotation[0]),
-                                            glm::radians((float)rotation[1]),
-                                            glm::radians((float)rotation[2]));
+        initParameters.angle = (float)rotation[0];
+        initParameters.rotationAxis = glm::vec3(glm::radians((float)rotation[1]),
+                                            glm::radians((float)rotation[2]),
+                                            glm::radians((float)rotation[3]));
         //scaling
         json scaling = currentModel["scaling"];
         initParameters.scaling = glm::vec3((float)scaling[0], (float)scaling[1], (float)scaling[2]);

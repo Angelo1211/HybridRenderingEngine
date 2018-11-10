@@ -36,7 +36,7 @@ void AABox::buildAABB(const Mesh &mesh){
 void AABox::update(const glm::mat4 &modelMatrix){
     glm::vec3 minVals(std::numeric_limits<float>::max());
     glm::vec3 maxVals(std::numeric_limits<float>::min());
-    glm::vec3 vertices[8];
+    // glm::vec3 vertices[8];
 
     // //Reconstructing the 8 vertices of an AABB from the min and max valuesin the struct
     // vertices[0] = glm::vec3(minPoints.x, minPoints.y, minPoints.z);

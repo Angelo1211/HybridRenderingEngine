@@ -11,30 +11,35 @@ void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured)
     if(textured){
             //Diffuse
             glActiveTexture(GL_TEXTURE0);
-            shader.setInt("diffuse1", 0);
+            shader.setInt("albedoMap", 0);
             glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-            //Roughness
+            //Emissive
             glActiveTexture(GL_TEXTURE1);
-            shader.setInt("specular1", 1);
+            shader.setInt("emissiveMap", 1);
             glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-            //Normal
+            //Normals
             glActiveTexture(GL_TEXTURE2);
-            shader.setInt("normal1", 2);
+            shader.setInt("normalsMap", 2);
             glBindTexture(GL_TEXTURE_2D, textures[2]);
 
-            //Metallic
+            //Ambient Oclussion
             glActiveTexture(GL_TEXTURE3);
-            shader.setInt("metallic1", 3);
+            shader.setInt("lightMap", 3);
             glBindTexture(GL_TEXTURE_2D, textures[3]);
+
+            //Ambient Oclussion
+            glActiveTexture(GL_TEXTURE3);
+            shader.setInt("metalRoughMap", 4);
+            glBindTexture(GL_TEXTURE_2D, textures[4]);
 
             glActiveTexture(GL_TEXTURE0);
     }
 
     //Mesh Drawing
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
 

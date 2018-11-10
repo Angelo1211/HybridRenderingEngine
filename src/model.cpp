@@ -37,7 +37,7 @@ glm::mat4 Model::getModelMatrix(){
     //Model matrix assembly
     modelMatrix = glm::mat4(1.0);
     modelMatrix = glm::translate(modelMatrix, modelParameters.translation);
-    // modelMatrix = glm::rotate(modelMatrix, (float)start/5000.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+    modelMatrix = glm::rotate(modelMatrix, modelParameters.angle, modelParameters.rotationAxis);
     modelMatrix = glm::scale(modelMatrix, modelParameters.scaling);
     return modelMatrix; 
 }
@@ -130,100 +130,119 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
     aiTextureType type;
     std::string fullTexturePath;
 
-    //Loading textures one type at a time
+    //Checking all texture stacks
+    for(int tex = aiTextureType_NONE ; tex <= aiTextureType_UNKNOWN; tex++){
+        type = static_cast<aiTextureType>(tex);
+        fullTexturePath = directory;
 
-    //Diffuse textures 
-    type = aiTextureType_DIFFUSE;
-    fullTexturePath = directory;
-    if( material->GetTextureCount(type) > 0 ){
+        if( material->GetTextureCount(type) > 0 ){
+            //We only care about the first texture assigned we don't expect multiple to be assigned
+            material->GetTexture(type, 0, &texturePath);
+            fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+
+            if (textureAtlas.count(fullTexturePath) == 0){
+                Texture texture;
+                bool srgb = type == aiTextureType_NORMALS || type == aiTextureType_HEIGHT;
+                texture.setupTexture(fullTexturePath, srgb);
+                textureAtlas.insert({fullTexturePath, texture});
+            }
+
+            textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+        }
+    }
+
+    //Diffuse textures
+    // type = aiTextureType_DIFFUSE;
+    // fullTexturePath = directory;
+    // if( material->GetTextureCount(type) > 0 ){
         //We only care about the first texture assigned we don't expect multiple to be assigned
-        material->GetTexture(type, 0, &texturePath);
-        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-    }
-    else{
-        fullTexturePath = fullTexturePath + "dummy.dds";
-    }
+        // material->GetTexture(type, 0, &texturePath);
+        // fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+    // }
+    // else{
+        // fullTexturePath = fullTexturePath + "dummy.dds";
+    // }
     //Checking if this is hte first tiem we are loading this texture 
-    if (textureAtlas.count(fullTexturePath) == 0){
-        Texture texture;
-        texture.type = "diffuse";
-        texture.setupTexture(fullTexturePath, false);
-        textureAtlas.insert({fullTexturePath, texture});
-    }
+    // if (textureAtlas.count(fullTexturePath) == 0){
+    //     Texture texture;
+    //     // texture.type = "diffuse";
+    //     texture.setupTexture(fullTexturePath, false);
+    //     textureAtlas.insert({fullTexturePath, texture});
+    // }
 
-    //No matter what, you push it to the vector of texures id's
-    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+    // //No matter what, you push it to the vector of texures id's
+    // textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
-    //Roughness textures 
-    type = aiTextureType_SPECULAR;
-    fullTexturePath = directory;
-    if( material->GetTextureCount(type) > 0 ){
-        //We only care about the first texture assigned we don't expect multiple to be assigned
-        material->GetTexture(type, 0, &texturePath);
-        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-    }
-    else{
-        fullTexturePath = fullTexturePath + "dummy_specular.dds";
-    }
-    //Checking if this is hte first tiem we are loading this texture 
-    if (textureAtlas.count(fullTexturePath) == 0){
-        Texture texture;
-        texture.type = "roughness";
-        texture.setupTexture(fullTexturePath, false);
-        textureAtlas.insert({fullTexturePath, texture});
-    }
+    // //Roughness textures 
+    // type = aiTextureType_SPECULAR;
+    // fullTexturePath = directory;
+    // if( material->GetTextureCount(type) > 0 ){
+    //     //We only care about the first texture assigned we don't expect multiple to be assigned
+    //     material->GetTexture(type, 0, &texturePath);
+    //     fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+    // }
+    // else{
+    //     fullTexturePath = fullTexturePath + "dummy_specular.dds";
+    // }
+    // //Checking if this is hte first tiem we are loading this texture 
+    // if (textureAtlas.count(fullTexturePath) == 0){
+    //     Texture texture;
+    //     texture.type = "roughness";
+    //     texture.setupTexture(fullTexturePath, false);
+    //     textureAtlas.insert({fullTexturePath, texture});
+    // }
 
-    //No matter what, you push it to the vector of texures id's
-    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+    // //No matter what, you push it to the vector of texures id's
+    // textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
 
-    //TODO: Make this either height or normals depending on the model
-    type = aiTextureType_HEIGHT;
-    // type = aiTextureType_NORMALS;
+    // //TODO: Make this either height or normals depending on the model
+    // type = aiTextureType_HEIGHT;
+    // // type = aiTextureType_NORMALS;
 
-    fullTexturePath = directory;
-    if( material->GetTextureCount(type) > 0 ){
-        //We only care about the first texture assigned we don't expect multiple to be assigned
-        material->GetTexture(type, 0, &texturePath);
-        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-    }
-    else{
-        fullTexturePath = fullTexturePath + "dummy_ddn.dds";
-    }
-    //Checking if this is hte first tiem we are loading this texture 
-    if (textureAtlas.count(fullTexturePath) == 0){
-        Texture texture;
-        texture.type = "normal";
-        texture.setupTexture(fullTexturePath, false);
-        textureAtlas.insert({fullTexturePath, texture});
-    }
+    // fullTexturePath = directory;
+    // if( material->GetTextureCount(type) > 0 ){
+    //     //We only care about the first texture assigned we don't expect multiple to be assigned
+    //     material->GetTexture(type, 0, &texturePath);
+    //     fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+    // }
+    // else{
+    //     fullTexturePath = fullTexturePath + "dummy_ddn.dds";
+    // }
+    // //Checking if this is hte first tiem we are loading this texture 
+    // if (textureAtlas.count(fullTexturePath) == 0){
+    //     Texture texture;
+    //     texture.type = "normal";
+    //     texture.setupTexture(fullTexturePath, false);
+    //     textureAtlas.insert({fullTexturePath, texture});
+    // }
 
-    //No matter what, you push it to the vector of texures id's
-    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+    // //No matter what, you push it to the vector of texures id's
+    // textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
-    ///--------------------------------------------------------------------------------------
-    // New pbr stuff
+    // ///--------------------------------------------------------------------------------------
+    // // New pbr stuff
 
-    //Metallic texture 
-    type = aiTextureType_AMBIENT;
-    fullTexturePath = directory;
-    if( material->GetTextureCount(type) > 0 ){
-        //We only care about the first texture assigned we don't expect multiple to be assigned
-        material->GetTexture(type, 0, &texturePath);
-        fullTexturePath = fullTexturePath.append(texturePath.C_Str());
-    }
-    else{
-        fullTexturePath = fullTexturePath + "dummy.dds";
-    }
-    //Checking if this is hte first tiem we are loading this texture 
-    if (textureAtlas.count(fullTexturePath) == 0){
-        Texture texture;
-        texture.type = "metallic";
-        texture.setupTexture(fullTexturePath, false);
-        textureAtlas.insert({fullTexturePath, texture});
-    }
+    // //Metallic texture 
+    // type = aiTextureType_AMBIENT;
+    // fullTexturePath = directory;
+    // if( material->GetTextureCount(type) > 0 ){
+    //     //We only care about the first texture assigned we don't expect multiple to be assigned
+    //     material->GetTexture(type, 0, &texturePath);
+    //     fullTexturePath = fullTexturePath.append(texturePath.C_Str());
+    // }
+    // else{
+    //     fullTexturePath = fullTexturePath + "dummy.dds";
+    // }
+    // //Checking if this is hte first tiem we are loading this texture 
+    // if (textureAtlas.count(fullTexturePath) == 0){
+    //     Texture texture;
+    //     texture.type = "metallic";
+    //     texture.setupTexture(fullTexturePath, false);
+    //     textureAtlas.insert({fullTexturePath, texture});
+    // }
 
-    textures.push_back(textureAtlas.at(fullTexturePath).textureID);
+    // textures.push_back(textureAtlas.at(fullTexturePath).textureID);
 
     return textures;
 }
