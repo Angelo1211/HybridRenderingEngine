@@ -456,16 +456,19 @@ void Scene::loadSkyBox(const json &sceneConfigJson){
 
 void Scene::loadSceneModels(const json &sceneConfigJson ){
     //model setup
-    std::string modelMesh;
+    std::string modelMesh, modelName;
     bool pbrEnabled;
     TransformParameters initParameters;
     unsigned int modelCount = (unsigned int)sceneConfigJson["models"].size();
+
 
     for (unsigned int i = 0; i < modelCount; ++i){
         //get model mesh and material info
         json currentModel = sceneConfigJson["models"][i];
         modelMesh = currentModel["mesh"];
         pbrEnabled = currentModel["pbr"];
+
+        modelName = modelMesh.substr(0, modelMesh.find_last_of('.'));
 
         //position
         json position = currentModel["position"];
@@ -481,13 +484,12 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
         initParameters.scaling = glm::vec3((float)scaling[0], (float)scaling[1], (float)scaling[2]);
 
         //attempts to load model with the initparameters it has read
-        modelMesh = "../assets/models/" + sceneID + "/" + modelMesh;
+        modelMesh = "../assets/models/" + modelName + "/" + modelMesh;
         if (!FLOAD::checkFileValidity(modelMesh)){
             //If the mesh deos not exist it's very likely nothing else does, quit early
             printf("Error! Mesh: %s does not exist.\n", modelMesh.c_str());
         }
         else{
-            // modelMaterial = "../assets/models/" + modelMaterial;
             modelsInScene.push_back(new Model(modelMesh, pbrEnabled, initParameters));
         }
     }

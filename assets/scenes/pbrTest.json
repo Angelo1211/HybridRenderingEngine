@@ -1,0 +1,77 @@
+{
+    "sceneID": "pbrTest",
+    "skybox": "default",
+    "models": [{
+        "mesh": "DamagedHelmet.gltf",
+        "pbr": false,
+        "material": "",
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scaling" : [1.0, 1.0, 1.0]
+    }],
+    "directionalLight": {
+        "ambient": 0.02,
+        "diffuse": 1.0,
+        "specular": 0.5,
+        "direction": [0.4, -5.0, 1.5],
+        "color": [1.0, 1.0, 1.0],
+        "distance": 100.0,
+        "strength": 1.0,
+        "zNear": 1.0,
+        "zFar": 700.0,
+        "orthoSize": 100.0,
+        "shadowRes": 2048
+    },
+    "pointLights":[{
+        "ambient": 0.05,
+        "diffuse": 1.0,
+        "specular": 1.0,
+        "position": [-110.0, 14.0, -41.0],
+        "color": [1.0, 0.0, 0.0],
+        "attenuation": [1.0, 0.045, 0.0075],
+        "strength": 1.0,
+        "zNear": 1.0,
+        "zFar": 2000.0,
+        "aspect":1.0,
+        "shadowRes": 2048
+    },
+    {
+        "ambient": 0.05,
+        "diffuse": 1.0,
+        "specular": 0.6,
+        "position": [110.0, 14.0, -41.0],
+        "color": [0.0, 1.0, 0.0],
+        "attenuation": [1.0, 0.045, 0.0075],
+        "strength": 1.0,
+        "zNear": 1.0,
+        "zFar": 2000.0,
+        "aspect":1.0,
+        "shadowRes": 2048
+    },
+    {
+        "ambient": 0.05,
+        "diffuse": 1.0,
+        "specular": 0.6,
+        "position": [110, 16.0, 41.0],
+        "color": [0.0, 0.0, 1.0],
+        "attenuation": [1.0, 0.045, 0.0075],
+        "strength": 1.0,
+        "zNear": 1.0,
+        "zFar": 2000.0,
+        "aspect":1.0,
+        "shadowRes": 2048
+    },
+    {
+        "ambient": 0.05,
+        "diffuse": 1.0,
+        "specular": 0.6,
+        "position": [-110.0, 16.0, 41.0],
+        "color": [1.0, 0.0, 1.0],
+        "attenuation": [1.0, 0.045, 0.0075],
+        "strength": 1.0,
+        "zNear": 1.0,
+        "zFar": 2000.0,
+        "aspect":1.0,
+        "shadowRes": 2048
+    }]
+}
