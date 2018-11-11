@@ -111,7 +111,7 @@ void main(){
     vec3 emissive   =  texture(emissiveMap, fs_in.texCoords).rgb;
     vec3 normal     =  normalize(2.0 * texture(normalsMap, fs_in.texCoords).rgb - 1.0);
     float ao        =  texture(lightMap, fs_in.texCoords).r;
-    vec2 metalRough =  texture(metalRoughMap, fs_in.texCoords).yz;
+    vec2 metalRough =  texture(metalRoughMap, fs_in.texCoords).bg;
     float metallic  =  metalRough.x;
     float roughness =  metalRough.y;
 

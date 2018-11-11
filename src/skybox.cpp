@@ -87,8 +87,17 @@ void Skybox::setupVertices(){
     glBindVertexArray(0);
 }
 
-void Skybox::setup(const std::string &filePath){
+void Skybox::setup(const std::string &skyboxName, bool isHDR, int resolution){
+    std::string skyBoxFolderPath = "../assets/skyboxes/";
+    skyBoxFolderPath += skyboxName;
+    std::string skyBoxFilePath = skyBoxFolderPath + "/" + skyboxName + ".hdr";
     setupVertices();
 
-    skyBoxCubeMap.loadCubeMap(filePath);
+    if(isHDR){
+        equirectangularMap.setupHDRTexture(skyBoxFilePath);
+        skyBoxCubeMap.generateCubeMap(resolution, resolution, HDR_MAP);
+    }
+    else{
+        skyBoxCubeMap.loadCubeMap(skyBoxFolderPath);
+    }
 }

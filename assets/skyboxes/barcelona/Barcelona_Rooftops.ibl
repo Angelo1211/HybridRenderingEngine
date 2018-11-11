@@ -1,0 +1,46 @@
+[Header]
+ICOfile = "Barce_Rooftop_C_thumb.jpg"
+PREVIEWfile = "Barce_Rooftop_C_preview.jpg"
+Name = "Barcelona Rooftops"
+Author = "Blochi"
+Location = "Barcelona"
+Comment = "Sunrise at the Hotel Pool, urban area, high above the rooftops"
+GEOlat = 41.38503265
+GEOlong = 2.17812109
+Link = "http://www.hdrlabs.com/sibl/archive.html"
+Date = "2009:10:02"
+Time = "07:15:00"
+Height = 1.754386
+North = 0.38
+
+[Background]
+BGfile = "Barce_Rooftop_C_8k.jpg"
+BGmap = 1
+BGu = 0.000000
+BGv = 0.000000
+BGheight = 4096
+
+[Enviroment]
+EVfile = "Barce_Rooftop_C_Env.hdr"
+EVmap = 1
+EVu = 0.000000
+EVv = 0.000000
+EVheight = 180
+EVmulti = 1.000000
+EVgamma = 1.400000
+
+[Reflection]
+REFfile = "Barce_Rooftop_C_3k.hdr"
+REFmap = 1
+REFu = 0.000000
+REFv = 0.000000
+REFheight = 1500
+REFmulti = 1.000000
+REFgamma = 1.400000
+
+[Sun]
+SUNcolor = 255,244,221
+SUNmulti = 1.020
+SUNu = 0.646000
+SUNv = 0.468000
+

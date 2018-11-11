@@ -30,7 +30,7 @@ void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured)
             glBindTexture(GL_TEXTURE_2D, textures[3]);
 
             //Ambient Oclussion
-            glActiveTexture(GL_TEXTURE3);
+            glActiveTexture(GL_TEXTURE4);
             shader.setInt("metalRoughMap", 4);
             glBindTexture(GL_TEXTURE_2D, textures[4]);
 

@@ -16,7 +16,7 @@
 
 class Skybox{
     public:
-        void setup(const std::string &filePath);
+        void setup(const std::string &skyboxName, bool isHDR, int resolution);
 
         void update();
 
@@ -25,7 +25,7 @@ class Skybox{
     private:
         void setupVertices();
         unsigned int VAO, VBO;
-
+        Texture equirectangularMap;
         CubeMap skyBoxCubeMap;
 };
 

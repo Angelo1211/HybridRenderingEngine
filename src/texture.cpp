@@ -24,7 +24,6 @@ void Texture::setupTexture(const std::string &filePath, bool sRGB){
     else{
         unsigned int ID;
         glGenTextures(1, &ID);
-        int width, height, nComponents;
         // stbi_set_flip_vertically_on_load(true);
         unsigned char *data = stbi_load(path.c_str(), &width, &height, &nComponents, 0);
         if (data){
@@ -66,10 +65,30 @@ void Texture::setupTexture(const std::string &filePath, bool sRGB){
         }
         else{
             printf("Texture failed to load at path: %s \n", path.c_str());
-            stbi_image_free(data);
         }
         textureID = ID;
     }
+}
+
+void Texture::setupHDRTexture(const std::string &filePath){
+	stbi_set_flip_vertically_on_load(true);
+
+	float *data = stbi_loadf(filePath.c_str(), &width, &height, &nComponents, 0);
+	if(data){
+		glGenTextures(1, &textureID);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	}
+	else{
+            printf("Texture failed to load at path: %s \n", filePath.c_str());
+	}
+    stbi_image_free(data);
 }
 
 void CubeMap::loadCubeMap(const std::string &folderPath){
@@ -106,23 +125,39 @@ void CubeMap::loadCubeMap(const std::string &folderPath){
     type = "cubemap";
 }
 
-void CubeMap::loadCubeMap(const int shadow_width, const int shadow_height){
-
+void CubeMap::generateCubeMap(const int width, const int height, CubeMapType cubeType){
     unsigned int ID;
     glGenTextures(1, &ID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 
-    for(unsigned int i = 0; i < numSidesInCube; ++i){
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                     0, GL_DEPTH_COMPONENT, shadow_width, shadow_height, 0,
-                     GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    }
+	switch(cubeType){
+		case SHADOW_MAP:
+			for (unsigned int i = 0; i < numSidesInCube; ++i){
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+							 0, GL_DEPTH_COMPONENT, width, height, 0,
+							 GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+			}
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		break;
 
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		case HDR_MAP:
+			for (unsigned int i = 0; i < numSidesInCube; ++i){
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+							 0, GL_RGB16F,
+							 width, height, 0,
+							 GL_RGB, GL_FLOAT, NULL);
+			}
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		break;
+	}
 
     textureID = ID;
     path = "";

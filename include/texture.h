@@ -12,17 +12,24 @@
 //Includes
 #include <string>
 
+enum CubeMapType{
+    SHADOW_MAP,
+    HDR_MAP
+};
+
 struct Texture{
     void setupTexture(const std::string &filePath, bool sRGB);
-    unsigned int  Texture::loadDSFile(char const* Filename);
+    void setupHDRTexture(const std::string &filePath);
+    unsigned int  loadDSFile(char const* Filename);
     unsigned int textureID;
+    int width, height, nComponents;
     std::string type;
     std::string path;
 };
 
 struct CubeMap : public Texture{
     void loadCubeMap(const std::string &filePath);
-    void loadCubeMap(const int shadow_width, const int shadow_height);
+    void generateCubeMap(const int width, const int height, CubeMapType cubeType);
     const unsigned int numSidesInCube = 6;
 
     //Order for this comes from the Opengl cubemap enums

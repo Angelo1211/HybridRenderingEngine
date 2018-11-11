@@ -156,7 +156,7 @@ bool DepthBuffer::setupFrameBuffer(unsigned int w, unsigned int h, bool omnidire
 
     glGenTextures(1, &depthMap);
     if(omnidirectional){
-        drawingTexture.loadCubeMap(width, height);
+        drawingTexture.generateCubeMap(width, height, SHADOW_MAP);
         depthMap = drawingTexture.textureID;
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthMap, 0);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);

@@ -447,11 +447,12 @@ void Scene::loadLights(const json &sceneConfigJson){
 }
 
 void Scene::loadSkyBox(const json &sceneConfigJson){
-    std::string skyBoxName = sceneConfigJson["skybox"];
-    std::string skyBoxFolderPath = "../assets/skyboxes/";
-    skyBoxFolderPath += skyBoxName;
+    json skyBox = sceneConfigJson["skybox"];
+    std::string skyBoxName = skyBox["id"];
+    bool isHDR = skyBox["hdr"];
+    int resolution = skyBox["resolution"];
 
-    mainSkyBox.setup(skyBoxFolderPath);
+    mainSkyBox.setup(skyBoxName, isHDR, resolution);
 }
 
 void Scene::loadSceneModels(const json &sceneConfigJson ){

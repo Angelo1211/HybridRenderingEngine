@@ -35,7 +35,7 @@ class Model {
         Model(const std::string meshPath, const bool PBR, const TransformParameters initParameters){
             if(PBR){
                pbrMaterial = true; 
-               numTextures = 4;
+               numTextures = 5;
             }
             loadModel(meshPath);
             modelParameters = initParameters;

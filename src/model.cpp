@@ -142,7 +142,8 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
 
             if (textureAtlas.count(fullTexturePath) == 0){
                 Texture texture;
-                bool srgb = type == aiTextureType_NORMALS || type == aiTextureType_HEIGHT;
+                // bool srgb = type == aiTextureType_NORMALS || type == aiTextureType_HEIGHT;
+                bool srgb = false;
                 texture.setupTexture(fullTexturePath, srgb);
                 textureAtlas.insert({fullTexturePath, texture});
             }
