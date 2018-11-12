@@ -115,6 +115,7 @@ void Skybox::fillCubeMapWithTexture(Shader *buildCubeMapShader){
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
     };
 
+
     buildCubeMapShader->use();
     buildCubeMapShader->setInt("equirectangularMap", 0);
     buildCubeMapShader->setMat4("projection", captureProjection);

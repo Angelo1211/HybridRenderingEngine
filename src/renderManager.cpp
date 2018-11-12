@@ -64,9 +64,18 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
             //Passing equirectangular map to cubemap
-            glBindFramebuffer(GL_FRAMEBUFFER, captureFBO.frameBufferID);;
+            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOBig.frameBufferID);
             currentScene->mainSkyBox.fillCubeMapWithTexture(shaderAtlas[8]);
+
+            //Cubemap convolution TODO:: Fix ugly function call
+            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
+            unsigned int environmentID = currentScene->mainSkyBox.skyBoxCubeMap.textureID;
+            unsigned int cubeVAO       = currentScene->mainSkyBox.VAO;
+            currentScene->irradianceMap.convolveCubeMap(environmentID, cubeVAO, shaderAtlas[9]);
+
             glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
+
+            currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->irradianceMap.textureID;
         }
     }
     return true;
@@ -190,7 +199,8 @@ bool RenderManager::loadShaders(){
     shaderAtlas[5] = new Shader("screenShader.vert", "screenShader.frag");
     shaderAtlas[6] = new Shader("shadowShader.vert", "shadowShader.frag");
     shaderAtlas[7] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
-    shaderAtlas[8] = new Shader("buildCubeMapShader.vert", "buildCubeMapShader.frag");
+    shaderAtlas[8] = new Shader("cubeMapShader.vert", "buildCubeMapShader.frag");
+    shaderAtlas[9] = new Shader("cubeMapShader.vert", "convolveCubemapShader.frag");
 
     computeGridAABB = new ComputeShader("clusterShader.comp");
     cullLightsAABB  = new ComputeShader("clusterCullLightShader.comp");
@@ -215,6 +225,7 @@ void RenderManager::shutDown(){
 }
 
 //Todo:: cleanup this mess
+//Fix capture FBO name convention
 bool RenderManager::initFBOs(){
     numLights = currentScene->getLightCount();
     pointLightShadowFBOs = new DepthBuffer[numLights];
@@ -226,7 +237,10 @@ bool RenderManager::initFBOs(){
     bool initFBOFLag4 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
 
     int skyboxRes = currentScene->mainSkyBox.resolution;
-    captureFBO.setupFrameBuffer(skyboxRes, skyboxRes);
+    captureFBOBig.setupFrameBuffer(skyboxRes, skyboxRes);
+
+    int irradianceRes = currentScene->irradianceMap.width;
+    captureFBOSmall.setupFrameBuffer(irradianceRes, irradianceRes);
     // bool initFBOFlag1 = depthPrePass.setupFrameBuffer(DisplayManager::SCREEN_WIDTH,
                                                     //   DisplayManager::SCREEN_HEIGHT,
                                                     //   false);

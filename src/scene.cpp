@@ -341,12 +341,16 @@ bool Scene::loadContent(){
         printf("Loading models...\n");
         loadSceneModels(configJson);
 
-        printf("Generating skybox...\n");
+        printf("Loading skybox...\n");
         loadSkyBox(configJson);
 
-        printf("Loading scene lighting...\n");
+        printf("Loading light data...\n");
         loadLights(configJson);
 
+        printf("Generating environment Maps...\n");
+        generateEnvironmentMaps();
+
+        printf("Reticulating splines...\n");
         //lastly we check if the scene is empty and return
         printf("Loading Complete!...\n");
         return !modelsInScene.empty();
@@ -496,7 +500,12 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
         }
     }
 }
-
+//TODO move the fixed size somewhere else
+void Scene::generateEnvironmentMaps(){
+    irradianceMap.width = 32;
+    irradianceMap.height = 32;
+    irradianceMap.generateCubeMap(irradianceMap.width, irradianceMap.height, HDR_MAP);
+}
 //-------------------------------------------------------------
 //TODO TODO TODO TODO TODO TODO TODO
 void Scene::frustrumCulling(){

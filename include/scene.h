@@ -50,8 +50,10 @@ class Scene{
         //Signals issues to scene Manager
         bool checkIfEmpty();  
 
-        //Tired of making things private, making this one public and we'll fix the rest
+        //Tired of making things private, making this one public and we'll fix the rest later
+        CubeMap irradianceMap;
         Skybox mainSkyBox;
+
     private:
         const std::string folderPath = "../assets/scenes/";
         const std::string fileExtension = ".json";
@@ -74,6 +76,7 @@ class Scene{
         void loadSceneModels(const json &sceneConfigJson);
         void loadSkyBox(const json &sceneConfigJson);
         void loadLights(const json &sceneConfigJson);
+        void generateEnvironmentMaps();
         
         //Finds objects that the camera can see
         void frustrumCulling();

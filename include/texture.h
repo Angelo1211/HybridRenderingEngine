@@ -11,6 +11,7 @@
 
 //Includes
 #include <string>
+#include "shader.h"
 
 enum CubeMapType{
     SHADOW_MAP,
@@ -30,6 +31,7 @@ struct Texture{
 struct CubeMap : public Texture{
     void loadCubeMap(const std::string &filePath);
     void generateCubeMap(const int width, const int height, CubeMapType cubeType);
+    void convolveCubeMap(const unsigned int environmentMap, const unsigned int cubeVAO, Shader *convolveShader);
     const unsigned int numSidesInCube = 6;
 
     //Order for this comes from the Opengl cubemap enums

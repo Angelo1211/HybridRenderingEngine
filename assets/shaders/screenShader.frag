@@ -21,9 +21,6 @@ void main(){
 
     bloomCol -= hdrCol;
     bloomCol = max(bloomCol, 0.0);
-    // if( dot(bloomCol, vec3(1.0)) > 0.0){
-    //     hdrCol =  (hdrCol + bloomCol) * 0.5 ;
-    // }
     hdrCol += bloomCol;
 
     //Exposure tone mapping
