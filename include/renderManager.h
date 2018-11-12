@@ -42,7 +42,7 @@ class RenderManager{
         void buildRenderQueue();
 
         //Todo:: move shaders to this to scene class?
-        Shader *shaderAtlas[8]; //The number is kind of arbitrary for now
+        Shader *shaderAtlas[9]; //The number is kind of arbitrary for now
 
 
         //Pointers to data important for rendering
@@ -76,6 +76,7 @@ class RenderManager{
 
         //Render pipeline FBO's
         FrameBuffer multiSampledFBO;
+        CaptureBuffer captureFBO;
         ResolveBuffer simpleFBO;
         QuadHDRBuffer pingPongFBO;
         DepthBuffer  dirShadowFBO;

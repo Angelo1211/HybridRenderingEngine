@@ -5,7 +5,6 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform sampler2D bloomBlur;
-uniform sampler2D computeTexture;
 uniform int offset; 
 uniform float exposure;
 
@@ -19,20 +18,19 @@ void main(){
 
     vec3 hdrCol = texture(screenTexture, TexCoords).rgb;
     vec3 bloomCol = texture(bloomBlur, TexCoords).rgb;
-    // vec3 computeCol = texture(computeTexture, TexCoords).rgb;
-    // ivec2 linCoords = ivec2(TexCoords.x * 16, TexCoords.y * 8);
-    // vec3 tileColor = tiles[linCoords.x][linCoords.y].rgb;
 
-    // hdrCol += bloomCol + tileColor;
+    bloomCol -= hdrCol;
+    bloomCol = max(bloomCol, 0.0);
+    // if( dot(bloomCol, vec3(1.0)) > 0.0){
+    //     hdrCol =  (hdrCol + bloomCol) * 0.5 ;
+    // }
     hdrCol += bloomCol;
 
     //Exposure tone mapping
     vec3 toneMappedResult = vec3(1.0) - exp(-hdrCol * exposure);
     //reinhard tone mapping
-    // vec3 toneMappedResult = result / (result + vec3(1.0));
+    // vec3 toneMappedResult = hdrCol / (hdrCol + vec3(1.0));
 
     FragColor = vec4(toneMappedResult, 1.0) ;
-    // FragColor  = vec4(computeCol, 1.0);
-    // FragColor = vec4(result, 1.0) ;
     // FragColor = vec4(vec3(texture(screenTexture, TexCoords).r), 1.0);
 }

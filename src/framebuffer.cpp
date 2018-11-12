@@ -91,7 +91,6 @@ bool FrameBuffer::setupFrameBuffer(bool isMultiSampled){
     return true;
 }
 
-
 //-----------------------------------------------------------------------------------------------
 //RESOLVEBUFFER CLASS
 bool ResolveBuffer::setupFrameBuffer(){
@@ -212,9 +211,11 @@ bool QuadHDRBuffer::setupFrameBuffer(){
     //We generate and attach a texture to the frame buffer that acts as our color buffer
     glGenTextures(1, &texColorBuffer);
     glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     //We now add the attachment to the framebuffer object
@@ -293,4 +294,32 @@ void GeometryBuffer::bind(){
     // glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+//-----------------------------------------------------------------------------------------------
+//CAPTUREBUFFER CLASS
+bool CaptureBuffer::setupFrameBuffer(unsigned int w, unsigned int h){
+    width = w;
+    height = h;
+
+    glGenFramebuffers(1, &frameBufferID);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBufferID);
+     
+
+    //Color+ Specular buffer
+    glGenRenderbuffers(1, &captureRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    //Setting color attachments for rendering
+
+    if( glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
+        printf(" Failed to initialize the capture frame buffer!\n");
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return false;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return true;
 }

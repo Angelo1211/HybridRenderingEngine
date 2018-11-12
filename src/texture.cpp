@@ -77,7 +77,7 @@ void Texture::setupHDRTexture(const std::string &filePath){
 	if(data){
 		glGenTextures(1, &textureID);
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, data);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -147,7 +147,7 @@ void CubeMap::generateCubeMap(const int width, const int height, CubeMapType cub
 		case HDR_MAP:
 			for (unsigned int i = 0; i < numSidesInCube; ++i){
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-							 0, GL_RGB16F,
+							 0, GL_RGB32F,
 							 width, height, 0,
 							 GL_RGB, GL_FLOAT, NULL);
 			}

@@ -47,10 +47,11 @@ class Scene{
         PointLight *getPointLight(unsigned int index);
         unsigned int getShadowRes();
 
-
         //Signals issues to scene Manager
         bool checkIfEmpty();  
 
+        //Tired of making things private, making this one public and we'll fix the rest
+        Skybox mainSkyBox;
     private:
         const std::string folderPath = "../assets/scenes/";
         const std::string fileExtension = ".json";
@@ -59,7 +60,6 @@ class Scene{
         bool missingScene;
 
         Camera mainCamera;
-        Skybox mainSkyBox;
         DirectionalLight dirLight;
 
         unsigned int pointLightCount;

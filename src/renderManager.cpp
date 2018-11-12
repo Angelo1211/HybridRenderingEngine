@@ -62,6 +62,11 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             computeGridAABB->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
             glDispatchCompute(gridSizeX, gridSizeY, gridSizeZ);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+            //Passing equirectangular map to cubemap
+            glBindFramebuffer(GL_FRAMEBUFFER, captureFBO.frameBufferID);;
+            currentScene->mainSkyBox.fillCubeMapWithTexture(shaderAtlas[8]);
+            glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
         }
     }
     return true;
@@ -185,6 +190,7 @@ bool RenderManager::loadShaders(){
     shaderAtlas[5] = new Shader("screenShader.vert", "screenShader.frag");
     shaderAtlas[6] = new Shader("shadowShader.vert", "shadowShader.frag");
     shaderAtlas[7] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
+    shaderAtlas[8] = new Shader("buildCubeMapShader.vert", "buildCubeMapShader.frag");
 
     computeGridAABB = new ComputeShader("clusterShader.comp");
     cullLightsAABB  = new ComputeShader("clusterCullLightShader.comp");
@@ -218,6 +224,9 @@ bool RenderManager::initFBOs(){
     bool initFBOFlag2 = pingPongFBO.setupFrameBuffer();
     bool initFBOFlag3 = simpleFBO.setupFrameBuffer();
     bool initFBOFLag4 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
+
+    int skyboxRes = currentScene->mainSkyBox.resolution;
+    captureFBO.setupFrameBuffer(skyboxRes, skyboxRes);
     // bool initFBOFlag1 = depthPrePass.setupFrameBuffer(DisplayManager::SCREEN_WIDTH,
                                                     //   DisplayManager::SCREEN_HEIGHT,
                                                     //   false);
@@ -330,8 +339,10 @@ void RenderManager::postProcess(const unsigned int start){
         ImGui::SliderFloat("Exposure", &sceneCamera->exposure, 0.1f, 5.0f);
     }
     pingPongFBO.bind();
-    shaderAtlas[3]->use();
-    canvas.draw(simpleFBO.texColorBuffer);
+    if( sceneCamera->blurAmount > 0){
+        shaderAtlas[3]->use();
+        canvas.draw(simpleFBO.texColorBuffer);
+    }
     //Applying Gaussian blur in ping pong fashion
     shaderAtlas[4]->use();
     for (int i = 0; i < sceneCamera->blurAmount; ++i)
@@ -358,7 +369,7 @@ void RenderManager::postProcess(const unsigned int start){
     shaderAtlas[5]->setInt("bloomBlur", 1);
     shaderAtlas[5]->setInt("computeTexture", 2);
     //Convoluting both images
-    canvas.draw(pingPongFBO.texColorBuffer, simpleFBO.texColorBuffer);
+    canvas.draw(simpleFBO.texColorBuffer, pingPongFBO.texColorBuffer);
 
     // Separating the high exposure content to the pingpongbuffer
     // pingPong1.bind();

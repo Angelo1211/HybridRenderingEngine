@@ -52,4 +52,10 @@ struct GeometryBuffer{
     int width, height;
 };
 
+struct CaptureBuffer {
+    void bind();
+    bool setupFrameBuffer(unsigned int w, unsigned int h);
+    unsigned int frameBufferID, captureRBO;
+    int width, height;
+};
 #endif

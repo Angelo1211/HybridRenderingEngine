@@ -12,21 +12,21 @@
 #include "texture.h"
 #include "shader.h"
 #include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 #include <string>
 
-class Skybox{
-    public:
-        void setup(const std::string &skyboxName, bool isHDR, int resolution);
+struct Skybox{
+    void setup(const std::string &skyboxName, bool isHDR, int resolution);
 
-        void update();
+    void update();
+    void draw();
+    void setupVertices();
 
-        void draw();
-
-    private:
-        void setupVertices();
-        unsigned int VAO, VBO;
-        Texture equirectangularMap;
-        CubeMap skyBoxCubeMap;
+    void fillCubeMapWithTexture(Shader *buildCubeMapShader);
+    unsigned int VAO, VBO;
+    int resolution;
+    Texture equirectangularMap;
+    CubeMap skyBoxCubeMap;
 };
 
 #endif
