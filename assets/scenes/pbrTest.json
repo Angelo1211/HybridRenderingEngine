@@ -5,11 +5,11 @@
                "resolution": 512
     },
     "models": [{
-        "mesh": "DamagedHelmet.gltf",
+        "mesh": "MetalRoughSpheres.gltf",
         "pbr": false,
         "material": "",
         "position": [0.0, 0.0, 0.0],
-        "rotation": [90.0, 1.0, 0.0, 0.0],
+        "rotation": [90.0, 0.0, 0.0, 1.0],
         "scaling" : [1.0, 1.0, 1.0]
     }],
     "directionalLight": {

@@ -252,6 +252,12 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     mainSceneShader->setInt("shadowMap", numTextures + pointLightCount);
     glBindTexture(GL_TEXTURE_2D, dirLight.depthMapTextureID);
 
+
+    //Setting environment map texture
+    glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount + 1);
+    mainSceneShader->setInt("irradianceMap", numTextures + pointLightCount + 1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap.textureID);
+
     for(unsigned int i = 0; i < visibleModels.size(); ++i){
         Model * currentModel = visibleModels[i];
 
@@ -481,10 +487,14 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
 
         //rotation
         json rotation = currentModel["rotation"];
-        initParameters.angle = (float)rotation[0];
-        initParameters.rotationAxis = glm::vec3(glm::radians((float)rotation[1]),
-                                            glm::radians((float)rotation[2]),
-                                            glm::radians((float)rotation[3]));
+        initParameters.angle = glm::radians((float)rotation[0]);
+        initParameters.rotationAxis = glm::vec3((float)rotation[1],
+                                            (float)rotation[2],
+                                            (float)rotation[3]);
+        // initParameters.rotationAxis = glm::vec3(glm::radians((float)rotation[1]),
+        //                                     glm::radians((float)rotation[2]),
+        //                                     glm::radians((float)rotation[3]));
+
         //scaling
         json scaling = currentModel["scaling"];
         initParameters.scaling = glm::vec3((float)scaling[0], (float)scaling[1], (float)scaling[2]);

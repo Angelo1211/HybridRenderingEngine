@@ -75,7 +75,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
             glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
 
-            currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->irradianceMap.textureID;
+            // currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->irradianceMap.textureID;
         }
     }
     return true;

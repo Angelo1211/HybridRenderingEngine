@@ -34,6 +34,8 @@ uniform sampler2D lightMap;
 uniform sampler2D metalRoughMap;
 uniform sampler2D shadowMap;
 
+uniform samplerCube irradianceMap;
+
 //Misc Uniforms
 uniform vec3 cameraPos_wS;
 
@@ -99,6 +101,7 @@ float linearDepth(float depthSample);
 
 //PBR Functions
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
 float distributionGGX(vec3 N, vec3 H, float rough);
 float geometrySchlickGGX(float nDotV, float rough);
 float geometrySmith(float nDotV, float nDotL, float rough);
@@ -151,7 +154,12 @@ void main(){
     }
 
     //Ambient term for the fragment    
-    vec3 ambient = vec3(0.01)* albedo * ao;
+    vec3  kS = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0), F0, roughness);
+    vec3  kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+    vec3 irradiance = texture(irradianceMap, norm).rgb;
+    vec3 diffuse    = irradiance * albedo;
+    vec3 ambient    = (kD * diffuse) * ao;
     radianceOut += ambient;
 
     //Adding any emissive
@@ -283,6 +291,11 @@ float linearDepth(float depthSample){
 vec3 fresnelSchlick(float cosTheta, vec3 F0){
     float val = 1.0 - cosTheta;
     return F0 + (1.0 - F0) * (val*val*val*val*val); //Faster than pow
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness){
+    float val = 1.0 - cosTheta;
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * (val*val*val*val*val); //Faster than pow
 }
 
 float distributionGGX(vec3 N, vec3 H, float rough){

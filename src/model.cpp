@@ -150,6 +150,18 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
 
             textures.push_back(textureAtlas.at(fullTexturePath).textureID);
         }
+        else{
+
+            if(type == aiTextureType_LIGHTMAP){
+                textures.push_back(0);
+            }
+            if(type == aiTextureType_EMISSIVE){
+                textures.push_back(0);
+            }
+            if(type == aiTextureType_NORMALS){
+                textures.push_back(0);
+            }
+        }
     }
 
     //Diffuse textures
