@@ -50,7 +50,8 @@ class Scene{
         bool checkIfEmpty();  
 
         //Tired of making things private, making them public as I go and we'll fix the rest later
-        CubeMap irradianceMap;
+        CubeMap irradianceMap, specFilteredMap;
+        Texture brdfLUTTexture;
         Skybox mainSkyBox;
         unsigned int pointLightCount;
 

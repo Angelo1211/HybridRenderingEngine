@@ -155,6 +155,7 @@ bool DisplayManager::createGLContext(){
             glEnable(GL_CULL_FACE);
             glEnable(GL_MULTISAMPLE);
             glEnable(GL_FRAMEBUFFER_SRGB);
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
             int w, h;
             SDL_GetWindowSize(mWindow, &w, &h);
             glViewport(0, 0, w, h);

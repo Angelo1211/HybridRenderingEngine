@@ -252,10 +252,21 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     glBindTexture(GL_TEXTURE_2D, dirLight.depthMapTextureID);
 
 
+    //TODO:: Formalize htis a bit more
     //Setting environment map texture
     glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount + 1);
     mainSceneShader->setInt("irradianceMap", numTextures + pointLightCount + 1);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap.textureID);
+
+    //Setting environment map texture for specular
+    glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount + 2);
+    mainSceneShader->setInt("prefilterMap", numTextures + pointLightCount + 2);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, specFilteredMap.textureID);
+
+    //Setting lookup table
+    glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount + 3);
+    mainSceneShader->setInt("brdfLUT", numTextures + pointLightCount + 3);
+    glBindTexture(GL_TEXTURE_2D, brdfLUTTexture.textureID);
 
     for(unsigned int i = 0; i < visibleModels.size(); ++i){
         Model * currentModel = visibleModels[i];
@@ -510,9 +521,27 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
 }
 //TODO move the fixed size somewhere else
 void Scene::generateEnvironmentMaps(){
+    //Diffuse map
     irradianceMap.width = 32;
     irradianceMap.height = 32;
     irradianceMap.generateCubeMap(irradianceMap.width, irradianceMap.height, HDR_MAP);
+
+    //Specular map
+    specFilteredMap.width = 128;
+    specFilteredMap.height = 128;
+    specFilteredMap.generateCubeMap(specFilteredMap.width, specFilteredMap.height, PREFILTER_MAP);
+
+    //Setting up texture ahead of time
+    unsigned int res = 512;
+    brdfLUTTexture.height = res;
+    brdfLUTTexture.width  = res;
+    glGenTextures(1, &brdfLUTTexture.textureID);
+    glBindTexture(GL_TEXTURE_2D, brdfLUTTexture.textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, res, res, 0, GL_RG, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void Scene::loadCamera(const json &sceneConfigJson){

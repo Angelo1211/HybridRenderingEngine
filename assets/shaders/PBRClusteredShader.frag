@@ -35,6 +35,8 @@ uniform sampler2D metalRoughMap;
 uniform sampler2D shadowMap;
 
 uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
 
 //Misc Uniforms
 uniform vec3 cameraPos_wS;
@@ -92,6 +94,7 @@ uniform float zFar;
 uniform float zNear;
 
 uniform bool normalMapped;
+uniform bool aoMapped;
 
 //Function prototypes
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float metal, float shadow, vec3 F0);
@@ -131,6 +134,7 @@ void main(){
 
     //Components common to all light types
     vec3 viewDir     = normalize(cameraPos_wS - fs_in.fragPos_wS);
+    vec3 R = reflect(-viewDir, norm);
 
     //Correcting zero incidence reflection
     vec3 F0   = vec3(0.04);
@@ -168,7 +172,19 @@ void main(){
     kD *= 1.0 - metallic;
     vec3 irradiance = texture(irradianceMap, norm).rgb;
     vec3 diffuse    = irradiance * albedo;
-    vec3 ambient    = (kD * diffuse) * ao;
+
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 envBRDF = texture(brdfLUT, vec2(max(dot(norm, viewDir), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
+    vec3 ambient = vec3(0.0);
+    if(aoMapped){
+        ambient = (kD * diffuse + specular) * ao;
+    }
+    else{
+        ambient = (kD * diffuse + specular);
+    }
+
     radianceOut += ambient;
 
     //Adding any emissive

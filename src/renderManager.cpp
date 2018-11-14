@@ -73,9 +73,26 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             unsigned int cubeVAO       = currentScene->mainSkyBox.VAO;
             currentScene->irradianceMap.convolveCubeMap(environmentID, cubeVAO, shaderAtlas[9]);
 
-            glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
+            //Cubemap prefiltering
+            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
+            unsigned int captureRBO = captureFBOSmall.captureRBO;
+            currentScene->specFilteredMap.preFilterCubeMap(environmentID, cubeVAO, captureRBO, shaderAtlas[10]);
 
-            // currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->irradianceMap.textureID;
+            //BRDF lookup texture
+            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
+            glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+            unsigned int res = currentScene->brdfLUTTexture.height;
+            unsigned int id = currentScene->brdfLUTTexture.textureID;
+
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, res,  res);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
+            shaderAtlas[11]->use();
+            glViewport(0, 0, res, res);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            canvas.draw();
+
+            // currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->specFilteredMap.textureID;
+            glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
         }
     }
     return true;
@@ -191,16 +208,20 @@ bool RenderManager::initSSBOs(){
 }
 
 bool RenderManager::loadShaders(){
-    shaderAtlas[0] = new Shader("depthPassShader.vert", "depthPassShader.frag");
-    shaderAtlas[1] = new Shader("PBRClusteredShader.vert", "PBRClusteredShader.frag");
-    shaderAtlas[2] = new Shader("skyboxShader.vert", "skyboxShader.frag");
-    shaderAtlas[3] = new Shader("splitHighShader.vert", "splitHighShader.frag");
-    shaderAtlas[4] = new Shader("blurShader.vert", "blurShader.frag");
-    shaderAtlas[5] = new Shader("screenShader.vert", "screenShader.frag");
-    shaderAtlas[6] = new Shader("shadowShader.vert", "shadowShader.frag");
-    shaderAtlas[7] = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
-    shaderAtlas[8] = new Shader("cubeMapShader.vert", "buildCubeMapShader.frag");
-    shaderAtlas[9] = new Shader("cubeMapShader.vert", "convolveCubemapShader.frag");
+    shaderAtlas[0]  = new Shader("depthPassShader.vert", "depthPassShader.frag");
+    shaderAtlas[1]  = new Shader("PBRClusteredShader.vert", "PBRClusteredShader.frag");
+    shaderAtlas[2]  = new Shader("skyboxShader.vert", "skyboxShader.frag");
+    shaderAtlas[3]  = new Shader("splitHighShader.vert", "splitHighShader.frag");
+    shaderAtlas[4]  = new Shader("blurShader.vert", "blurShader.frag");
+    shaderAtlas[5]  = new Shader("screenShader.vert", "screenShader.frag");
+    shaderAtlas[6]  = new Shader("shadowShader.vert", "shadowShader.frag");
+    shaderAtlas[7]  = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
+
+    //TODO :: could be compute shaders ? 
+    shaderAtlas[8]  = new Shader("cubeMapShader.vert", "buildCubeMapShader.frag");
+    shaderAtlas[9]  = new Shader("cubeMapShader.vert", "convolveCubemapShader.frag");
+    shaderAtlas[10] = new Shader("cubeMapShader.vert", "preFilteringShader.frag");
+    shaderAtlas[11] = new Shader("screenShader.vert", "brdfIntegralShader.frag");
 
     computeGridAABB = new ComputeShader("clusterShader.comp");
     cullLightsAABB  = new ComputeShader("clusterCullLightShader.comp");

@@ -15,7 +15,8 @@
 
 enum CubeMapType{
     SHADOW_MAP,
-    HDR_MAP
+    HDR_MAP,
+    PREFILTER_MAP
 };
 
 struct Texture{
@@ -32,7 +33,11 @@ struct CubeMap : public Texture{
     void loadCubeMap(const std::string &filePath);
     void generateCubeMap(const int width, const int height, CubeMapType cubeType);
     void convolveCubeMap(const unsigned int environmentMap, const unsigned int cubeVAO, Shader *convolveShader);
+    void preFilterCubeMap(const unsigned int environmentMap, const unsigned int cubeVAO,
+                          const unsigned int captureRBO,  Shader *filterShader);
+
     const unsigned int numSidesInCube = 6;
+    unsigned int maxMipLevels;
 
     //Order for this comes from the Opengl cubemap enums
     const std::string fileHandleForFaces[6] = {

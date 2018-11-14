@@ -31,6 +31,12 @@ void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured)
             glBindTexture(GL_TEXTURE_2D, textures[2]);
 
             //Ambient Oclussion
+            if (textures[3] == 0){
+                shader.setBool("aoMapped", false);
+            }
+            else{
+                shader.setBool("aoMapped", true);
+            }
             glActiveTexture(GL_TEXTURE3);
             shader.setInt("lightMap", 3);
             glBindTexture(GL_TEXTURE_2D, textures[3]);
@@ -134,8 +140,10 @@ void Quad::draw(const unsigned int readTexture1,
     glDisable(GL_DEPTH_TEST);
 
     //A texture must always be defined (for now)
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, readTexture1);
+    if(readTexture1 != 0){
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, readTexture1);
+    }
 
     //A texture id of 0 is never assigned by opengl so we can
     //be sure that it means we haven't set any texture in the second paramenter and therefore

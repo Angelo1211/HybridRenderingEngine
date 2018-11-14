@@ -1,16 +1,16 @@
 {
     "sceneID": "pbrTest",
-    "skybox": {"id": "barcelona",
+    "skybox": {"id": "catwalk",
                "hdr": true,
                "resolution": 512
     },
     "models": [{
-        "mesh": "MetalRoughSpheres.gltf",
+        "mesh": "WaterBottle.gltf",
         "pbr": false,
         "material": "",
         "position": [0.0, 0.0, 0.0],
-        "rotation": [90.0, 1.0, 0.0, 0.0],
-        "scaling" : [1.0, 1.0, 1.0]
+        "rotation": [0.0, 1.0, 0.0, 0.0],
+        "scaling" : [20.0, 20.0, 20.0]
     }],
     "camera":{
         "speed": 0.005
@@ -19,12 +19,12 @@
         "ambient": 0.02,
         "diffuse": 1.0,
         "specular": 0.5,
-        "direction": [0.4, -5.0, 1.5],
+        "direction": [0.0, 0.0, -1.0],
         "color": [1.0, 1.0, 1.0],
         "distance": 100.0,
         "strength": 1.0,
         "zNear": 1.0,
-        "zFar": 700.0,
+        "zFar": 200.0,
         "orthoSize": 200.0,
         "shadowRes": 2048
     },
@@ -32,7 +32,7 @@
         "ambient": 0.05,
         "diffuse": 1.0,
         "specular": 1.0,
-        "position": [1.0, 10.0, 1.0],
+        "position": [1.0, 1000.0, 1.0],
         "color": [1.0, 1.0, 1.0],
         "attenuation": [1.0, 0.045, 0.0075],
         "strength": 1.0,

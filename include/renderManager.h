@@ -42,7 +42,7 @@ class RenderManager{
         void buildRenderQueue();
 
         //Todo:: move shaders to this to scene class?
-        const static unsigned int numShaders = 10; //The number is kind of arbitrary for now
+        const static unsigned int numShaders = 12; //The number is kind of arbitrary for now
         Shader *shaderAtlas[numShaders]; 
 
 
