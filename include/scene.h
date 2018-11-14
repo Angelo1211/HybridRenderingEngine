@@ -43,16 +43,16 @@ class Scene{
         //Getters used in the setup of the render queue
         std::vector<Model*>* getVisiblemodels();
         Camera * getCurrentCamera();
-        unsigned int getLightCount();
         PointLight *getPointLight(unsigned int index);
         unsigned int getShadowRes();
 
         //Signals issues to scene Manager
         bool checkIfEmpty();  
 
-        //Tired of making things private, making this one public and we'll fix the rest later
+        //Tired of making things private, making them public as I go and we'll fix the rest later
         CubeMap irradianceMap;
         Skybox mainSkyBox;
+        unsigned int pointLightCount;
 
     private:
         const std::string folderPath = "../assets/scenes/";
@@ -64,7 +64,6 @@ class Scene{
         Camera mainCamera;
         DirectionalLight dirLight;
 
-        unsigned int pointLightCount;
         PointLight *pointLights;
 
         //Contains the models that remain after frustrum culling

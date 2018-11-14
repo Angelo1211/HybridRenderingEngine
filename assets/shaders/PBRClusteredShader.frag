@@ -91,13 +91,14 @@ uniform float far_plane;
 uniform float zFar;
 uniform float zNear;
 
+uniform bool normalMapped;
+
 //Function prototypes
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float metal, float shadow, vec3 F0);
 float calcDirShadow(vec4 fragPosLightSpace);
 vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 albedo, float rough, float metal, vec3 F0,  float viewDistance);
 float calcPointLightShadows(samplerCube depthMap, vec3 fragPos, float viewDistance);
 float linearDepth(float depthSample);
-// uint  findSlice(float depth);
 
 //PBR Functions
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
@@ -112,15 +113,23 @@ void main(){
     //Texture Reads
     vec3 albedo     =  texture(albedoMap, fs_in.texCoords).rgb;
     vec3 emissive   =  texture(emissiveMap, fs_in.texCoords).rgb;
-    vec3 normal     =  normalize(2.0 * texture(normalsMap, fs_in.texCoords).rgb - 1.0);
     float ao        =  texture(lightMap, fs_in.texCoords).r;
     vec2 metalRough =  texture(metalRoughMap, fs_in.texCoords).bg;
     float metallic  =  metalRough.x;
     float roughness =  metalRough.y;
 
+    //Normal mapping
+    vec3 norm = vec3(0.0);
+    if(normalMapped){
+        vec3 normal = normalize(2.0 * texture(normalsMap, fs_in.texCoords).rgb - 1.0);
+        mat3 TBN  = mat3(fs_in.T, fs_in.B, fs_in.N);
+        norm = normalize(TBN * normal ); //going -1 to 1
+    }
+    else{
+        norm = normalize(fs_in.N);
+    }
+
     //Components common to all light types
-    mat3 TBN  = mat3(fs_in.T, fs_in.B, fs_in.N);
-    vec3 norm = normalize(TBN * normal ); //going -1 to 1
     vec3 viewDir     = normalize(cameraPos_wS - fs_in.fragPos_wS);
 
     //Correcting zero incidence reflection

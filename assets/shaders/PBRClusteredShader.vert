@@ -22,11 +22,11 @@ out VS_OUT{
     mat3 TBN;
 } vs_out;
 
-// flat out mat3 TBN;
 
 uniform mat4 MVP;
 uniform mat4 M;
 uniform mat4 lightSpaceMatrix;
+
 
 void main(){
     //Position in clip space

@@ -8,7 +8,7 @@
 #include "SDL.h"
 
 Camera::Camera(){
-    front = glm::normalize(position - target);
+    front = glm::normalize(target - position);
     side = glm::normalize(glm::cross(front, up));
     viewMatrix = glm::lookAt(position, target, up);
     projectionMatrix = glm::perspective(glm::radians(cameraFrustrum.fov), cameraFrustrum.AR, cameraFrustrum.nearPlane, cameraFrustrum.farPlane);

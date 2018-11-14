@@ -1,19 +1,22 @@
 {
-    "sceneID": "sponza",
-    "skybox": "default",
+    "sceneID": "Sponza",
+    "skybox": {"id": "barcelona",
+               "hdr": true,
+               "resolution": 512
+    },
     "models": [{
-        "mesh": "sponza.dae",
-        "pbr": false,
+        "mesh": "Sponza.gltf",
+        "pbr": true,
         "material": "",
         "position": [0.0, 0.0, 0.0],
-        "rotation": [0.0, 0.0, 0.0],
-        "scaling" : [1.0, 1.0, 1.0]
+        "rotation": [0.0, 1.0, 0.0, 0.0],
+        "scaling" : [0.10, 0.10, 0.10]
     }],
     "directionalLight": {
         "ambient": 0.02,
         "diffuse": 1.0,
         "specular": 0.5,
-        "direction": [0.4, -5.0, 1.5],
+        "direction": [0.0, -5.0, 1.333],
         "color": [1.0, 1.0, 1.0],
         "distance": 100.0,
         "strength": 1.0,

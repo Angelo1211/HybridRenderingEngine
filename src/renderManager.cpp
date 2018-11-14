@@ -204,10 +204,8 @@ bool RenderManager::loadShaders(){
 
     computeGridAABB = new ComputeShader("clusterShader.comp");
     cullLightsAABB  = new ComputeShader("clusterCullLightShader.comp");
-    // computeDepths = new ComputeShader("depthBoundShader.comp");
 
     return true;
-    // return ( shaderAtlas[0] != nullptr ) && ( shaderAtlas[1] != nullptr ) && ( shaderAtlas[2] != nullptr );
 }
 
 void RenderManager::shutDown(){
@@ -227,7 +225,7 @@ void RenderManager::shutDown(){
 //Todo:: cleanup this mess
 //Fix capture FBO name convention
 bool RenderManager::initFBOs(){
-    numLights = currentScene->getLightCount();
+    numLights = currentScene->pointLightCount;
     pointLightShadowFBOs = new DepthBuffer[numLights];
     unsigned int shadowMapResolution = currentScene->getShadowRes();
 
@@ -282,9 +280,10 @@ void RenderManager::render(const unsigned int start){
 
     //Shadow mapping
     ImGui::Checkbox("Dynamic shadow Mapping", &hasMoved);
+    
     if(hasMoved){
         //Populating depth cube maps for the point lights
-        for (unsigned int i = 0; i < 4; ++i){
+        for (unsigned int i = 0; i < currentScene->pointLightCount; ++i){
             pointLightShadowFBOs[i].bind();
             currentScene->drawPointLightShadow(shaderAtlas[7], i, pointLightShadowFBOs[i].depthMap);
         }

@@ -9,7 +9,7 @@
         "pbr": false,
         "material": "",
         "position": [0.0, 0.0, 0.0],
-        "rotation": [90.0, 0.0, 0.0, 1.0],
+        "rotation": [90.0, 1.0, 0.0, 0.0],
         "scaling" : [1.0, 1.0, 1.0]
     }],
     "directionalLight": {
@@ -22,7 +22,7 @@
         "strength": 1.0,
         "zNear": 1.0,
         "zFar": 700.0,
-        "orthoSize": 100.0,
+        "orthoSize": 200.0,
         "shadowRes": 2048
     },
     "pointLights":[{

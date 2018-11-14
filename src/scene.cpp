@@ -311,10 +311,6 @@ Camera* Scene::getCurrentCamera(){
     return &mainCamera;
 }
 
-unsigned int Scene::getLightCount(){
-    return pointLightCount;
-}
-
 unsigned int Scene::getShadowRes(){
     return dirLight.shadowRes;
 }

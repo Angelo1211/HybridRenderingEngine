@@ -161,6 +161,9 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
             if(type == aiTextureType_NORMALS){
                 textures.push_back(0);
             }
+            if(type == aiTextureType_UNKNOWN){
+                textures.push_back(0);
+            }
         }
     }
 

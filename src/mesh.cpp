@@ -20,6 +20,12 @@ void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured)
             glBindTexture(GL_TEXTURE_2D, textures[1]);
 
             //Normals
+            if (textures[2] == 0){
+                shader.setBool("normalMapped", false);
+            }
+            else{
+                shader.setBool("normalMapped", true);
+            }
             glActiveTexture(GL_TEXTURE2);
             shader.setInt("normalsMap", 2);
             glBindTexture(GL_TEXTURE_2D, textures[2]);
@@ -29,7 +35,7 @@ void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured)
             shader.setInt("lightMap", 3);
             glBindTexture(GL_TEXTURE_2D, textures[3]);
 
-            //Ambient Oclussion
+            //Metal / Roughness
             glActiveTexture(GL_TEXTURE4);
             shader.setInt("metalRoughMap", 4);
             glBindTexture(GL_TEXTURE_2D, textures[4]);
