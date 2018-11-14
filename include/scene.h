@@ -75,6 +75,7 @@ class Scene{
         void loadSceneModels(const json &sceneConfigJson);
         void loadSkyBox(const json &sceneConfigJson);
         void loadLights(const json &sceneConfigJson);
+        void loadCamera(const json &sceneConfigJson);
         void generateEnvironmentMaps();
         
         //Finds objects that the camera can see

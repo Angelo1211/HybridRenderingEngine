@@ -12,6 +12,9 @@
         "rotation": [90.0, 1.0, 0.0, 0.0],
         "scaling" : [1.0, 1.0, 1.0]
     }],
+    "camera":{
+        "speed": 0.005
+    },
     "directionalLight": {
         "ambient": 0.02,
         "diffuse": 1.0,

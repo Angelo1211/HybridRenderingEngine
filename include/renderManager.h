@@ -42,7 +42,8 @@ class RenderManager{
         void buildRenderQueue();
 
         //Todo:: move shaders to this to scene class?
-        Shader *shaderAtlas[10]; //The number is kind of arbitrary for now
+        const static unsigned int numShaders = 10; //The number is kind of arbitrary for now
+        Shader *shaderAtlas[numShaders]; 
 
 
         //Pointers to data important for rendering
@@ -54,7 +55,6 @@ class RenderManager{
         //Rendering miscs
         bool hasMoved = true;
         Quad canvas;
-
 
         //Light initialization values
         const unsigned int maxLights = 10000; // pretty overkill for sponza, but ok for testing

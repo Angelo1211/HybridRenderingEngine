@@ -208,7 +208,6 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
         ImGui::SliderFloat("BoxSize", &dirLight.orthoBoxSize, 0.1f, 500.0f);
         ImGui::SliderFloat("Distance", &dirLight.distance, 0.1f, 500.0f);
         ImGui::SliderFloat3("Direction", (float*)&dirLight.direction, -5.0f, 5.0f);
-        ImGui::InputFloat3("Camera Position", (float*)&mainCamera.position);
     }
 
     mainSceneShader->use();
@@ -346,10 +345,13 @@ bool Scene::loadContent(){
         printf("Loading skybox...\n");
         loadSkyBox(configJson);
 
-        printf("Loading light data...\n");
+        printf("Loading lights...\n");
         loadLights(configJson);
 
-        printf("Generating environment Maps...\n");
+        printf("Loading camera...\n");
+        loadCamera(configJson);
+
+        printf("Generating environment maps...\n");
         generateEnvironmentMaps();
 
         printf("Reticulating splines...\n");
@@ -511,6 +513,11 @@ void Scene::generateEnvironmentMaps(){
     irradianceMap.width = 32;
     irradianceMap.height = 32;
     irradianceMap.generateCubeMap(irradianceMap.width, irradianceMap.height, HDR_MAP);
+}
+
+void Scene::loadCamera(const json &sceneConfigJson){
+    json cameraSettings = sceneConfigJson["camera"];
+    mainCamera.camSpeed = (float)cameraSettings["speed"];
 }
 //-------------------------------------------------------------
 //TODO TODO TODO TODO TODO TODO TODO

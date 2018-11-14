@@ -209,13 +209,9 @@ bool RenderManager::loadShaders(){
 }
 
 void RenderManager::shutDown(){
-    delete shaderAtlas[0];
-    delete shaderAtlas[1];
-    delete shaderAtlas[2];
-    delete shaderAtlas[3];
-    delete shaderAtlas[4];
-    delete shaderAtlas[5];
-    delete shaderAtlas[6];
+    for(int i = 0; i < numShaders; i++){
+        delete shaderAtlas[i];
+    }
 
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
@@ -295,6 +291,10 @@ void RenderManager::render(const unsigned int start){
 
     //Preps all the items that will be drawn in the scene
     buildRenderQueue();
+
+    //Camera controls
+    ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position);
+    ImGui::SliderFloat("Movement speed", &sceneCamera->camSpeed, 0.005f, 1.0f);
 
     //1.1- Multisampled Depth pre-pass
     multiSampledFBO.bind();
