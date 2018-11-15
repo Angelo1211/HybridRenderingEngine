@@ -1,16 +1,16 @@
 {
     "sceneID": "pbrTest",
-    "skybox": {"id": "catwalk",
+    "skybox": {"id": "barcelona",
                "hdr": true,
                "resolution": 512
     },
     "models": [{
-        "mesh": "WaterBottle.gltf",
+        "mesh": "MetalRoughSpheres.gltf",
         "pbr": false,
         "material": "",
         "position": [0.0, 0.0, 0.0],
-        "rotation": [0.0, 1.0, 0.0, 0.0],
-        "scaling" : [20.0, 20.0, 20.0]
+        "rotation": [90.0, 1.0, 0.0, 0.0],
+        "scaling" : [1.0, 1.0, 1.0]
     }],
     "camera":{
         "speed": 0.005
