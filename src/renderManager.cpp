@@ -339,6 +339,7 @@ void RenderManager::render(const unsigned int start){
     // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     //4-Light culling
+
     cullLightsAABB->use();
     cullLightsAABB->setMat4("viewMatrix", sceneCamera->viewMatrix);
     glDispatchCompute(1, 1, 6);
@@ -346,9 +347,10 @@ void RenderManager::render(const unsigned int start){
 
     //4 - Actual shading
     //4.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
-    glDepthFunc(GL_EQUAL);
     // glDepthFunc(GL_EQUAL);
+    glDepthFunc(GL_LEQUAL);
     glDepthMask(false);
+    // glDepthMask(true);
     currentScene->drawFullScene(shaderAtlas[1], shaderAtlas[2]);
 
     //4.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing

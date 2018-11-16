@@ -5,7 +5,7 @@
 // wS = world Space
 // tS = tangent Space
 
-layout(early_fragment_tests) in;
+// layout(early_fragment_tests) in;
 
 out vec4 FragColor;
 
@@ -114,13 +114,21 @@ float geometrySmith(float nDotV, float nDotL, float rough);
 
 void main(){
     //Texture Reads
-    vec3 albedo     =  texture(albedoMap, fs_in.texCoords).rgb;
+    // vec3 albedo     =  texture(albedoMap, fs_in.texCoords).rgb;
+    vec4 color      =  texture(albedoMap, fs_in.texCoords).rgba;
     vec3 emissive   =  texture(emissiveMap, fs_in.texCoords).rgb;
     float ao        =  texture(lightMap, fs_in.texCoords).r;
     vec2 metalRough =  texture(metalRoughMap, fs_in.texCoords).bg;
     float metallic  =  metalRough.x;
     float roughness =  metalRough.y;
 
+    vec3 albedo = color.rgb;
+    float alpha = color .a;
+
+    if(alpha < 0.5){
+        discard;
+    }
+    
     //Normal mapping
     vec3 norm = vec3(0.0);
     if(normalMapped){

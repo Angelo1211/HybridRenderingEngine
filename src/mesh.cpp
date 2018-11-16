@@ -8,12 +8,11 @@
 #include <string>
 
 void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured){
+        //Diffuse
+        glActiveTexture(GL_TEXTURE0);
+        shader.setInt("albedoMap", 0);
+        glBindTexture(GL_TEXTURE_2D, textures[0]);
     if(textured){
-            //Diffuse
-            glActiveTexture(GL_TEXTURE0);
-            shader.setInt("albedoMap", 0);
-            glBindTexture(GL_TEXTURE_2D, textures[0]);
-
             //Emissive
             glActiveTexture(GL_TEXTURE1);
             shader.setInt("emissiveMap", 1);
