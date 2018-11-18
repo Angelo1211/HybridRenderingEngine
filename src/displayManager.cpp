@@ -1,7 +1,9 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-05
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-05 
+*/
 
 //Includes
 #include "displayManager.h"
@@ -15,8 +17,7 @@
 DisplayManager::DisplayManager(){}
 DisplayManager::~DisplayManager(){}
 
-//Initializes the window and obtains the surface on which we draw.
-//Also first place where SDL and the OpenGL Context is initialized.
+// Initialization sequence of all rendering related libraries such as SDL, GLAD and ImGUI.
 bool DisplayManager::startUp(){
     bool success = true;
     if( !startSDL() ){
@@ -38,12 +39,6 @@ bool DisplayManager::startUp(){
                     if( !createImGuiContext()){
                         success = false;
                     }
-                    else{
-                        //Imgui first frame setup
-                        ImGui_ImplOpenGL3_NewFrame();
-                        ImGui_ImplSDL2_NewFrame(mWindow);
-                        ImGui::NewFrame();
-                    }
                 }
             }
         }
@@ -51,15 +46,18 @@ bool DisplayManager::startUp(){
     return success;
 }
 
-//Closes down the opengl context and sdl, also destroys window.
+//Closes down all contexts and subsystems in the reverse initialization order
 void DisplayManager::shutDown(){
     ImGui::EndFrame();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+
     SDL_GL_DeleteContext(mContext); 
+
     SDL_DestroyWindow(mWindow);
     mWindow = nullptr;
+
     SDL_Quit();
 }
 
@@ -81,9 +79,10 @@ void DisplayManager::swapDisplayBuffer(){
     ImGui::NewFrame();
 }
 
+//Binding the display framebuffer for drawing and clearing it before rendering
 void DisplayManager::bind(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -96,7 +95,7 @@ bool DisplayManager::startSDL(){
     return true;
 }
 
-//Entry point to OpenGL
+//Loads the openGL library and sets the attributes of the future OpenGL context 
 bool DisplayManager::startOpenGL(){
     if(SDL_GL_LoadLibrary(NULL) != 0 ){
         printf("Failed to initialize OpenGL. Error: %s\n", SDL_GetError() );
@@ -109,7 +108,7 @@ bool DisplayManager::startOpenGL(){
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
         // No point in having a deplth buffer if you're using the default 
-        // buffer for post processing
+        // buffer only for post processing
         // SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
         //Also set the default buffer to be sRGB 
@@ -119,7 +118,8 @@ bool DisplayManager::startOpenGL(){
     return true;
 }
 
-//TODO
+//Initializes SDL2 window object with the given width and heigh and marks it as
+// an openGL enabled window;
 bool DisplayManager::createWindow(){
     mWindow = SDL_CreateWindow( "Hybrid Renderering Engine", 
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
@@ -131,7 +131,13 @@ bool DisplayManager::createWindow(){
     return true;
 }
 
-//Todo
+/* 
+1. Creates the OpenGL context using SDL
+2. Inits GLAD functionality
+3. Prints some vendor information
+4. Sets some more GL context stuff  
+5. Sets the glViewport to be the same size as the SDL window
+ */
 bool DisplayManager::createGLContext(){
     mContext = SDL_GL_CreateContext(mWindow);
     if(mContext == nullptr){
@@ -144,18 +150,19 @@ bool DisplayManager::createGLContext(){
             return false;
         }
         else{
-            //Vendor Information
+            //Printing some vendor Information
             printf("Vendor:   %s\n", glGetString(GL_VENDOR));
             printf("Renderer: %s\n", glGetString(GL_RENDERER));
             printf("Version:  %s\n", glGetString(GL_VERSION));
 
             //Init GL context settings
             SDL_GL_SetSwapInterval(0);
-            // glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
             glEnable(GL_MULTISAMPLE);
             glEnable(GL_FRAMEBUFFER_SRGB);
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+            //Setting the glViewport to be the size of the SDL window
             int w, h;
             SDL_GetWindowSize(mWindow, &w, &h);
             glViewport(0, 0, w, h);
@@ -164,6 +171,8 @@ bool DisplayManager::createGLContext(){
     }
 }
 
+// Inits our GUI library and calls all init functions related to configuring it for use
+// in OpenGL3+ and SDL2
 bool DisplayManager::createImGuiContext(){
     ImGuiContext * mGuiContext = ImGui::CreateContext();
     if( mGuiContext == nullptr){
@@ -171,9 +180,15 @@ bool DisplayManager::createImGuiContext(){
         return false;
     }
     else{
+        //Init and configure for OpenGL and SDL
         ImGui_ImplSDL2_InitForOpenGL(mWindow, mContext);
         ImGui_ImplOpenGL3_Init(glsl_version);
+
+        //Imgui first frame setup
         ImGui::StyleColorsDark();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame(mWindow);
+        ImGui::NewFrame();
         return true;
     }
 }

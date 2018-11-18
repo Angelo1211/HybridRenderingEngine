@@ -1,7 +1,9 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-07-11
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-11
+*/
 
 //Headers
 #include "inputManager.h"
@@ -15,22 +17,21 @@
 InputManager::InputManager(){}
 InputManager::~InputManager(){}
 
+//Simply fetches the current scene's camera
 bool InputManager::startUp(SceneManager sceneManager){
     sceneController = &sceneManager;
     sceneCamera = (sceneController->getCurrentScene()->getCurrentCamera());
     
-    //Only really care about relative mouse motion because we're building a free camera
-    // bool success = !SDL_SetRelativeMouseMode(SDL_TRUE);
-    // return success;
     return true;
 }
 
+//Nothing to do yet
 void InputManager::shutDown(){
-    //Nothing to do yet
 }
 
-//Goes through the list of every event that has occurred since the last call
-//of this function and either performs and exit or sends the result to the even handler
+/*
+1. 
+*/
 void InputManager::processInput(bool &done, unsigned int deltaT){
     SDL_Event event;
     ImGuiIO& io = ImGui::GetIO();

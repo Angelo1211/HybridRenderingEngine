@@ -1,30 +1,30 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-05
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-05 
+*/
 
 //Headers
 #include "engine.h"
 #include "SDL.h"
-#include <math.h>
 #include <stdio.h>
-
-Engine Engine::instance_;
 
 //Dummy constructors and destructors
 Engine::Engine(){}
 Engine::~Engine(){}
 
 bool Engine::startUp(){
-    unsigned int start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
+    unsigned int start = SDL_GetTicks(); //Could probably be its own timer class 
     bool success = true;
+
     //Start up of all SDL and opengl Display related content
     if( !gDisplayManager.startUp() ){
         success = false;
         printf("Failed to initialize window display manager.\n");
     }
     else{
-        // Initis scene manager and loads default scene
+        // Inits scene manager and loads default scene
         if( !gSceneManager.startUp() ){
             success = false;
             printf("Failed to initialize scene manager.\n");
@@ -33,7 +33,6 @@ bool Engine::startUp(){
             //Initializes rendererer manager, which is in charge of high level
             //rendering tasks (render queue, locating render scene etc)
             //It gets passed references to the other major subsystems for use later
-            //on setup of the render queue.
             if( !gRenderManager.startUp(gDisplayManager, gSceneManager) ){
                 success = false;
                 printf("Failed to initialize Render manager.\n");
@@ -49,6 +48,8 @@ bool Engine::startUp(){
             }
         }
     }
+
+    //Want to keep track of how much time the whole loading process took
     unsigned int deltaT = SDL_GetTicks() - start;
     printf("Load time: %ums\n",deltaT);
     return success;
@@ -71,7 +72,8 @@ void Engine::shutDown(){
 
 //Runs main application loop 
 void Engine::run(){
-    //Main flags
+
+    //Early exit or other shared data flags
     bool done = false;
 
     //Iteration and time keeping counters
@@ -83,7 +85,7 @@ void Engine::run(){
 
     while(!done){
         ++count;
-        start = SDL_GetTicks(); //Could probably be its own timer class, but we're keeping things simple here
+        start = SDL_GetTicks(); 
         
         //Handle all user input
         //Any changes to the scene are directly sent to the respective objects in
@@ -95,13 +97,12 @@ void Engine::run(){
 
         gRenderManager.render(start);
 
-        //Monitoring time taken per frame to gauge engine performance
+        //Obtaining deltaT for any 
         deltaT = SDL_GetTicks() - start;
-        // printf("%2.1d: Frame elapsed time (ms):%d\n",count, deltaT);
         total += deltaT;
-        // if(count == 500) break;
-        // break;
     }
+    
+    //Average performance over the whole loop (excludes load time costs)
     printf("\nPerformance Stats:\n------------------\n");
     printf("Average frame time over %2.1d frames:%2.fms.\n\n", count, total/(float)count);
     printf("Closing down engine...\n");
