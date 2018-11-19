@@ -49,10 +49,8 @@ struct Frustum{
         FARP
     };
 
-    float fov, nearPlane, farPlane, AR, nearH, nearW;
     Plane pl[6];
-
-    // Frustum(float ratio): fov(60.0f), nearPlane(1.0f), farPlane(300.0f), AR(ratio){}
+    float fov, nearPlane, farPlane, AR, nearH, nearW;
 
     void setCamInternals();
     void updatePlanes(glm::mat4 &viewMat, const glm::vec3 &cameraPos);

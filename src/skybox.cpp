@@ -1,7 +1,9 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-24
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-24
+*/
 
 #include "skybox.h"
 #include "glad/glad.h"

@@ -1,7 +1,9 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-10
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-10
+*/
 
 #include "geometry.h"
 #include <limits>
@@ -31,40 +33,11 @@ void AABox::buildAABB(const Mesh &mesh){
     minPoints = minVals;
     maxPoints = maxVals;
 }
-//TODO TODO TODO
+
 //Update AABB from rotated AABB 
+//STUB:: the update function is not currently implemented
+//Waiting on the mesh/model rewrite
 void AABox::update(const glm::mat4 &modelMatrix){
-    glm::vec3 minVals(std::numeric_limits<float>::max());
-    glm::vec3 maxVals(std::numeric_limits<float>::min());
-    // glm::vec3 vertices[8];
-
-    // //Reconstructing the 8 vertices of an AABB from the min and max valuesin the struct
-    // vertices[0] = glm::vec3(minPoints.x, minPoints.y, minPoints.z);
-    // vertices[1] = glm::vec3(maxPoints.x, minPoints.y, minPoints.z);
-    // vertices[2] = glm::vec3(minPoints.x, maxPoints.y, minPoints.z);
-    // vertices[3] = glm::vec3(maxPoints.x, maxPoints.y, minPoints.z);
-    // vertices[4] = glm::vec3(minPoints.x, minPoints.y, maxPoints.z);
-    // vertices[5] = glm::vec3(maxPoints.x, minPoints.y, maxPoints.z);
-    // vertices[6] = glm::vec3(minPoints.x, maxPoints.y, maxPoints.z);
-    // vertices[7] = glm::vec3(maxPoints.x, maxPoints.y, maxPoints.z);
-
-    // //Iterating through every vertx in the mesh
-    // for(int i = 0; i < 8; ++i){
-    //     //Checking the current vertex for all axes
-    //     for(int ax = 0; ax < 3; ++ax){
-    //         //Setting max values
-    //         if(vertices[i].data[ax] > maxVals.data[ax]){
-    //             maxVals.data[ax] = vertices[i].data[ax];
-    //         }
-    //         //Setting min values
-    //         if(vertices[i].data[ax] < minVals.data[ax]){
-    //             minVals.data[ax] = vertices[i].data[ax];
-    //         }
-    //     }
-    // }
-
-    // minPoints = minVals;
-    // maxPoints = maxVals;
 }
 
 
@@ -75,6 +48,7 @@ float Plane::distance(const glm::vec3 &points){
     return glm::dot(normal, points) + D;
 }
 
+//Setup function using a normal and a point on the plane
 void Plane::setNormalAndPoint(const glm::vec3 &n, const glm::vec3 &p0){
     normal = n;
     D = -glm::dot(n, p0);

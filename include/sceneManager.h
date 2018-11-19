@@ -1,13 +1,14 @@
 #ifndef SCENEMANAGER_H
 #define SCENEMANAGER_H
 
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-12
-// PURPOSE      : TODO
-// ===============================
-// SPECIAL NOTES: TODO update comments
-// ===============================
+/*
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-12
+PURPOSE      : Manage the loading and unloading of scenes.
+SPECIAL NOTES: Currently scene switching is disabled. Re-enabling is a high-priority feature.
+*/
 
 //Headers
 #include "scene.h"
@@ -29,7 +30,6 @@ class SceneManager{
         void update(unsigned int deltaT);
 
         //Called by the rendermanager to prep the render queue 
-        //Also called by the input manager as a precaution to avoid dangling pointers
         Scene* getCurrentScene();
 
     private:

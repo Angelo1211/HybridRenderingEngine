@@ -1,13 +1,14 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-12
-// PURPOSE      : TODO
-// ===============================
-// SPECIAL NOTES: TODO update comments
-// ===============================
+/*
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-12
+PURPOSE      : 
+SPECIAL NOTES: 
+*/
 
 //Headers
 #include <vector>
@@ -23,7 +24,7 @@ using json = nlohmann::json;
 
 class Scene{
     public:
-        //Builds scene using path to folder containing content and txt setup file
+        //Builds scene using a string to a JSON scene description file
         Scene(const std::string &sceneFolder);
         ~Scene();
 
@@ -80,7 +81,8 @@ class Scene{
         void loadCamera(const json &sceneConfigJson);
         void generateEnvironmentMaps();
         
-        //Finds objects that the camera can see
+        //Builds the list of meshes that are visible
+        //Currently disabled working for rework of model/mesh
         void frustrumCulling();
 };
 

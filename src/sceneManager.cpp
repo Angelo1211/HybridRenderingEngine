@@ -1,7 +1,9 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-12
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-12
+*/
 
 //Headers
 #include "sceneManager.h"
@@ -10,14 +12,13 @@
 SceneManager::SceneManager(){}
 SceneManager::~SceneManager(){}
 
-//Starts up the scene manager and loads the default scene 
-//If for whatever reason the scene could not load any model, or there are none defined
-//It just quits early.
+//Starts up the scene manager and loads the default scene. If for whatever reason
+// the scene could not load any model, or there are none defined it quits early.
 bool SceneManager::startUp(){
     // currentSceneID = "pbrTest";
     currentSceneID = "Sponza";
     if (!loadScene(currentSceneID)){
-        printf("Could not load default scene. No models succesfully loaded!\n");
+        printf("Could not load default sponza scene. No models succesfully loaded!\n");
         return false;
     }
     return true;

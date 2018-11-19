@@ -1,12 +1,15 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-10-04
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-10-04
+*/
 
 #include "debugUtils.h"
 #include <cstdio>
 #include <string>
 
+//Determine what OpenGL error you are facing specifically
 GLenum HREUtils::glCheckError_(const char *file, int line){
     GLenum errorCode;
     while((errorCode = glGetError()) != GL_NO_ERROR){
@@ -25,21 +28,24 @@ GLenum HREUtils::glCheckError_(const char *file, int line){
     return errorCode;
 }
 
-// //Finding the max sizes for compute units
-// int work_grp_cnt[3];
+//Finding the max sizes for compute units
+void HREUtils::printComputeSizes(){
+    int work_grp_cnt[3];
+    int work_grp_size[3];
 
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
+    //Counts
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
 
-// printf("max global (total) work group size x:%i y:%i z:%i\n",
-//        work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
+    //Sizes
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
 
-// int work_grp_size[3];
+    printf("max global (total) work group size x:%i y:%i z:%i\n",
+        work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
 
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
-// glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
-
-// printf("max local (in one shader) work group sizes x:%i y:%i z:%i\n",
-//        work_grp_size[0], work_grp_size[1], work_grp_size[2]);
+    printf("max local (in one shader) work group sizes x:%i y:%i z:%i\n",
+        work_grp_size[0], work_grp_size[1], work_grp_size[2]);
+}
