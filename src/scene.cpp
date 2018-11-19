@@ -30,13 +30,14 @@ Scene::~Scene(){
             delete models;
         }
         delete [] pointLights;
+        delete  mainCamera;
     }
 }
 
 //Update Order is critical for correct culling
 void Scene::update(unsigned int deltaT){
     visibleModels.clear();
-    mainCamera.update(deltaT);
+    mainCamera->update(deltaT);
     // for(int i=0; i < lightCount; ++i){
     //     lights[i].update(deltaT);
     // }
@@ -111,7 +112,7 @@ void Scene::drawGeometry(Shader *gBufferShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 M   = glm::mat4(1.0);
-    glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
+    glm::mat4 VP  = mainCamera->projectionMatrix * mainCamera->viewMatrix;
 
     gBufferShader->use();
 
@@ -146,7 +147,7 @@ void Scene::setupLightingShader(Shader *lightShader){
         ImGui::SliderFloat("BoxSize", &dirLight.orthoBoxSize, 0.1f, 500.0f);
         ImGui::SliderFloat("Distance", &dirLight.distance, 0.1f, 500.0f);
         ImGui::SliderFloat3("Direction", (float*)&dirLight.direction, -5.0f, 5.0f);
-        ImGui::InputFloat3("Camera Position", (float*)&mainCamera.position);
+        ImGui::InputFloat3("Camera Position", (float*)&mainCamera->position);
     }
 
     //Setting up directional light uniforms
@@ -187,15 +188,15 @@ void Scene::setupLightingShader(Shader *lightShader){
         lightShader->setFloat("far_plane", light->zFar);
     }
     //Camera Uniforms
-    lightShader->setVec3("cameraPos_wS", mainCamera.position);
+    lightShader->setVec3("cameraPos_wS", mainCamera->position);
 }
 
 void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 M   = glm::mat4(1.0);
-    glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
-    glm::mat4 VPCubeMap = mainCamera.projectionMatrix *glm::mat4(glm::mat3(mainCamera.viewMatrix));
+    glm::mat4 VP  = mainCamera->projectionMatrix * mainCamera->viewMatrix;
+    glm::mat4 VPCubeMap = mainCamera->projectionMatrix *glm::mat4(glm::mat3(mainCamera->viewMatrix));
 
     //Just to avoid magic constants
     const unsigned int numTextures =  5;
@@ -214,9 +215,9 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
     mainSceneShader->setVec3("dirLight.direction", dirLight.direction);
     mainSceneShader->setVec3("dirLight.color",   dirLight.strength * dirLight.color);
     mainSceneShader->setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
-    mainSceneShader->setVec3("cameraPos_wS", mainCamera.position);
-    mainSceneShader->setFloat("zFar", mainCamera.cameraFrustrum.farPlane);
-    mainSceneShader->setFloat("zNear", mainCamera.cameraFrustrum.nearPlane);
+    mainSceneShader->setVec3("cameraPos_wS", mainCamera->position);
+    mainSceneShader->setFloat("zFar", mainCamera->cameraFrustum.farPlane);
+    mainSceneShader->setFloat("zNear", mainCamera->cameraFrustum.nearPlane);
 
     if(ImGui::CollapsingHeader("PointLights", ImGuiTreeNodeFlags_DefaultOpen)){
         for (unsigned int i = 0; i < pointLightCount; ++i)
@@ -292,7 +293,7 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
 void Scene::drawDepthPass(Shader *depthPassShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);
-    glm::mat4 VP  = mainCamera.projectionMatrix * mainCamera.viewMatrix;
+    glm::mat4 VP  = mainCamera->projectionMatrix * mainCamera->viewMatrix;
 
     glColorMask(0,0,0,0);
     //Drawing every object into the depth buffer
@@ -318,7 +319,7 @@ std::vector<Model*>* Scene::getVisiblemodels(){
 }
 
 Camera* Scene::getCurrentCamera(){
-    return &mainCamera;
+    return mainCamera;
 }
 
 unsigned int Scene::getShadowRes(){
@@ -350,6 +351,9 @@ bool Scene::loadContent(){
     //now we can parse the rest of the file "safely"
     //TODO: more safety checks
     else{
+        printf("Loading camera...\n");
+        loadCamera(configJson);
+
         printf("Loading models...\n");
         loadSceneModels(configJson);
 
@@ -359,13 +363,11 @@ bool Scene::loadContent(){
         printf("Loading lights...\n");
         loadLights(configJson);
 
-        printf("Loading camera...\n");
-        loadCamera(configJson);
-
         printf("Generating environment maps...\n");
         generateEnvironmentMaps();
 
         printf("Reticulating splines...\n");
+
         //lastly we check if the scene is empty and return
         printf("Loading Complete!...\n");
         return !modelsInScene.empty();
@@ -546,7 +548,19 @@ void Scene::generateEnvironmentMaps(){
 
 void Scene::loadCamera(const json &sceneConfigJson){
     json cameraSettings = sceneConfigJson["camera"];
-    mainCamera.camSpeed = (float)cameraSettings["speed"];
+    float speed = (float)cameraSettings["speed"];
+    float sens  = (float)cameraSettings["mouseSens"];
+    float fov   = (float)cameraSettings["fov"];
+    float nearP = (float)cameraSettings["nearPlane"];
+    float farP  = (float)cameraSettings["farPlane"];
+
+    json position = cameraSettings["position"];
+    glm::vec3 pos = glm::vec3((float)position[0], (float)position[1], (float)position[2]);
+
+    json target   = cameraSettings["target"];
+    glm::vec3 tar = glm::vec3((float)target[0], (float)target[1], (float)target[2]);
+
+    mainCamera = new Camera(tar, pos, fov, speed, sens, nearP, farP);
 }
 //-------------------------------------------------------------
 //TODO TODO TODO TODO TODO TODO TODO

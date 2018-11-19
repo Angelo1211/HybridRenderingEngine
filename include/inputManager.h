@@ -34,10 +34,9 @@ class InputManager{
     private:
         SceneManager *sceneController;
         Camera *sceneCamera;
-        
-        //Specific event type handlers
+
+        //Handle all events in one convenient function
         void handleEvent(SDL_Event * event, bool &done, unsigned int deltaT);
-        void handleKeyboardEvent(SDL_Event * event, bool &done, unsigned int deltaT);
 };
 
 

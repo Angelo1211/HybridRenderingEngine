@@ -58,8 +58,8 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
             //TODO:: not everything should be here
             computeGridAABB->use();
-            computeGridAABB->setFloat("zNear", sceneCamera->cameraFrustrum.nearPlane);
-            computeGridAABB->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
+            computeGridAABB->setFloat("zNear", sceneCamera->cameraFrustum.nearPlane);
+            computeGridAABB->setFloat("zFar", sceneCamera->cameraFrustum.farPlane);
             glDispatchCompute(gridSizeX, gridSizeY, gridSizeZ);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -103,8 +103,8 @@ bool RenderManager::initSSBOs(){
     sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
     // sizeY =  (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)gridSizeY);
 
-    float zFar    =  sceneCamera->cameraFrustrum.farPlane;
-    float zNear   =  sceneCamera->cameraFrustrum.nearPlane;
+    float zFar    =  sceneCamera->cameraFrustum.farPlane;
+    float zNear   =  sceneCamera->cameraFrustum.nearPlane;
 
     // tileNumZ = (unsigned int)std::floorf( num / denom);
 

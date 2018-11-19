@@ -55,6 +55,8 @@ class Scene{
         Skybox mainSkyBox;
         unsigned int pointLightCount;
 
+        Camera *mainCamera;
+
     private:
         const std::string folderPath = "../assets/scenes/";
         const std::string fileExtension = ".json";
@@ -62,7 +64,6 @@ class Scene{
         std::string sceneID;
         bool missingScene;
 
-        Camera mainCamera;
         DirectionalLight dirLight;
 
         PointLight *pointLights;

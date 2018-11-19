@@ -13,7 +13,12 @@
         "scaling" : [1.0, 1.0, 1.0]
     }],
     "camera":{
-        "speed": 0.005
+        "speed": 0.005,
+        "fov": 60.0,
+        "nearPlane": 1.0,
+        "farPlane": 300.0,
+        "position": [0.0, 0.0, 0.0],
+        "target": [1.0,0.0,0.0]
     },
     "directionalLight": {
         "ambient": 0.02,

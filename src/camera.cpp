@@ -1,26 +1,24 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-07-10
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-11 
+*/
 
 //Headers
 #include "camera.h"
 #include "SDL.h"
 
-Camera::Camera(){
-    front = glm::normalize(target - position);
-    side = glm::normalize(glm::cross(front, up));
-    viewMatrix = glm::lookAt(position, target, up);
-    projectionMatrix = glm::perspective(glm::radians(cameraFrustrum.fov), cameraFrustrum.AR, cameraFrustrum.nearPlane, cameraFrustrum.farPlane);
-    cameraFrustrum.setCamInternals();
-    cameraFrustrum.updatePlanes(viewMatrix, position);
-}
-
-//Updates target and position based on camera movement mode.
+//Updates the cameras orientation and position based on the input from the user
 ///Also updates view matrix and projection matrix for rendering
 void Camera::update(unsigned int deltaT){
     float speed = camSpeed * deltaT;
-    for(char x : set){
+
+    //We apply the rotation first
+    updateOrientation();
+
+    //Then translate
+    for(char x : activeMoveStates){
         switch (x){
             case 'w':
                 position += front * speed;
@@ -47,25 +45,43 @@ void Camera::update(unsigned int deltaT){
             break;
         }
     }
+
+    //And we recalculate the new view and projection matrices for rendering
     target = position + front;
     viewMatrix = glm::lookAt(position, target, up);
-    cameraFrustrum.updatePlanes(viewMatrix, position);
-    projectionMatrix = glm::perspective(glm::radians(cameraFrustrum.fov), cameraFrustrum.AR, cameraFrustrum.nearPlane, cameraFrustrum.farPlane);
+    cameraFrustum.updatePlanes(viewMatrix, position);
+    projectionMatrix = glm::perspective(glm::radians(cameraFrustum.fov), cameraFrustum.AR, cameraFrustum.nearPlane, cameraFrustum.farPlane);
 }
 
-//View frustrum culling using a models AAB
+//View frustrum culling using a models AABB
 bool Camera::checkVisibility(AABox *bounds){
-    return cameraFrustrum.checkIfInside(bounds);
+    return cameraFrustum.checkIfInside(bounds);
 }
 
 //Used by input to reset camera to origin in case user loses their bearings
 void Camera::resetCamera(){
-    position = glm::vec3(0, 0, 8.0);
-    target   = glm::vec3(0, 0, 0 );
-    front    = glm::vec3(0, 0, -1);
-    side     = glm::cross(front, up);
-    radius   =   2;
-    pitch    =   0;
-    yaw      = -90;
-    period   =  30;
+    position = originalPosition;
+    target   = originalTarget;
+    front    = originalFront;
+    side     = originalSide;
+    pitch    = originalPitch;
+    yaw      = originalYaw;
+}
+
+//Transform from cartesian to spherical, used in the first setup of yaw and pitch
+//Since the incoming target and position values are being read from an unknown scene file
+float Camera::getPitch(glm::vec3 front){
+    return glm::degrees(glm::asin(front.y));
+}
+float Camera::getYaw(glm::vec3 front, float pitch){
+    return glm::degrees(glm::acos(front.x / cos(glm::radians(pitch))));
+}
+
+//Orient the front and side vectors based on the screen pitch and yaw values
+void Camera::updateOrientation(){
+    front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+    front.y = sin(glm::radians(pitch));
+    front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+    front = glm::normalize(front);
+    side  = glm::normalize(glm::cross(front, up));
 }

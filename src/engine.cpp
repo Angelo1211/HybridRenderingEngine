@@ -78,7 +78,7 @@ void Engine::run(){
 
     //Iteration and time keeping counters
     int count = 0;
-    unsigned int deltaT = 0;
+    unsigned int deltaT = SDL_GetTicks();
     unsigned int start = 0;;
     unsigned int total = 0;
     printf("Entered Main Loop!\n");
@@ -86,7 +86,7 @@ void Engine::run(){
     while(!done){
         ++count;
         start = SDL_GetTicks(); 
-        
+
         //Handle all user input
         //Any changes to the scene are directly sent to the respective objects in
         //the scene class. Also sets exit flag based on user input.

@@ -82,14 +82,14 @@ void Plane::setNormalAndPoint(const glm::vec3 &n, const glm::vec3 &p0){
 
 //-------------------------------FRUSTRUM------------------------------------//
 
-void Frustrum::setCamInternals(){
+void Frustum::setCamInternals(){
     float tanHalfFOV  =  (float)tan( glm::radians(fov/2.0f) );
     nearH = nearPlane * tanHalfFOV; //Half of the frustrum near plane height
     nearW = nearH * AR;
 }
 
 //Calculates frustrum planes in world space
-void Frustrum::updatePlanes(glm::mat4 &viewMat, const glm::vec3 &cameraPos){
+void Frustum::updatePlanes(glm::mat4 &viewMat, const glm::vec3 &cameraPos){
     setCamInternals();
     glm::vec3 X(viewMat[0][0], viewMat[0][1], viewMat[0][2]); //Side Unit Vector
     glm::vec3 Y(viewMat[1][0], viewMat[1][1], viewMat[1][2]); //Up Unit Vector
@@ -145,7 +145,7 @@ void Frustrum::updatePlanes(glm::mat4 &viewMat, const glm::vec3 &cameraPos){
 
 //False is fully outside, true if inside or intersects
 //based on iquilez method
-bool Frustrum::checkIfInside(AABox *box){
+bool Frustum::checkIfInside(AABox *box){
 
     //Check box outside or inside of frustrum
     for(int i =0; i < 6; ++i){
