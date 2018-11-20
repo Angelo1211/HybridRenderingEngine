@@ -15,6 +15,7 @@ SPECIAL NOTES:
 #include "model.h"
 #include "camera.h"
 #include "texture.h"
+#include "cubeMap.h"
 #include "skybox.h"
 #include "glm/glm.hpp"
 #include "nlohmann/json.hpp"
@@ -59,9 +60,6 @@ class Scene{
         Camera *mainCamera;
 
     private:
-        const std::string folderPath = "../assets/scenes/";
-        const std::string fileExtension = ".json";
-
         std::string sceneID;
         bool missingScene;
 
@@ -75,11 +73,11 @@ class Scene{
 
         //Scene loading
         bool loadContent();
-        void loadSceneModels(const json &sceneConfigJson);
+        void generateEnvironmentMaps();
         void loadSkyBox(const json &sceneConfigJson);
         void loadLights(const json &sceneConfigJson);
         void loadCamera(const json &sceneConfigJson);
-        void generateEnvironmentMaps();
+        void loadSceneModels(const json &sceneConfigJson);
         
         //Builds the list of meshes that are visible
         //Currently disabled working for rework of model/mesh

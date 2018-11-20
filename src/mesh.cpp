@@ -183,3 +183,75 @@ void Quad::drawDeffered(const unsigned int position,
 
     glBindVertexArray(0);
 }
+
+//----------------------------------------------------------------------------------------------------
+//Cube class 
+void Cube::setup(){
+    //This is here because I don't see the point to storing it after I've pushed it to the VBO
+    //so once this function is popped off the stack its gone positions
+    const float boxVertices[108] = {
+        -1.0f, 1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f, -1.0f,
+
+        -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f, 1.0f,
+        -1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,
+
+        -1.0f, 1.0f, -1.0f,
+        1.0f, 1.0f, -1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        -1.0f, 1.0f, 1.0f,
+        -1.0f, 1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f, 1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f, 1.0f,
+        1.0f, -1.0f, 1.0f};
+
+    //Generate Buffers
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    //Bind Vertex Array Object and VBO in correct order
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    //VBO initialization 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(boxVertices), &boxVertices, GL_STATIC_DRAW);
+
+    //Vertex position pointer init
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 *  sizeof(float), (void*)0);
+
+    //Unbinding VAO
+    glBindVertexArray(0);
+}
+
+void Cube::draw(){
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}

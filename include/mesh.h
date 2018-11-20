@@ -63,5 +63,11 @@ class Quad {
         unsigned int VAO, VBO;
 };
 
+struct Cube{
+    void setup();
+    void draw();
+    unsigned int VAO = 0, VBO;
+};
+
 
 #endif

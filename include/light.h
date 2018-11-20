@@ -1,6 +1,15 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
+/*
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-11-20
+PURPOSE      : 
+SPECIAL NOTES: 
+*/
+
 #include "glm/glm.hpp"
 
 struct BaseLight{

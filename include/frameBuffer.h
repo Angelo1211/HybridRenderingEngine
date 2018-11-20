@@ -12,6 +12,7 @@ kind of buffer. TODO?
 */
 
 #include "texture.h"
+#include "cubeMap.h"
 #include "glad/glad.h"
 
 struct ResolveBuffer;

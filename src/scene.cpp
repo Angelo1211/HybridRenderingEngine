@@ -13,6 +13,8 @@ DATE	     : 2018-09-12
 #include "imgui/imgui.h"
 
 Scene::Scene(const std::string &sceneName){
+    std::string folderPath = "../assets/scenes/";
+    std::string fileExtension = ".json";
     sceneID = sceneName;
     if( !FLOAD::checkFileValidity(folderPath + sceneName + fileExtension) ){
         //If you do not find the scene file set the quit flag to true 
@@ -340,6 +342,8 @@ bool Scene::checkIfEmpty(){
 //Config file parsing, gets all the important 
 bool Scene::loadContent(){
     //Parsing into Json file readable format
+    std::string folderPath = "../assets/scenes/";
+    std::string fileExtension = ".json";
     std::string sceneConfigFilePath = folderPath + sceneID + fileExtension;
     std::ifstream file(sceneConfigFilePath.c_str());
     json configJson;
@@ -360,6 +364,7 @@ bool Scene::loadContent(){
         loadSceneModels(configJson);
 
         printf("Loading skybox...\n");
+        CubeMap::cubeMapCube.setup();
         loadSkyBox(configJson);
 
         printf("Loading lights...\n");

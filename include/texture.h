@@ -1,54 +1,32 @@
 #ifndef TEXTURE_H 
 #define TEXTURE_H
 
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-15
-// PURPOSE      : TODO
-// ===============================
-// SPECIAL NOTES: TODO update comments
-// ===============================
+/*
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-15
+PURPOSE      : Load image textures to gpu memory and stored their ID along with their 
+               width and height.
+SPECIAL NOTES: Unify load api. Low priority. 
+*/
 
 //Includes
 #include <string>
 #include "shader.h"
 
-enum CubeMapType{
-    SHADOW_MAP,
-    HDR_MAP,
-    PREFILTER_MAP
-};
-
 struct Texture{
-    void setupTexture(const std::string &filePath, bool sRGB);
-    void setupHDRTexture(const std::string &filePath);
-    unsigned int  loadDSFile(char const* Filename);
-    unsigned int textureID;
+    void loadHDRTexture(const std::string &filePath);
+    unsigned int loadDDSTexture(char const* Filename);
+    void loadTexture(const std::string &filePath, bool sRGB);
+
+    //TextureID is zero only if the texture has not been initialized properly
+    //by OpenGl
+    unsigned int textureID = 0;
     int width, height, nComponents;
-    std::string type;
-    std::string path;
-};
 
-struct CubeMap : public Texture{
-    void loadCubeMap(const std::string &filePath);
-    void generateCubeMap(const int width, const int height, CubeMapType cubeType);
-    void convolveCubeMap(const unsigned int environmentMap, const unsigned int cubeVAO, Shader *convolveShader);
-    void preFilterCubeMap(const unsigned int environmentMap, const unsigned int cubeVAO,
-                          const unsigned int captureRBO,  Shader *filterShader);
-
-    const unsigned int numSidesInCube = 6;
-    unsigned int maxMipLevels;
-
-    //Order for this comes from the Opengl cubemap enums
-    const std::string fileHandleForFaces[6] = {
-        "right.jpg",
-        "left.jpg",
-        "top.jpg",
-        "bottom.jpg",
-        "front.jpg",
-        "back.jpg"
-    };
-
+    //Leftover from old non-pbr workflow. TODO:: cleanup and/or recuperate functionality
+    std::string type, path;
 };
 
 #endif

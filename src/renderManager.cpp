@@ -70,13 +70,12 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             //Cubemap convolution TODO:: Fix ugly function call
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
             unsigned int environmentID = currentScene->mainSkyBox.skyBoxCubeMap.textureID;
-            unsigned int cubeVAO       = currentScene->mainSkyBox.VAO;
-            currentScene->irradianceMap.convolveCubeMap(environmentID, cubeVAO, shaderAtlas[9]);
+            currentScene->irradianceMap.convolveCubeMap(environmentID, shaderAtlas[9]);
 
             //Cubemap prefiltering
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
             unsigned int captureRBO = captureFBOSmall.captureRBO;
-            currentScene->specFilteredMap.preFilterCubeMap(environmentID, cubeVAO, captureRBO, shaderAtlas[10]);
+            currentScene->specFilteredMap.preFilterCubeMap(environmentID, captureRBO, shaderAtlas[10]);
 
             //BRDF lookup texture
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);

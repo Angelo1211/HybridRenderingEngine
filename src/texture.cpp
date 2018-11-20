@@ -1,24 +1,35 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-15
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-15
+*/
 
+//Includes
 #include "texture.h"
 #include <glad/glad.h>
-#include <algorithm>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "gli/gli.hpp"
 #include "fileManager.h"
 
-void Texture::setupTexture(const std::string &filePath, bool sRGB){
+/* 
+The basic texture loading function. Deals with:
+1.- All textures that stb image can deal with except hdr 
+2.- DDS textures through gli
+3.- SRGB and non SRGB textures
+4.- R, RGB, RGBA texture types
+
+Textures generated here are mip-mapped and repeat
+*/
+void Texture::loadTexture(const std::string &filePath, bool sRGB){
     path = filePath;
     std::replace(path.begin(), path.end(), '\\', '/');
     std::string fileExtension = FLOAD::getFileExtension(filePath);
 
     //GLI path for dds and ktx files
     if( fileExtension == "dds"){
-        textureID = loadDSFile(path.c_str());
+        textureID = loadDDSTexture(path.c_str());
     }
     //STBI path for any other normal files
     else{
@@ -56,6 +67,7 @@ void Texture::setupTexture(const std::string &filePath, bool sRGB){
             glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
 
+            //MipMapped and repeating
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -70,7 +82,8 @@ void Texture::setupTexture(const std::string &filePath, bool sRGB){
     }
 }
 
-void Texture::setupHDRTexture(const std::string &filePath){
+//Currently only in use for equirectangular skybox maps
+void Texture::loadHDRTexture(const std::string &filePath){
     stbi_set_flip_vertically_on_load(true);
 
     float *data = stbi_loadf(filePath.c_str(), &width, &height, &nComponents, 0);
@@ -91,9 +104,10 @@ void Texture::setupHDRTexture(const std::string &filePath){
     stbi_image_free(data);
 }
 
-unsigned int Texture::loadDSFile(char const* Filename){
+//Handling other image types that stbi does not handle
+//Implementation taken from GLI example implementation files
+unsigned int Texture::loadDDSTexture(char const* Filename){
     gli::texture Texture = gli::load(Filename);
-    // Texture = gli::flip(Texture);
     if(Texture.empty())
         return 0;
 
@@ -208,169 +222,4 @@ unsigned int Texture::loadDSFile(char const* Filename){
         }
     }
     return TextureName;
-}
-
-void CubeMap::loadCubeMap(const std::string &folderPath){
-    std::string filePath = folderPath + "/";
-    unsigned int ID;    
-    glGenTextures(1, &ID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
-    
-    int width, height, nComponents;
-    for(unsigned int i = 0; i < numSidesInCube ; ++i ){
-        std::string currentFile = filePath + fileHandleForFaces[i];
-        unsigned char *data = stbi_load(currentFile.c_str(), &width, &height, &nComponents, 0);
-        if(data){
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-            0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
-        }
-        else
-        {
-            printf("Texture failed to load at path: %s \n", currentFile.c_str());
-            stbi_image_free(data);
-        }
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-
-    textureID = ID;
-    path = filePath;
-    type = "cubemap";
-}
-
-void CubeMap::generateCubeMap(const int width, const int height, CubeMapType cubeType){
-    unsigned int ID;
-    glGenTextures(1, &ID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
-
-    switch(cubeType){
-        case SHADOW_MAP:
-            for (unsigned int i = 0; i < numSidesInCube; ++i){
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                             0, GL_DEPTH_COMPONENT, width, height, 0,
-                             GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-            }
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        break;
-
-        case HDR_MAP:
-            for (unsigned int i = 0; i < numSidesInCube; ++i){
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                             0, GL_RGB32F,
-                             width, height, 0,
-                             GL_RGB, GL_FLOAT, NULL);
-            }
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        break;
-
-        case PREFILTER_MAP:
-            for (unsigned int i = 0; i < numSidesInCube; ++i){
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                             0, GL_RGB16F,
-                             width, height, 0,
-                             GL_RGB, GL_FLOAT, NULL);
-            }
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-            maxMipLevels = 5;
-        break;
-    }
-
-    textureID = ID;
-    path = "";
-    type = "cubemap";
-}
-
-void CubeMap::convolveCubeMap(const unsigned int environmentMap, const unsigned int cubeVAO, Shader *convolveShader){
-    glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-    glm::mat4 captureViews[] = {
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
-    };
-
-    convolveShader->use();
-    convolveShader->setInt("environmentMap", 0);
-    convolveShader->setMat4("projection", captureProjection);
-    
-    glViewport(0, 0, width, height);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMap);
-
-    for(unsigned int i = 0; i < numSidesInCube; ++i){
-        convolveShader->setMat4("view", captureViews[i]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-                               GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, textureID, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    
-}
-
-void CubeMap::preFilterCubeMap(const unsigned int environmentMap, const unsigned int cubeVAO,
-                               const unsigned int captureRBO, Shader *filterShader){
-    glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-    glm::mat4 captureViews[] = {
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
-    };
-
-    filterShader->use();
-    filterShader->setInt("environmentMap", 0);
-    filterShader->setMat4("projection", captureProjection);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMap);
-
-    for( unsigned int mip = 0; mip < maxMipLevels; ++mip){
-        unsigned int mipWidth  = unsigned int( width  * std::pow(0.5f, mip));
-        unsigned int mipHeight = unsigned int( height * std::pow(0.5f, mip));
-
-        glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
-        glViewport(0, 0, mipWidth, mipHeight);
-        
-
-        for(unsigned int i = 0; i < numSidesInCube; ++i){
-            filterShader->setMat4("view", captureViews[i]);
-
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-                                   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                                   textureID, mip);
-
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glBindVertexArray(cubeVAO);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-    }
-    
 }

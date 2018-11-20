@@ -6,27 +6,31 @@ AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
 PROJECT      : Hybrid Rendering Engine 
 LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 DATE	     : 2018-09-24
-PURPOSE      : 
-SPECIAL NOTES: 
+PURPOSE      : Container for the skybox texture in two supported formats:
+               equirectangular map and cubemap. 
+SPECIAL NOTES: Is not compatible with a fully deferred pipeline yet. Low Priority.
 */
+
+//Includes
 #include "texture.h"
+#include "cubeMap.h"
 #include "shader.h"
 #include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 #include <string>
 
 struct Skybox{
-
-    void setup(const std::string &skyboxName, bool isHDR, int resolution);
-
-    void update();
+    //Has special depth testing requirements
     void draw();
 
-    void setupVertices();
-    void fillCubeMapWithTexture(Shader *buildCubeMapShader);
+    //Setup functions for skybox mesh (VAO) and textures
+    void setup(const std::string &skyboxName, bool isHDR, int resolution);
 
-    unsigned int VAO, VBO;
-    int resolution;
+    //Transforming the equirecangular texture to a cubemap format for rendering
+    void fillCubeMapWithTexture(Shader *buildCubeMapShader); 
+
+    unsigned int resolution;
+
+    //Equirectangular map is not rendered, just an intermediate state
     Texture equirectangularMap;
     CubeMap skyBoxCubeMap;
 };

@@ -1,26 +1,28 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-08
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-08
+*/
 
 #include "shader.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-/*
-TODO Make this a fully error checked class and return to the above levels info on where
-it crashed and burned  
-*/
-
+//Shader setup and initialization code, could be combined with the compute shader initialization and
+//could also set success/failure flags to indicate issues during load to avoid full crashes. TODO
 Shader::Shader(const std::string vertexPath, const std::string fragmentPath, const std::string geometryPath){
     //Getting the vertex shader code from the text file at file path
     bool gShaderOn = geometryPath != "";
     std::string shaderFolderPath = "../assets/shaders/";
+
     std::string vertexCode, fragmentCode, geometryCode;
-    std::ifstream vShaderFile(shaderFolderPath + vertexPath), fShaderFile(shaderFolderPath + fragmentPath);
     std::stringstream vShaderStream, fShaderStream, gShaderStream;
-    std::ifstream gShaderFile(shaderFolderPath + geometryPath);
+    std::ifstream vShaderFile(shaderFolderPath + vertexPath),
+                  fShaderFile(shaderFolderPath + fragmentPath),
+                  gShaderFile(shaderFolderPath + geometryPath);
+
     //Check if shader files exist
     if(!vShaderFile.good()){
         printf("Couldn't find vertex shader file: %s in shaders folder.\n ", vertexPath.c_str());
@@ -75,7 +77,6 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath, con
                 printf("Fragment shader compilation failed %s\n", infoLog );
             }
 
-
             //Geometry shader stuff
             int geometryShader;
             if (gShaderOn){
@@ -110,10 +111,12 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath, con
     } 
 } 
 
+//Indicate to openGL that this is the GPU program that is going to be run
 void Shader::use(){
     glUseProgram(ID);
 }
 
+//Setting uniforms within the shader, share functionality with compute
 void Shader::setBool(const std::string &name, bool value) const {
     glUniform1i(glGetUniformLocation(ID,name.c_str()), (int)value);
 }
@@ -135,11 +138,13 @@ void Shader::setVec3(const std::string &name, const glm::vec3 &vec) const {
 }
 
 //--------------------------------------------------------------------------------------------
-//ComputeShader
+//ComputeShader constructor
 
+//The constructor is actually really similar to the base class one,
+//Could be simplified?
 ComputeShader::ComputeShader(const std::string computePath){
-    //Getting the vertex shader code from the text file at file path
-    std::string shaderFolderPath = "../assets/shaders/";
+    //Getting the compute shader code from the text file at file path
+    std::string shaderFolderPath = "../assets/shaders/ComputeShaders/";
     std::string computeCode;
     std::ifstream cShaderFile(shaderFolderPath + computePath);
     std::stringstream cShaderStream;
@@ -185,20 +190,4 @@ ComputeShader::ComputeShader(const std::string computePath){
         //Deleting shaders
         glDeleteShader(computeShader);
     } 
-}
-
-void ComputeShader::use(){
-    glUseProgram(ID);
-}
-
-void ComputeShader::setInt(const std::string &name, int  value) const {
-    glUniform1i(glGetUniformLocation(ID,name.c_str()), value);
-}
-
-void ComputeShader::setFloat(const std::string &name, float value) const {
-    glUniform1f(glGetUniformLocation(ID,name.c_str()), value);
-}
-
-void ComputeShader::setMat4(const std::string &name, const glm::mat4 &mat) const {
-    glUniformMatrix4fv(glGetUniformLocation(ID,name.c_str()), 1, GL_FALSE, &mat[0][0]);
 }
