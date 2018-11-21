@@ -1,13 +1,17 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-10
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-10
+*/
 
 //Includes
 #include "mesh.h"
 #include <string>
 
-void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured){
+//The diffuse texture is assumed to always exist and always loaded in case you want to do alpha
+//discard. Lower overhead texture setup is something worth investigating here.
+void Mesh::draw(const Shader &shader, bool textured){
         //Diffuse
         glActiveTexture(GL_TEXTURE0);
         shader.setInt("albedoMap", 0);
@@ -54,6 +58,7 @@ void Mesh::draw(const Shader &shader, const tAtlas &textureAtlas, bool textured)
     glBindVertexArray(0);
 }
 
+//Sending the data to the GPU and formatting it in memory
 void Mesh::setupMesh(){
     //Generate Buffers
     glGenVertexArrays(1, &VAO);
@@ -95,163 +100,3 @@ void Mesh::setupMesh(){
     glBindVertexArray(0);
 }
 
-//----------------------------------------------------------------------------------------------------
-//Quad Class stuff
-void Quad::setupQuad(){
-    const float quadVertices[] = {
-        //positions //texCoordinates
-        -1.0f, 1.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f,
-        1.0f, -1.0f, 1.0f, 0.0f,
-
-        -1.0f, 1.0f, 0.0f, 1.0f,
-        1.0f, -1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 1.0f, 1.0f
-    };
-
-    //OpenGL postprocessing quad setup
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    //Bind Vertex Array Object and VBO in correct order
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    //VBO initialization
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-
-    //Quad position pointer initialization in attribute array
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-    //Quad texcoords pointer initialization in attribute array
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-    glBindVertexArray(0);
-}
-
-void Quad::draw(const unsigned int readTexture1,
-                const unsigned int readTexture2,
-                const unsigned int computeTexture)
-{
-    glBindVertexArray(VAO);
-    glDisable(GL_DEPTH_TEST);
-
-    //A texture must always be defined (for now)
-    if(readTexture1 != 0){
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, readTexture1);
-    }
-
-    //A texture id of 0 is never assigned by opengl so we can
-    //be sure that it means we haven't set any texture in the second paramenter and therefore
-    //we only want one texture
-    if(readTexture2 != 0){
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, readTexture2);
-    }
-
-    //It's starting to become somewhat cumbersome to do this now but it's going to be
-    //temporary too.
-    if(computeTexture != 0){
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, computeTexture);
-    }
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindVertexArray(0);
-}
-
-void Quad::drawDeffered(const unsigned int position,
-                  const unsigned int normals,
-                  const unsigned int albedoSpec){
-    glBindVertexArray(VAO);
-    // glDisable(GL_DEPTH_TEST);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, position);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normals);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, albedoSpec);
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindVertexArray(0);
-}
-
-//----------------------------------------------------------------------------------------------------
-//Cube class 
-void Cube::setup(){
-    //This is here because I don't see the point to storing it after I've pushed it to the VBO
-    //so once this function is popped off the stack its gone positions
-    const float boxVertices[108] = {
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-
-        -1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f};
-
-    //Generate Buffers
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    //Bind Vertex Array Object and VBO in correct order
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    //VBO initialization 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(boxVertices), &boxVertices, GL_STATIC_DRAW);
-
-    //Vertex position pointer init
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 *  sizeof(float), (void*)0);
-
-    //Unbinding VAO
-    glBindVertexArray(0);
-}
-
-void Cube::draw(){
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-}

@@ -1,7 +1,9 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-13
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-13
+*/
 
 //Includes
 #include "renderManager.h"
@@ -53,7 +55,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             //Setup of other important rendering items
             //TODO:: not everything should be here
             buildRenderQueue();
-            canvas.setupQuad();
+            canvas.setup();
             initSSBOs();
 
             //TODO:: not everything should be here

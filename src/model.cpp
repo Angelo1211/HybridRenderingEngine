@@ -1,7 +1,9 @@
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-08
-// ===============================
+/* 
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-08
+*/
 
 //Includes
 #include "model.h"
@@ -25,7 +27,7 @@ void Model::loadModel(std::string path){
 
 void Model::draw(const Shader &shader, const  bool textured){
     for(int i = 0; i < meshes.size(); ++i){
-        meshes[i].draw(shader, textureAtlas, textured);
+        meshes[i].draw(shader, textured);
     }
 }
 

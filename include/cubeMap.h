@@ -15,7 +15,7 @@ SPECIAL NOTES: A cube mesh is initialized in the scene class which contains the 
 
 //Includes
 #include "texture.h"
-#include "mesh.h"
+#include "meshPrimitives.h"
 
 enum CubeMapType{
     SHADOW_MAP,

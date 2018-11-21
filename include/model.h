@@ -1,13 +1,15 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-10
-// PURPOSE      : TODO
-// ===============================
-// SPECIAL NOTES: TODO update comments
-// ===============================
+
+/*
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-10
+PURPOSE      : 
+SPECIAL NOTES: 
+*/
 
 //Includes
 #include "shader.h"
