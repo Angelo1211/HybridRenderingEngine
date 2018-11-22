@@ -14,10 +14,11 @@ DATE	     : 2018-11-20
 void FrameBuffer::bind(){
     glViewport(0,0,width, height);
     glBindFramebuffer(GL_FRAMEBUFFER, frameBufferID);
-    glEnable(GL_DEPTH_TEST);
-    // glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void FrameBuffer::clear(GLbitfield clearTarget, glm::vec3 clearColor){
+    glClearColor(clearColor.r, clearColor.g, clearColor.b, 1.0f);
+    glClear(clearTarget);
 }
 
 void FrameBuffer::blitTo(const ResolveBuffer &FBO, GLbitfield mask){
@@ -25,9 +26,6 @@ void FrameBuffer::blitTo(const ResolveBuffer &FBO, GLbitfield mask){
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO.frameBufferID);
     if(mask == GL_COLOR_BUFFER_BIT){
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    }
-    else{
-        // glDrawBuffer(GL_NONE);
     }
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, mask, GL_NEAREST );
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBufferID);

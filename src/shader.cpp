@@ -191,3 +191,9 @@ ComputeShader::ComputeShader(const std::string computePath){
         glDeleteShader(computeShader);
     } 
 }
+
+//Shorthand for dispatch compute with some default parameter values
+void ComputeShader::dispatch(unsigned int x, unsigned int y, unsigned int z){
+    glDispatchCompute(x, y, z);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}

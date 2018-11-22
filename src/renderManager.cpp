@@ -62,8 +62,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             computeGridAABB->use();
             computeGridAABB->setFloat("zNear", sceneCamera->cameraFrustum.nearPlane);
             computeGridAABB->setFloat("zFar", sceneCamera->cameraFrustum.farPlane);
-            glDispatchCompute(gridSizeX, gridSizeY, gridSizeZ);
-            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+            computeGridAABB->dispatch(gridSizeX, gridSizeY, gridSizeZ);
 
             //Passing equirectangular map to cubemap
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOBig.frameBufferID);
@@ -320,44 +319,27 @@ void RenderManager::render(const unsigned int start){
 
     //1.1- Multisampled Depth pre-pass
     multiSampledFBO.bind();
+    multiSampledFBO.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, glm::vec3(0.0f));
     currentScene->drawDepthPass(shaderAtlas[0]);
 
     //1.2- Multisampled blitting to depth texture
     multiSampledFBO.blitTo(simpleFBO, GL_DEPTH_BUFFER_BIT);
 
-    // //2.2- Near and far plane update
-    // computeDepths->use();
-    // computeDepths->setFloat("zNear", sceneCamera->cameraFrustrum.nearPlane);
-    // computeDepths->setFloat("zFar", sceneCamera->cameraFrustrum.farPlane);
-
-    // glBindImageTexture(0, simpleFBO.depthBuffer, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, simpleFBO.depthBuffer);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    // computeDepths->setInt("depthMap", 0);
-
-    // glDispatchCompute(tileNumX, tileNumY, 1);
-    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-    //4-Light culling
-
+    //4-Light assignment
     cullLightsAABB->use();
     cullLightsAABB->setMat4("viewMatrix", sceneCamera->viewMatrix);
-    glDispatchCompute(1, 1, 6);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    cullLightsAABB->dispatch(1,1,6);
 
-    //4 - Actual shading
-    //4.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
-    // glDepthFunc(GL_EQUAL);
+    //5 - Actual shading
+    //5.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
     glDepthFunc(GL_LEQUAL);
     glDepthMask(false);
-    // glDepthMask(true);
     currentScene->drawFullScene(shaderAtlas[1], shaderAtlas[2]);
 
-    //4.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
+    //5.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
     multiSampledFBO.blitTo(simpleFBO, GL_COLOR_BUFFER_BIT);
 
-    //4.3 -postprocess
+    //6 -postprocess
     postProcess(start);
 
     //Rendering gui scope ends here cannot be done later because the whole frame
@@ -389,6 +371,7 @@ void RenderManager::postProcess(const unsigned int start){
         glDrawBuffer(GL_COLOR_ATTACHMENT1);
         shaderAtlas[4]->setBool("horizontal", true);
         canvas.draw(pingPongFBO.texColorBuffer);
+
         //Vertical pass
         glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO.frameBufferID);
         shaderAtlas[4]->setBool("horizontal", false);

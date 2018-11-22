@@ -1,14 +1,17 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-
 /*
 AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
 PROJECT      : Hybrid Rendering Engine 
 LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
-DATE	     : 2018-09-10
-PURPOSE      : 
-SPECIAL NOTES: 
+DATE	     : 2018-09-08
+PURPOSE      : Container for the different meshes in a scene. Also serves as the loading point for mesh files 
+               using assimp as the loading library. It also keeps track of and objects position and loads the 
+               associated textures for each mesh that it contains.
+SPECIAL NOTES: Because it uses assimp to load meshes it is naturally shaped by it in the way it loads and handles 
+               data. Currently, all meshes load textures in the exact same way and therefore are limited to effectively
+               having just one material type. This is a high priority change, probably the next version after the alpha.
 */
 
 //Includes
@@ -32,37 +35,31 @@ struct TransformParameters{
     glm::vec3 scaling;
 };
 
-class Model {
-    public:
-        Model(const std::string meshPath, const bool PBR, const TransformParameters initParameters){
-            if(PBR){
-               pbrMaterial = true; 
-               numTextures = 5;
-            }
-            loadModel(meshPath);
-            modelParameters = initParameters;
-        }
+struct Model {
+    Model(const std::string meshPath, const TransformParameters initParameters){
+        loadModel(meshPath);
+        modelMatrix = glm::mat4(1.0);
+        modelMatrix = glm::translate(modelMatrix, initParameters.translation);
+        modelMatrix = glm::rotate(modelMatrix, initParameters.angle, initParameters.rotationAxis);
+        modelMatrix = glm::scale(modelMatrix, initParameters.scaling);
+    }
+    //Base interface
+    void loadModel(std::string path);
+    void update(const unsigned int deltaT);
+    void draw(const Shader &shader, const bool textured);
 
-        void draw(const Shader &shader, const bool textured);
-        void update( const unsigned int deltaT);
+    //Model processing/loading functions
+    void processNode(aiNode *node, const aiScene *scene);
+    Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+    std::vector<unsigned int> processTextures(const aiMaterial *material);
 
-        glm::mat4 getModelMatrix();
+    //Object to world space matrix
+    glm::mat4 modelMatrix;
+    std::vector<Mesh> meshes; //Does it need to be a vector after initialization?
 
-        unsigned int numTextures = 3;
-        bool pbrMaterial = false;
-    private:
-        TransformParameters modelParameters;
-        glm::mat4 modelMatrix;
-
-        std::vector<Mesh> meshes;        
-        std::unordered_map<std::string, Texture> textureAtlas; 
-
-        std::string directory, fileExtension;
-
-        void loadModel(std::string path);
-        void processNode(aiNode *node, const aiScene *scene);
-        Mesh processMesh(aiMesh *mesh, const aiScene *scene);
-        std::vector<unsigned int> processTextures(const aiMaterial *material);
+    //To avoid textures being loaded from disk more than once they are indexed into a dictionary
+    std::unordered_map<std::string, Texture> textureAtlas;
+    std::string directory, fileExtension;
 };
 
 #endif 

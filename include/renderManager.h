@@ -45,7 +45,6 @@ class RenderManager{
         const static unsigned int numShaders = 12; //The number is kind of arbitrary for now
         Shader *shaderAtlas[numShaders]; 
 
-
         //Pointers to data important for rendering
         SceneManager   * sceneLocator;
         Scene  *currentScene;
@@ -76,18 +75,13 @@ class RenderManager{
 
         //Render pipeline FBO's
         FrameBuffer multiSampledFBO;
-        CaptureBuffer captureFBOBig, captureFBOSmall;
+
         ResolveBuffer simpleFBO;
         QuadHDRBuffer pingPongFBO;
+
+        CaptureBuffer captureFBOBig, captureFBOSmall;
         DepthBuffer  dirShadowFBO;
         DepthBuffer   *pointLightShadowFBOs;
 
-        //Old Framebuffers
-        // GeometryBuffer gBuffer;
-        // QuadHDRBuffer lightingBuffer, pingPong1, pingPong2;
-        // DepthBuffer depthPrePass;
-
-        //Stuff related to forward+
-        // ComputeShader *computeFrustrumPerTile, *cullLights, *computeDepths;
 };
 #endif

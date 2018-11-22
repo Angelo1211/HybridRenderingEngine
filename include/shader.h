@@ -41,6 +41,7 @@ struct Shader{
 //Compute shaders require a different constructor since they are simpler and stored elsewhere
 struct ComputeShader : public Shader{
     ComputeShader(const std::string computePath);
+    void dispatch(unsigned int x, unsigned int y = 1, unsigned int z = 1);
 };
 
 #endif

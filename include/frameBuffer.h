@@ -1,6 +1,15 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
+/*
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-11-20
+PURPOSE      : 
+SPECIAL NOTES: 
+*/
+
 /* TODO TODO TODO 
 You should refactor away some of the texture creation code into the texture class to
 avoid cluttering so much of the frame buffer creation with texture stuff.
@@ -11,14 +20,25 @@ compress this though since each initialization is genuinely different for each
 kind of buffer. TODO?
 */
 
+//Includes
 #include "texture.h"
 #include "cubeMap.h"
 #include "glad/glad.h"
+
+enum FrameBufferType{
+    MULTISAMPLED_FORWARD_FB,
+    RESOLVE_FB,
+    HDR_FB,
+    DEPTH_FB,
+    GEOMETRY_FB,
+    CAPTURE_FB
+};
 
 struct ResolveBuffer;
 
 struct FrameBuffer{
     void bind();
+    void clear(GLbitfield clearTarget, glm::vec3 clearColor);
     void blitTo(const ResolveBuffer &FBO, GLbitfield mask);
     bool setupFrameBuffer(bool isMultiSampled);
 

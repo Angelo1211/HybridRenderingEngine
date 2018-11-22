@@ -72,7 +72,7 @@ void Scene::drawPointLightShadow(Shader *pointLightShader, unsigned int index, u
     for(unsigned int i = 0; i < modelsInScene.size(); ++i){
         Model * currentModel = modelsInScene[i];
 
-        M = currentModel->getModelMatrix();
+        M = currentModel->modelMatrix;
         //Shader setup stuff that changes every frame
         pointLightShader->setMat4("M", M);
         
@@ -101,7 +101,7 @@ void Scene::drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextu
         Model * currentModel = modelsInScene[i];
 
         //Matrix setup
-        ModelLS = dirLight.lightSpaceMatrix * currentModel->getModelMatrix();
+        ModelLS = dirLight.lightSpaceMatrix * currentModel->modelMatrix;
 
         //Shader setup stuff that changes every frame
         dirLightShader->use();
@@ -124,7 +124,7 @@ void Scene::drawGeometry(Shader *gBufferShader){
         Model * currentModel = visibleModels[i];
 
         //Matrix setup
-        M  = currentModel->getModelMatrix();
+        M  = currentModel->modelMatrix;
         MVP = VP * M;
 
         //Shader setup stuff that changes every frame
@@ -277,7 +277,7 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
         Model * currentModel = visibleModels[i];
 
         //Matrix setup
-        M  = currentModel->getModelMatrix();
+        M  = currentModel->modelMatrix;
         MVP = VP * M;
 
         //Shader setup stuff that changes every frame
@@ -305,7 +305,7 @@ void Scene::drawDepthPass(Shader *depthPassShader){
         Model * currentModel = modelsInScene[i];
 
         //Matrix setup
-        MVP = VP * currentModel->getModelMatrix();
+        MVP = VP * currentModel->modelMatrix;
 
         //Shader setup stuff that changes every frame
         depthPassShader->use();
@@ -486,16 +486,13 @@ void Scene::loadSkyBox(const json &sceneConfigJson){
 void Scene::loadSceneModels(const json &sceneConfigJson ){
     //model setup
     std::string modelMesh, modelName;
-    bool pbrEnabled;
     TransformParameters initParameters;
     unsigned int modelCount = (unsigned int)sceneConfigJson["models"].size();
-
 
     for (unsigned int i = 0; i < modelCount; ++i){
         //get model mesh and material info
         json currentModel = sceneConfigJson["models"][i];
         modelMesh = currentModel["mesh"];
-        pbrEnabled = currentModel["pbr"];
 
         modelName = modelMesh.substr(0, modelMesh.find_last_of('.'));
 
@@ -509,9 +506,6 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
         initParameters.rotationAxis = glm::vec3((float)rotation[1],
                                             (float)rotation[2],
                                             (float)rotation[3]);
-        // initParameters.rotationAxis = glm::vec3(glm::radians((float)rotation[1]),
-        //                                     glm::radians((float)rotation[2]),
-        //                                     glm::radians((float)rotation[3]));
 
         //scaling
         json scaling = currentModel["scaling"];
@@ -524,7 +518,7 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
             printf("Error! Mesh: %s does not exist.\n", modelMesh.c_str());
         }
         else{
-            modelsInScene.push_back(new Model(modelMesh, pbrEnabled, initParameters));
+            modelsInScene.push_back(new Model(modelMesh, initParameters));
         }
     }
 }
