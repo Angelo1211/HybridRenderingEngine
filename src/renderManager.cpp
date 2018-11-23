@@ -37,7 +37,6 @@ struct ScreenToView{
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
 bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneManager ){
-    printf("Here!\n");
     screen = &displayManager;
     sceneLocator = &sceneManager;
     currentScene = sceneLocator->getCurrentScene();
@@ -48,7 +47,6 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
     }
     else{
         if (!loadShaders()){
-            printf("A Shader failed to compile! \n");
             return false;
         }
         else{
@@ -59,24 +57,24 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
             initSSBOs();
 
             //TODO:: not everything should be here
-            computeGridAABB->use();
-            computeGridAABB->setFloat("zNear", sceneCamera->cameraFrustum.nearPlane);
-            computeGridAABB->setFloat("zFar", sceneCamera->cameraFrustum.farPlane);
-            computeGridAABB->dispatch(gridSizeX, gridSizeY, gridSizeZ);
+            buildAABBGridCompShader.use();
+            buildAABBGridCompShader.setFloat("zNear", sceneCamera->cameraFrustum.nearPlane);
+            buildAABBGridCompShader.setFloat("zFar", sceneCamera->cameraFrustum.farPlane);
+            buildAABBGridCompShader.dispatch(gridSizeX, gridSizeY, gridSizeZ);
 
             //Passing equirectangular map to cubemap
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOBig.frameBufferID);
-            currentScene->mainSkyBox.fillCubeMapWithTexture(shaderAtlas[8]);
+            currentScene->mainSkyBox.fillCubeMapWithTexture(fillCubeMapShader);
 
             //Cubemap convolution TODO:: Fix ugly function call
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
             unsigned int environmentID = currentScene->mainSkyBox.skyBoxCubeMap.textureID;
-            currentScene->irradianceMap.convolveCubeMap(environmentID, shaderAtlas[9]);
+            currentScene->irradianceMap.convolveCubeMap(environmentID, convolveCubeMap);
 
             //Cubemap prefiltering
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
             unsigned int captureRBO = captureFBOSmall.depthBuffer;
-            currentScene->specFilteredMap.preFilterCubeMap(environmentID, captureRBO, shaderAtlas[10]);
+            currentScene->specFilteredMap.preFilterCubeMap(environmentID, captureRBO, preFilterSpecShader);
 
             //BRDF lookup texture
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
@@ -86,12 +84,11 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, res,  res);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
-            shaderAtlas[11]->use();
+            integrateBRDFShader.use();
             glViewport(0, 0, res, res);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             canvas.draw();
 
-            // currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->specFilteredMap.textureID;
             glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
         }
     }
@@ -101,17 +98,10 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 bool RenderManager::initSSBOs(){
     //Setting up tile size on both X and Y 
     sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
-    // sizeY =  (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)gridSizeY);
 
     float zFar    =  sceneCamera->cameraFrustum.farPlane;
     float zNear   =  sceneCamera->cameraFrustum.nearPlane;
 
-    // tileNumZ = (unsigned int)std::floorf( num / denom);
-
-    // cullDispatchX = (unsigned int)std::ceilf(tileNumX / (float)size);
-    // cullDispatchY = (unsigned int)std::ceilf(tileNumY / (float)size);
-    
-    //Setting up the AABB volume grid
     {
         glGenBuffers(1, &volumeGridAABB_SSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, volumeGridAABB_SSBO);
@@ -208,32 +198,51 @@ bool RenderManager::initSSBOs(){
 }
 
 bool RenderManager::loadShaders(){
-    shaderAtlas[0]  = new Shader("depthPassShader.vert", "depthPassShader.frag");
-    shaderAtlas[1]  = new Shader("PBRClusteredShader.vert", "PBRClusteredShader.frag");
-    shaderAtlas[2]  = new Shader("skyboxShader.vert", "skyboxShader.frag");
-    shaderAtlas[3]  = new Shader("splitHighShader.vert", "splitHighShader.frag");
-    shaderAtlas[4]  = new Shader("blurShader.vert", "blurShader.frag");
-    shaderAtlas[5]  = new Shader("screenShader.vert", "screenShader.frag");
-    shaderAtlas[6]  = new Shader("shadowShader.vert", "shadowShader.frag");
-    shaderAtlas[7]  = new Shader("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
+    bool stillValid = true;
+    //Pre-processing
+    stillValid &= buildAABBGridCompShader.setup("clusterShader.comp");
+    stillValid &= cullLightsCompShader.setup("clusterCullLightShader.comp");
+    stillValid &= fillCubeMapShader.setup("cubeMapShader.vert", "buildCubeMapShader.frag");
+    stillValid &= convolveCubeMap.setup("cubeMapShader.vert", "convolveCubemapShader.frag");
+    stillValid &= preFilterSpecShader.setup("cubeMapShader.vert", "preFilteringShader.frag");
+    stillValid &= integrateBRDFShader.setup("screenShader.vert", "brdfIntegralShader.frag");
 
-    //TODO :: could be compute shaders ? 
-    shaderAtlas[8]  = new Shader("cubeMapShader.vert", "buildCubeMapShader.frag");
-    shaderAtlas[9]  = new Shader("cubeMapShader.vert", "convolveCubemapShader.frag");
-    shaderAtlas[10] = new Shader("cubeMapShader.vert", "preFilteringShader.frag");
-    shaderAtlas[11] = new Shader("screenShader.vert", "brdfIntegralShader.frag");
+    if(!stillValid){
+        printf("Error loading pre-processing Shaders!\n");
+        return false;
+    }
+    //Rendering
+    stillValid &= depthPrePassShader.setup("depthPassShader.vert", "depthPassShader.frag");
+    stillValid &= PBRClusteredShader.setup("PBRClusteredShader.vert", "PBRClusteredShader.frag");
+    stillValid &= skyboxShader.setup("skyboxShader.vert", "skyboxShader.frag");
+    stillValid &= screenSpaceShader.setup("screenShader.vert", "screenShader.frag");
 
-    computeGridAABB = new ComputeShader("clusterShader.comp");
-    cullLightsAABB  = new ComputeShader("clusterCullLightShader.comp");
+    if(!stillValid){
+        printf("Error loading rendering Shaders!\n");
+        return false;
+    }
 
-    return true;
+    //Shadow mapping
+    stillValid &= dirShadowShader.setup("shadowShader.vert", "shadowShader.frag");
+    stillValid &= pointShadowShader.setup("pointShadowShader.vert", "pointShadowShader.frag", "pointShadowShader.geom");
+
+    if(!stillValid){
+        printf("Error loading shadow mapping Shaders!\n");
+        return false;
+    }
+    //Post-processing
+    stillValid &= highPassFilterShader.setup("splitHighShader.vert", "splitHighShader.frag");
+    stillValid &= gaussianBlurShader.setup("blurShader.vert", "blurShader.frag");
+
+    if(!stillValid){
+        printf("Error loading post-processing Shaders!\n");
+        return false;
+    }
+
+    return stillValid;
 }
 
 void RenderManager::shutDown(){
-    for(int i = 0; i < numShaders; i++){
-        delete shaderAtlas[i];
-    }
-
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
     screen = nullptr;
@@ -261,15 +270,7 @@ bool RenderManager::initFBOs(){
     for(unsigned int i = 0; i < numLights; ++i ){
         initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution);
     }
-
-    // bool initFBOFlag1 = gBuffer.setupFrameBuffer();
-    // bool initFBOFLag2 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
-    // bool initFBOFlag3 = pingPong1.setupFrameBuffer();
-    // bool initFBOFlag4 = pingPong2.setupFrameBuffer();
-    // bool initFBOFlag5 = lightingBuffer.setupFrameBuffer();
-
     return true;
-    // return initFBOFlag1 && initFBOFLag2 && initFBOFlag3 && initFBOFlag4 && initFBOFlagPointLights;
 }
 
 /* This time using volume tiled forward
@@ -300,13 +301,13 @@ void RenderManager::render(const unsigned int start){
         for (unsigned int i = 0; i < currentScene->pointLightCount; ++i){
             pointLightShadowFBOs[i].bind();
             pointLightShadowFBOs[i].clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
-            currentScene->drawPointLightShadow(shaderAtlas[7], i, pointLightShadowFBOs[i].depthBuffer);
+            currentScene->drawPointLightShadow(pointShadowShader, i, pointLightShadowFBOs[i].depthBuffer);
         }
 
         // Directional shadows
         dirShadowFBO.bind();
         dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
-        currentScene->drawDirLightShadows(shaderAtlas[6], dirShadowFBO.depthBuffer);
+        currentScene->drawDirLightShadows(dirShadowShader, dirShadowFBO.depthBuffer);
     }
 
     //Preps all the items that will be drawn in the scene
@@ -319,21 +320,21 @@ void RenderManager::render(const unsigned int start){
     //1.1- Multisampled Depth pre-pass
     multiSampledFBO.bind();
     multiSampledFBO.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, glm::vec3(0.0f));
-    currentScene->drawDepthPass(shaderAtlas[0]);
+    currentScene->drawDepthPass(depthPrePassShader);
 
     //1.2- Multisampled blitting to depth texture
     // multiSampledFBO.blitTo(simpleFBO, GL_DEPTH_BUFFER_BIT);
 
     //4-Light assignment
-    cullLightsAABB->use();
-    cullLightsAABB->setMat4("viewMatrix", sceneCamera->viewMatrix);
-    cullLightsAABB->dispatch(1,1,6);
+    cullLightsCompShader.use();
+    cullLightsCompShader.setMat4("viewMatrix", sceneCamera->viewMatrix);
+    cullLightsCompShader.dispatch(1,1,6);
 
     //5 - Actual shading;
     //5.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
     glDepthFunc(GL_LEQUAL);
     glDepthMask(false);
-    currentScene->drawFullScene(shaderAtlas[1], shaderAtlas[2]);
+    currentScene->drawFullScene(PBRClusteredShader, skyboxShader);
 
     //5.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
     multiSampledFBO.blitTo(simpleFBO, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -359,22 +360,22 @@ void RenderManager::postProcess(const unsigned int start){
     pingPongFBO.bind();
     pingPongFBO.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, glm::vec3(0.0f));
     if( sceneCamera->blurAmount > 0){
-        shaderAtlas[3]->use();
+        highPassFilterShader.use();
         canvas.draw(simpleFBO.texColorBuffer);
     }
     //Applying Gaussian blur in ping pong fashion
-    shaderAtlas[4]->use();
+    gaussianBlurShader.use();
     for (int i = 0; i < sceneCamera->blurAmount; ++i)
     {
         //Horizontal pass
         glBindFramebuffer(GL_FRAMEBUFFER, simpleFBO.frameBufferID);
         glDrawBuffer(GL_COLOR_ATTACHMENT1);
-        shaderAtlas[4]->setBool("horizontal", true);
+        gaussianBlurShader.setBool("horizontal", true);
         canvas.draw(pingPongFBO.texColorBuffer);
 
         //Vertical pass
         glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO.frameBufferID);
-        shaderAtlas[4]->setBool("horizontal", false);
+        gaussianBlurShader.setBool("horizontal", false);
         canvas.draw(simpleFBO.blurHighEnd);
     }
     //Setting back to default framebuffer (screen) and clearing
@@ -382,49 +383,14 @@ void RenderManager::postProcess(const unsigned int start){
     screen->bind();
 
     //Shader setup for postprocessing
-    shaderAtlas[5]->use();
-    shaderAtlas[5]->setInt("offset", start);
-    shaderAtlas[5]->setFloat("exposure", sceneCamera->exposure);
-    shaderAtlas[5]->setInt("screenTexture", 0);
-    shaderAtlas[5]->setInt("bloomBlur", 1);
-    shaderAtlas[5]->setInt("computeTexture", 2);
+    screenSpaceShader.use();
+    screenSpaceShader.setInt("offset", start);
+    screenSpaceShader.setFloat("exposure", sceneCamera->exposure);
+    screenSpaceShader.setInt("screenTexture", 0);
+    screenSpaceShader.setInt("bloomBlur", 1);
+    screenSpaceShader.setInt("computeTexture", 2);
     //Convoluting both images
     canvas.draw(simpleFBO.texColorBuffer, pingPongFBO.texColorBuffer);
-
-    // Separating the high exposure content to the pingpongbuffer
-    // pingPong1.bind();
-    // shaderAtlas[4]->use();
-    // canvas.draw(lightingBuffer.texColorBuffer);
-
-    // //Applying Gaussian blur in ping pong fashion
-    // shaderAtlas[5]->use();
-
-    // for(int i =0; i < sceneCamera->blurAmount; ++i){
-    //     //Horizontal pass 
-    //     glBindFramebuffer(GL_FRAMEBUFFER, pingPong2.frameBufferID);
-    //     // glDrawBuffer(GL_COLOR_ATTACHMENT1);
-    //     shaderAtlas[5]->setBool("horizontal", true);
-    //     canvas.draw(pingPong1.texColorBuffer);
-
-    //     //Vertical pass 
-    //     glBindFramebuffer(GL_FRAMEBUFFER, pingPong1.frameBufferID);
-    //     shaderAtlas[5]->setBool("horizontal", false);
-    //     canvas.draw(pingPong2.texColorBuffer);
-    // }
-
-    // //Setting back to default framebuffer (screen) and clearing
-    // //No need for depth testing cause we're drawing to a flat quad
-    // screen->bind();
-
-    // //Shader setup for postprocessing
-    // shaderAtlas[6]->use();
-    // shaderAtlas[6]->setInt("offset", start);
-    // shaderAtlas[6]->setFloat("exposure", sceneCamera->exposure);
-    // shaderAtlas[6]->setInt("screenTexture", 0);
-    // shaderAtlas[6]->setInt("bloomBlur", 1);
-
-    // // //Convoluting both images
-    // canvas.draw(pingPong2.texColorBuffer, lightingBuffer.texColorBuffer);
 }
 
 //Done every frame in case scene changes
@@ -435,23 +401,3 @@ void RenderManager::buildRenderQueue(){
     //Set renderer camera
     sceneCamera = currentScene->getCurrentCamera();
 }
-
-//Drawing the final result of the compute shader to the screen to get an idea
-//of how well it worked
-// screen->bind();
-// shaderAtlas[1]->use();
-// glActiveTexture(GL_TEXTURE0);
-// shaderAtlas[1]->setInt("screenTexture", 0);
-// glBindTexture(GL_TEXTURE_2D, testTexture);
-// canvas.draw(testTexture);
-
-
-// //Deffered rendering 
-// //Filling the geometry buffer
-// gBuffer.bind();
-// currentScene->drawGeometry(shaderAtlas[0]);
-
-// //Lighting pass
-// lightingBuffer.bind();
-// currentScene->setupLightingShader(shaderAtlas[1]);
-// canvas.drawDeffered(gBuffer.positionBuffer, gBuffer.normalsBuffer, gBuffer.albedoSpecBuffer);

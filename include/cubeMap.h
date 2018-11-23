@@ -29,9 +29,9 @@ struct CubeMap : public Texture{
     void generateCubeMap(const int width, const int height, CubeMapType cubeType);
 
     //Cubemap modifications
-    void convolveCubeMap(const unsigned int environmentMap, Shader *convolveShader);
-    void preFilterCubeMap(const unsigned int environmentMap, const unsigned int captureRBO, Shader *filterShader);
-    void equiRectangularToCubeMap(const unsigned int equirectangularMap, const int resolution, Shader * transformShader);
+    void convolveCubeMap(const unsigned int environmentMap, const Shader &convolveShader);
+    void preFilterCubeMap(const unsigned int environmentMap, const unsigned int captureRBO,const Shader &filterShader);
+    void equiRectangularToCubeMap(const unsigned int equirectangularMap, const int resolution, const Shader &transformShader);
 
     //TODO::Remove, Redundant?
     void drawCube();

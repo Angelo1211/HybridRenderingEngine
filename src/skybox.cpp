@@ -42,6 +42,6 @@ void Skybox::setup(const std::string &skyboxName, bool isHDR, int res){
 }
 
 //Instead of passing the shader in, we could call this function when skybox is initialized?
-void Skybox::fillCubeMapWithTexture(Shader *buildCubeMapShader){
+void Skybox::fillCubeMapWithTexture(const Shader &buildCubeMapShader){
     skyBoxCubeMap.equiRectangularToCubeMap(equirectangularMap.textureID, resolution, buildCubeMapShader);
 }

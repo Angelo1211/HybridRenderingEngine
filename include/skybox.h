@@ -26,7 +26,7 @@ struct Skybox{
     void setup(const std::string &skyboxName, bool isHDR, int resolution);
 
     //Transforming the equirecangular texture to a cubemap format for rendering
-    void fillCubeMapWithTexture(Shader *buildCubeMapShader); 
+    void fillCubeMapWithTexture(const Shader &buildCubeMapShader); 
 
     unsigned int resolution;
 

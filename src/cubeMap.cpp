@@ -128,17 +128,17 @@ void CubeMap::generateCubeMap(const int width, const int height, CubeMapType cub
 }
 
 //For use in the diffuse IBL setup for now
-void CubeMap::convolveCubeMap(const unsigned int environmentMap, Shader *convolveShader){
-    convolveShader->use();
-    convolveShader->setInt("environmentMap", 0);
-    convolveShader->setMat4("projection", captureProjection);
+void CubeMap::convolveCubeMap(const unsigned int environmentMap,const Shader &convolveShader){
+    convolveShader.use();
+    convolveShader.setInt("environmentMap", 0);
+    convolveShader.setMat4("projection", captureProjection);
     
     glViewport(0, 0, width, height);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMap);
 
     for(unsigned int i = 0; i < numSidesInCube; ++i){
-        convolveShader->setMat4("view", captureViews[i]);
+        convolveShader.setMat4("view", captureViews[i]);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
                                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, textureID, 0);
 
@@ -150,11 +150,11 @@ void CubeMap::convolveCubeMap(const unsigned int environmentMap, Shader *convolv
 
 //Specular IBL cubemap component of hte integral
 void CubeMap::preFilterCubeMap(const unsigned int environmentMap,
-                               const unsigned int captureRBO, Shader *filterShader){
+                               const unsigned int captureRBO,const Shader &filterShader){
 
-    filterShader->use();
-    filterShader->setInt("environmentMap", 0);
-    filterShader->setMat4("projection", captureProjection);
+    filterShader.use();
+    filterShader.setInt("environmentMap", 0);
+    filterShader.setMat4("projection", captureProjection);
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMap);
@@ -171,7 +171,7 @@ void CubeMap::preFilterCubeMap(const unsigned int environmentMap,
         glViewport(0, 0, mipWidth, mipHeight);
         
         for(unsigned int i = 0; i < numSidesInCube; ++i){
-            filterShader->setMat4("view", captureViews[i]);
+            filterShader.setMat4("view", captureViews[i]);
 
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
                                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
@@ -185,17 +185,17 @@ void CubeMap::preFilterCubeMap(const unsigned int environmentMap,
 
 //Transform an equirectangular map to a six sided cubemap
 void CubeMap::equiRectangularToCubeMap(const unsigned int equirectangularMap,
-                                       const int resolution, Shader* transformShader){
-    transformShader->use();
-    transformShader->setInt("equirectangularMap", 0);
-    transformShader->setMat4("projection", captureProjection);
+                                       const int resolution, const Shader &transformShader){
+    transformShader.use();
+    transformShader.setInt("equirectangularMap", 0);
+    transformShader.setMat4("projection", captureProjection);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, equirectangularMap);
     glViewport(0, 0, resolution, resolution);
 
     for(unsigned int i = 0; i < numSidesInCube; i++){
-        transformShader->setMat4("view", captureViews[i]);
+        transformShader.setMat4("view", captureViews[i]);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
                                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, textureID, 0);
 

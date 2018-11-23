@@ -1,13 +1,14 @@
 #ifndef RENDERMANAGER_H
 #define RENDERMANAGER_H
 
-// ===============================
-// AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
-// CREATE DATE  : 2018-09-13
-// PURPOSE      : TODO
-// ===============================
-// SPECIAL NOTES: TODO update comments
-// ===============================
+/*
+AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
+PROJECT      : Hybrid Rendering Engine 
+LICENSE      : This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
+DATE	     : 2018-09-13
+PURPOSE      : 
+SPECIAL NOTES: 
+*/
 
 //Includes
 #include "displayManager.h"
@@ -41,27 +42,31 @@ class RenderManager{
         void postProcess(const unsigned int start);
         void buildRenderQueue();
 
-        //Todo:: move shaders to this to scene class?
-        const static unsigned int numShaders = 12; //The number is kind of arbitrary for now
-        Shader *shaderAtlas[numShaders]; 
+        //Todo:: shaders should belong to a material not the rendermanager
+        Shader depthPrePassShader, PBRClusteredShader, skyboxShader,
+               highPassFilterShader, gaussianBlurShader, screenSpaceShader,
+               dirShadowShader, pointShadowShader, fillCubeMapShader,
+               convolveCubeMap, preFilterSpecShader, integrateBRDFShader;
+
+        //Compute shaders also could be moved? 
+        ComputeShader buildAABBGridCompShader, cullLightsCompShader;
 
         //Pointers to data important for rendering
-        SceneManager   * sceneLocator;
-        Scene  *currentScene;
         Camera *sceneCamera;
-        DisplayManager * screen;
+        Scene  *currentScene;
+        DisplayManager *screen;
+        SceneManager   *sceneLocator;
 
         //Rendering miscs
-        bool hasMoved = true;
         Quad canvas;
+        bool hasMoved = true;
 
         //Light initialization values
+        unsigned int numLights;
         const unsigned int maxLights = 10000; // pretty overkill for sponza, but ok for testing
         const unsigned int maxLightsPerTile = 100;
-        unsigned int numLights;
 
         //Clustered Forward Setup
-        ComputeShader *computeGridAABB, *cullLightsAABB, *computeDepths;
         const unsigned int gridSizeX = 16;
         const unsigned int gridSizeY =  9;
         const unsigned int gridSizeZ = 24;
@@ -75,13 +80,10 @@ class RenderManager{
 
         //Render pipeline FBO's
         FrameBufferMultiSampled multiSampledFBO;
-
         ResolveBuffer simpleFBO;
         QuadHDRBuffer pingPongFBO;
-
         CaptureBuffer captureFBOBig, captureFBOSmall;
         DirShadowBuffer  dirShadowFBO;
         PointShadowBuffer   *pointLightShadowFBOs;
-
 };
 #endif

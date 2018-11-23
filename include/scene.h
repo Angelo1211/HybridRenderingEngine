@@ -32,15 +32,11 @@ class Scene{
         //Updates all models, lights and cameras
         void update(unsigned int deltaT);
 
-        //Deffered lighting drawing functions
-        void drawGeometry(Shader *gBufferShader);
-        void setupLightingShader(Shader *lightShader);
-
         //Old Forward renderer drawing functions
-        void drawPointLightShadow(Shader *pointLightShader, unsigned int index, unsigned int cubeMapTarget);
-        void drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID);
-        void drawFullScene(Shader *mainSceneShader, Shader *skyboxShader);
-        void drawDepthPass(Shader *depthPassShader);
+        void drawPointLightShadow(const Shader &pointLightShader, unsigned int index, unsigned int cubeMapTarget);
+        void drawDirLightShadows(const Shader &dirLightShader, unsigned int targetTextureID);
+        void drawFullScene(const Shader &mainSceneShader, const Shader &skyboxShader);
+        void drawDepthPass(const Shader &depthPassShader);
 
         //Getters used in the setup of the render queue
         std::vector<Model*>* getVisiblemodels();

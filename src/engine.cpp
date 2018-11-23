@@ -51,7 +51,7 @@ bool Engine::startUp(){
 
     //Want to keep track of how much time the whole loading process took
     unsigned int deltaT = SDL_GetTicks() - start;
-    printf("Load time: %ums\n",deltaT);
+    printf("(Load time: %ums)\n",deltaT);
     return success;
 }
 
@@ -81,7 +81,7 @@ void Engine::run(){
     unsigned int deltaT = SDL_GetTicks();
     unsigned int start = 0;;
     unsigned int total = 0;
-    printf("Entered Main Loop!\n");
+    printf("\nEntered Main Loop!\n");
 
     while(!done){
         ++count;

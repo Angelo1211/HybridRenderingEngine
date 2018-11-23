@@ -8,8 +8,8 @@ LICENSE      : This code is licensed under the MIT license (MIT) (http://opensou
 DATE	     : 2018-09-08
 PURPOSE      : Load parse and compile opengl shader programs. Also can set their uniforms and indicate
                that they will be used.
-SPECIAL NOTES: Error checking is fine for now but should probably send the info upstream to quit early 
-               if something comes up, or at least print to the console. Low priority.
+SPECIAL NOTES: We have to minimize shader passing, currently each pass can potentially cause a shader deletion.
+               Need to come up with a robust solution to how to avoid deletion. Priority high
 */
 
 //Includes
@@ -18,30 +18,34 @@ SPECIAL NOTES: Error checking is fine for now but should probably send the info 
 #include "glm/glm.hpp"
 
 struct Shader{
-    //Shader ID for referencing
-    unsigned int ID;
-
-    //Constructor using vertex, geometry and fragment shader paths
-    Shader(){};
-    Shader(const std::string vertexPath, const std::string fragmentPath,
+    //Initialization 
+    bool setup(const std::string vertexPath, const std::string fragmentPath,
            const std::string geometryPath = "");
 
-    //Activate shader for use
-    void use();
+    //Shader program marked for deletion on destructor call
+    //CAREFUL with passing by value, any destructor call wipes the shader out!!
+    ~Shader(){
+        glDeleteProgram(ID);
+    }
 
-    //Utility functions
+    //Activate shader program for use
+    void use() const;
+
+    //Uniform setting functions
     void setBool(const std::string &name, bool value) const; 
     void setInt(const std::string &name, int value) const;
     void setFloat(const std::string &name, float value) const;
     void setMat4(const std::string &name, const glm::mat4 &mat) const;
     void setVec3(const std::string &name, const glm::vec3 &vec) const;
 
+    //Shader program ID for referencing
+    unsigned int ID;
 };
 
 //Compute shaders require a different constructor since they are simpler and stored elsewhere
 struct ComputeShader : public Shader{
-    ComputeShader(const std::string computePath);
-    void dispatch(unsigned int x, unsigned int y = 1, unsigned int z = 1);
+    bool setup(const std::string computePath);
+    void dispatch(unsigned int x, unsigned int y = 1, unsigned int z = 1) const;
 };
 
 #endif

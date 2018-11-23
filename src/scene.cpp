@@ -16,6 +16,8 @@ Scene::Scene(const std::string &sceneName){
     std::string folderPath = "../assets/scenes/";
     std::string fileExtension = ".json";
     sceneID = sceneName;
+
+    printf("\nBeginning Scene load, checking scene description file:\n");
     if( !FLOAD::checkFileValidity(folderPath + sceneName + fileExtension) ){
         //If you do not find the scene file set the quit flag to true 
         printf("Cannot find scene descriptor file for %s \n", sceneID.c_str());
@@ -51,14 +53,14 @@ void Scene::update(unsigned int deltaT){
     frustrumCulling();
 }
 
-void Scene::drawPointLightShadow(Shader *pointLightShader, unsigned int index, unsigned int cubeMapTarget){
+void Scene::drawPointLightShadow(const Shader &pointLightShader, unsigned int index, unsigned int cubeMapTarget){
     //Current light
     PointLight * light = &pointLights[index];
     light->depthMapTextureID = cubeMapTarget;
     //Shader setup
-    pointLightShader->use();
-    pointLightShader->setVec3("lightPos", light->position);
-    pointLightShader->setFloat("far_plane", light->zFar);
+    pointLightShader.use();
+    pointLightShader.setVec3("lightPos", light->position);
+    pointLightShader.setFloat("far_plane", light->zFar);
 
     //Matrix setup
     glm::mat4 lightMatrix, M;
@@ -66,7 +68,7 @@ void Scene::drawPointLightShadow(Shader *pointLightShader, unsigned int index, u
     for (unsigned int face = 0; face < PointLight::numFaces; ++face){
         std::string number = std::to_string(face);
         lightMatrix = shadowProj * light->lookAtPerFace[face];
-        pointLightShader->setMat4(("shadowMatrices[" + number + "]").c_str(), lightMatrix);
+        pointLightShader.setMat4(("shadowMatrices[" + number + "]").c_str(), lightMatrix);
     }
 
     for(unsigned int i = 0; i < modelsInScene.size(); ++i){
@@ -74,14 +76,14 @@ void Scene::drawPointLightShadow(Shader *pointLightShader, unsigned int index, u
 
         M = currentModel->modelMatrix;
         //Shader setup stuff that changes every frame
-        pointLightShader->setMat4("M", M);
+        pointLightShader.setMat4("M", M);
         
         //Draw object
-        currentModel->draw(*pointLightShader, false);
+        currentModel->draw(pointLightShader, false);
     }
 }
 
-void Scene::drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextureID){
+void Scene::drawDirLightShadows(const Shader &dirLightShader, unsigned int targetTextureID){
     glm::mat4 ModelLS = glm::mat4(1.0);
     dirLight.depthMapTextureID = targetTextureID;
 
@@ -104,98 +106,15 @@ void Scene::drawDirLightShadows(Shader *dirLightShader, unsigned int targetTextu
         ModelLS = dirLight.lightSpaceMatrix * currentModel->modelMatrix;
 
         //Shader setup stuff that changes every frame
-        dirLightShader->use();
-        dirLightShader->setMat4("lightSpaceMatrix", ModelLS);
+        dirLightShader.use();
+        dirLightShader.setMat4("lightSpaceMatrix", ModelLS);
         
         //Draw object
-        currentModel->draw(*dirLightShader, false);
+        currentModel->draw(dirLightShader, false);
     }
 }
 
-void Scene::drawGeometry(Shader *gBufferShader){
-    //Matrix Setup
-    glm::mat4 MVP = glm::mat4(1.0);
-    glm::mat4 M   = glm::mat4(1.0);
-    glm::mat4 VP  = mainCamera->projectionMatrix * mainCamera->viewMatrix;
-
-    gBufferShader->use();
-
-    for(unsigned int i = 0; i < visibleModels.size(); ++i){
-        Model * currentModel = visibleModels[i];
-
-        //Matrix setup
-        M  = currentModel->modelMatrix;
-        MVP = VP * M;
-
-        //Shader setup stuff that changes every frame
-        gBufferShader->setMat4("MVP", MVP);
-        gBufferShader->setMat4("M", M);
-        
-        //Draw object
-        currentModel->draw(*gBufferShader, true);
-    }
-}
-
-void Scene::setupLightingShader(Shader *lightShader){
-    const unsigned int numTextures =  3;
-    lightShader->use();
-    //Setting up gBuffer texture uniform positions 
-    lightShader->setInt("position", 0);
-    lightShader->setInt("normals", 1);
-    lightShader->setInt("albedoSpec", 2);
-
-    if(ImGui::CollapsingHeader("Directional Light Settings")){
-        ImGui::TextColored(ImVec4(1,1,1,1), "Directional light Settings");
-        ImGui::ColorEdit3("Color", (float *)&dirLight.color);
-        ImGui::SliderFloat("Strength", &dirLight.strength, 0.1f, 200.0f);
-        ImGui::SliderFloat("BoxSize", &dirLight.orthoBoxSize, 0.1f, 500.0f);
-        ImGui::SliderFloat("Distance", &dirLight.distance, 0.1f, 500.0f);
-        ImGui::SliderFloat3("Direction", (float*)&dirLight.direction, -5.0f, 5.0f);
-        ImGui::InputFloat3("Camera Position", (float*)&mainCamera->position);
-    }
-
-    //Setting up directional light uniforms
-    lightShader->setVec3("dirLight.direction", dirLight.direction);
-    lightShader->setVec3("dirLight.ambient",   dirLight.ambient);
-    lightShader->setVec3("dirLight.diffuse",   dirLight.strength * dirLight.color * dirLight.diffuse);
-    lightShader->setVec3("dirLight.specular",  dirLight.specular);
-    lightShader->setMat4("dirLight.lightSpaceMatrix", dirLight.lightSpaceMatrix);
-    glActiveTexture(GL_TEXTURE0 + numTextures);
-    lightShader->setInt("shadowMap", numTextures);
-    glBindTexture(GL_TEXTURE_2D, dirLight.depthMapTextureID);
-
-    //Point lights
-    for (unsigned int i = 0; i < pointLightCount; ++i)
-    {
-        PointLight *light = &pointLights[i];
-        std::string number = std::to_string(i);
-
-        // //Point light Gui
-        // // static ImVec4 color = ImColor(light->color.r, light->color.g, light->color.b);
-        // ImGui::TextColored(ImVec4(1, 1, 1, 1), ("Light" + number).c_str());
-        // ImGui::SliderFloat(("Strength" + number).c_str(), &(light->strength), 0.1f, 200.0f);
-        // ImGui::ColorEdit3(("Color" + number).c_str(), (float *)&(light->color));
-        // ImGui::InputFloat3(("Position" + number).c_str(), (float *)&(light->position));
-
-        lightShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position);
-        lightShader->setVec3(("pointLights[" + number + "].ambient").c_str(), light->ambient);
-        lightShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), light->strength * light->color * light->diffuse);
-        lightShader->setVec3(("pointLights[" + number + "].specular").c_str(), light->specular);
-        lightShader->setFloat(("pointLights[" + number + "].constant").c_str(), light->attenuation[0]);
-        lightShader->setFloat(("pointLights[" + number + "].linear").c_str(), light->attenuation[1]);
-        lightShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), light->attenuation[2]);
-
-        //Change constants herer TODO TODO
-        glActiveTexture(GL_TEXTURE0 + numTextures + 1 + i);
-        lightShader->setInt(("pointLights[" + number + "].depthMap").c_str(), numTextures + 1 + i);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
-        lightShader->setFloat("far_plane", light->zFar);
-    }
-    //Camera Uniforms
-    lightShader->setVec3("cameraPos_wS", mainCamera->position);
-}
-
-void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
+void Scene::drawFullScene(const Shader &mainSceneShader,const  Shader &skyboxShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 M   = glm::mat4(1.0);
@@ -215,13 +134,13 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
         ImGui::SliderFloat3("Direction", (float*)&dirLight.direction, -5.0f, 5.0f);
     }
 
-    mainSceneShader->use();
-    mainSceneShader->setVec3("dirLight.direction", dirLight.direction);
-    mainSceneShader->setVec3("dirLight.color",   dirLight.strength * dirLight.color);
-    mainSceneShader->setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
-    mainSceneShader->setVec3("cameraPos_wS", mainCamera->position);
-    mainSceneShader->setFloat("zFar", mainCamera->cameraFrustum.farPlane);
-    mainSceneShader->setFloat("zNear", mainCamera->cameraFrustum.nearPlane);
+    mainSceneShader.use();
+    mainSceneShader.setVec3("dirLight.direction", dirLight.direction);
+    mainSceneShader.setVec3("dirLight.color",   dirLight.strength * dirLight.color);
+    mainSceneShader.setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
+    mainSceneShader.setVec3("cameraPos_wS", mainCamera->position);
+    mainSceneShader.setFloat("zFar", mainCamera->cameraFrustum.farPlane);
+    mainSceneShader.setFloat("zNear", mainCamera->cameraFrustum.nearPlane);
 
     if(ImGui::CollapsingHeader("PointLights", ImGuiTreeNodeFlags_DefaultOpen)){
         for (unsigned int i = 0; i < pointLightCount; ++i)
@@ -229,48 +148,31 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
             PointLight *light = &pointLights[i];
             std::string number = std::to_string(i);
 
-            //Point light Gui
-            // static ImVec4 color = ImColor(light->color.r, light->color.g, light->color.b);
-            // ImGui::TextColored(ImVec4(1, 1, 1, 1), ("Light" + number).c_str());
-            // ImGui::SliderFloat(("Strength" + number).c_str(), &(light->strength), 0.1f, 200.0f);
-            // ImGui::ColorEdit3(("Color" + number).c_str(), (float *)&(light->color));
-            // ImGui::InputFloat3(("Position"+ number).c_str(), (float*)&(light->position));
-
-            // mainSceneShader->setVec3(("pointLights[" + number + "].position").c_str(), light->position); 
-            // mainSceneShader->setVec3(("pointLight_wS[" + number + "]").c_str(), light->position); 
-            // mainSceneShader->setVec3(("pointLights[" + number + "].ambient").c_str(), light->ambient);
-            // mainSceneShader->setVec3(("pointLights[" + number + "].diffuse").c_str(), light->strength * light->color * light->diffuse);
-            // mainSceneShader->setVec3(("pointLights[" + number + "].specular").c_str(), light->specular);
-            // mainSceneShader->setFloat(("pointLights[" + number + "].constant").c_str(), light->attenuation[0]);
-            // mainSceneShader->setFloat(("pointLights[" + number + "].linear").c_str(), light->attenuation[1]);
-            // mainSceneShader->setFloat(("pointLights[" + number + "].quadratic").c_str(), light->attenuation[2]);
-
             glActiveTexture(GL_TEXTURE0 + numTextures + i); 
-            mainSceneShader->setInt(("depthMaps[" + number + "]").c_str(), numTextures + i);
+            mainSceneShader.setInt(("depthMaps[" + number + "]").c_str(), numTextures + i);
             glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
-            mainSceneShader->setFloat("far_plane", light->zFar);
+            mainSceneShader.setFloat("far_plane", light->zFar);
         }   
     }    
     //Setting directional shadow depth map textures
     glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount);
-    mainSceneShader->setInt("shadowMap", numTextures + pointLightCount);
+    mainSceneShader.setInt("shadowMap", numTextures + pointLightCount);
     glBindTexture(GL_TEXTURE_2D, dirLight.depthMapTextureID);
-
 
     //TODO:: Formalize htis a bit more
     //Setting environment map texture
     glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount + 1);
-    mainSceneShader->setInt("irradianceMap", numTextures + pointLightCount + 1);
+    mainSceneShader.setInt("irradianceMap", numTextures + pointLightCount + 1);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap.textureID);
 
     //Setting environment map texture for specular
     glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount + 2);
-    mainSceneShader->setInt("prefilterMap", numTextures + pointLightCount + 2);
+    mainSceneShader.setInt("prefilterMap", numTextures + pointLightCount + 2);
     glBindTexture(GL_TEXTURE_CUBE_MAP, specFilteredMap.textureID);
 
     //Setting lookup table
     glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount + 3);
-    mainSceneShader->setInt("brdfLUT", numTextures + pointLightCount + 3);
+    mainSceneShader.setInt("brdfLUT", numTextures + pointLightCount + 3);
     glBindTexture(GL_TEXTURE_2D, brdfLUTTexture.textureID);
 
     for(unsigned int i = 0; i < visibleModels.size(); ++i){
@@ -281,20 +183,20 @@ void Scene::drawFullScene(Shader *mainSceneShader, Shader *skyboxShader){
         MVP = VP * M;
 
         //Shader setup stuff that changes every frame
-        mainSceneShader->setMat4("MVP", MVP);
-        mainSceneShader->setMat4("M", M);
+        mainSceneShader.setMat4("MVP", MVP);
+        mainSceneShader.setMat4("M", M);
         
         //Draw object
-        currentModel->draw(*mainSceneShader, true);
+        currentModel->draw(mainSceneShader, true);
     }
 
     //Drawing skybox
-    skyboxShader->use();
-    skyboxShader->setMat4("VP", VPCubeMap);
+    skyboxShader.use();
+    skyboxShader.setMat4("VP", VPCubeMap);
     mainSkyBox.draw();
 }
 
-void Scene::drawDepthPass(Shader *depthPassShader){
+void Scene::drawDepthPass(const Shader &depthPassShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 VP  = mainCamera->projectionMatrix * mainCamera->viewMatrix;
@@ -308,11 +210,11 @@ void Scene::drawDepthPass(Shader *depthPassShader){
         MVP = VP * currentModel->modelMatrix;
 
         //Shader setup stuff that changes every frame
-        depthPassShader->use();
-        depthPassShader->setMat4("MVP", MVP);
+        depthPassShader.use();
+        depthPassShader.setMat4("MVP", MVP);
         
         //Draw object
-        currentModel->draw(*depthPassShader, false);
+        currentModel->draw(depthPassShader, false);
     }
     glColorMask(1,1,1,1);
 }

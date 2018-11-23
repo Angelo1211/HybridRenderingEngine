@@ -12,7 +12,7 @@ DATE	     : 2018-09-08
 
 //Shader setup and initialization code, could be combined with the compute shader initialization and
 //could also set success/failure flags to indicate issues during load to avoid full crashes. TODO
-Shader::Shader(const std::string vertexPath, const std::string fragmentPath, const std::string geometryPath){
+bool Shader::setup(const std::string vertexPath, const std::string fragmentPath, const std::string geometryPath){
     //Getting the vertex shader code from the text file at file path
     bool gShaderOn = geometryPath != "";
     std::string shaderFolderPath = "../assets/shaders/";
@@ -26,10 +26,12 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath, con
     //Check if shader files exist
     if(!vShaderFile.good()){
         printf("Couldn't find vertex shader file: %s in shaders folder.\n ", vertexPath.c_str());
+        return false;
     }
     else{ //Vertex shader file exists
         if(!fShaderFile.good()){
             printf("Couldn't find fragment shader file: %s in shaders folder.\n ", fragmentPath.c_str());
+            return false;
         }
         else{
             //Frgment shader file exists
@@ -65,6 +67,7 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath, con
             if(!success){
                 glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
                 printf("Vertex shader compilation failed %s\n", infoLog );
+                return false;
             }
 
             //Fragment shader stuff
@@ -75,6 +78,7 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath, con
             if(!success){
                 glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
                 printf("Fragment shader compilation failed %s\n", infoLog );
+                return false;
             }
 
             //Geometry shader stuff
@@ -87,6 +91,7 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath, con
                 if(!success){
                     glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
                     printf("Geometry shader compilation failed %s\n", infoLog );
+                    return false;
                 }
             }
 
@@ -101,18 +106,21 @@ Shader::Shader(const std::string vertexPath, const std::string fragmentPath, con
             if(!success){
                 glGetProgramInfoLog(ID, 512, NULL, infoLog);
                 printf("Shader Linking failed %s\n", infoLog );
+                return false;
             }
 
             //Deleting shaders
             glDeleteShader(vertexShader);
             glDeleteShader(fragmentShader);
             if (gShaderOn) {glDeleteShader(geometryShader);}
+
+            return true;
         }
     } 
 } 
 
 //Indicate to openGL that this is the GPU program that is going to be run
-void Shader::use(){
+void Shader::use() const {
     glUseProgram(ID);
 }
 
@@ -138,11 +146,9 @@ void Shader::setVec3(const std::string &name, const glm::vec3 &vec) const {
 }
 
 //--------------------------------------------------------------------------------------------
-//ComputeShader constructor
-
 //The constructor is actually really similar to the base class one,
 //Could be simplified?
-ComputeShader::ComputeShader(const std::string computePath){
+bool ComputeShader::setup(const std::string computePath){
     //Getting the compute shader code from the text file at file path
     std::string shaderFolderPath = "../assets/shaders/ComputeShaders/";
     std::string computeCode;
@@ -151,6 +157,7 @@ ComputeShader::ComputeShader(const std::string computePath){
     //Check if shader files exist
     if(!cShaderFile.good()){
         printf("Couldn't find compute shader file: %s in shaders folder.\n ", computePath.c_str());
+        return false;
     }
     else{ //Compute Shader Exists
         cShaderStream << cShaderFile.rdbuf();
@@ -173,6 +180,7 @@ ComputeShader::ComputeShader(const std::string computePath){
         {
             glGetShaderInfoLog(computeShader, 512, NULL, infoLog);
             printf("Vertex shader compilation failed %s\n", infoLog);
+            return false;
         }
 
         //Linking shaders
@@ -181,19 +189,20 @@ ComputeShader::ComputeShader(const std::string computePath){
         glLinkProgram(ID);
 
         glGetProgramiv(ID, GL_LINK_STATUS, &success);
-        if (!success)
-        {
+        if (!success){
             glGetProgramInfoLog(ID, 512, NULL, infoLog);
             printf("Shader Linking failed %s\n", infoLog);
+            return false;
         }
 
         //Deleting shaders
         glDeleteShader(computeShader);
+        return true;
     } 
 }
 
 //Shorthand for dispatch compute with some default parameter values
-void ComputeShader::dispatch(unsigned int x, unsigned int y, unsigned int z){
+void ComputeShader::dispatch(unsigned int x, unsigned int y, unsigned int z) const{
     glDispatchCompute(x, y, z);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
