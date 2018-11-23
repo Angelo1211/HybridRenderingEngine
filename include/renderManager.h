@@ -74,14 +74,14 @@ class RenderManager{
         unsigned int lightSSBO, lightIndexList, lightGrid, lightIndexGlobalCount;
 
         //Render pipeline FBO's
-        FrameBuffer multiSampledFBO;
+        FrameBufferMultiSampled multiSampledFBO;
 
         ResolveBuffer simpleFBO;
         QuadHDRBuffer pingPongFBO;
 
         CaptureBuffer captureFBOBig, captureFBOSmall;
-        DepthBuffer  dirShadowFBO;
-        DepthBuffer   *pointLightShadowFBOs;
+        DirShadowBuffer  dirShadowFBO;
+        PointShadowBuffer   *pointLightShadowFBOs;
 
 };
 #endif

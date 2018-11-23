@@ -75,7 +75,7 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 
             //Cubemap prefiltering
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
-            unsigned int captureRBO = captureFBOSmall.captureRBO;
+            unsigned int captureRBO = captureFBOSmall.depthBuffer;
             currentScene->specFilteredMap.preFilterCubeMap(environmentID, captureRBO, shaderAtlas[10]);
 
             //BRDF lookup texture
@@ -243,26 +243,23 @@ void RenderManager::shutDown(){
 //Fix capture FBO name convention
 bool RenderManager::initFBOs(){
     numLights = currentScene->pointLightCount;
-    pointLightShadowFBOs = new DepthBuffer[numLights];
+    pointLightShadowFBOs = new PointShadowBuffer[numLights];
     unsigned int shadowMapResolution = currentScene->getShadowRes();
 
-    bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer(true);
+    bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer();
     bool initFBOFlag2 = pingPongFBO.setupFrameBuffer();
     bool initFBOFlag3 = simpleFBO.setupFrameBuffer();
-    bool initFBOFLag4 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution, false);
+    bool initFBOFLag4 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution);
 
     int skyboxRes = currentScene->mainSkyBox.resolution;
     captureFBOBig.setupFrameBuffer(skyboxRes, skyboxRes);
 
     int irradianceRes = currentScene->irradianceMap.width;
     captureFBOSmall.setupFrameBuffer(irradianceRes, irradianceRes);
-    // bool initFBOFlag1 = depthPrePass.setupFrameBuffer(DisplayManager::SCREEN_WIDTH,
-                                                    //   DisplayManager::SCREEN_HEIGHT,
-                                                    //   false);
 
     bool initFBOFlagPointLights = true;
     for(unsigned int i = 0; i < numLights; ++i ){
-        initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution, true);
+        initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution);
     }
 
     // bool initFBOFlag1 = gBuffer.setupFrameBuffer();
@@ -302,12 +299,14 @@ void RenderManager::render(const unsigned int start){
         //Populating depth cube maps for the point lights
         for (unsigned int i = 0; i < currentScene->pointLightCount; ++i){
             pointLightShadowFBOs[i].bind();
-            currentScene->drawPointLightShadow(shaderAtlas[7], i, pointLightShadowFBOs[i].depthMap);
+            pointLightShadowFBOs[i].clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
+            currentScene->drawPointLightShadow(shaderAtlas[7], i, pointLightShadowFBOs[i].depthBuffer);
         }
 
         // Directional shadows
         dirShadowFBO.bind();
-        currentScene->drawDirLightShadows(shaderAtlas[6], dirShadowFBO.depthMap);
+        dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
+        currentScene->drawDirLightShadows(shaderAtlas[6], dirShadowFBO.depthBuffer);
     }
 
     //Preps all the items that will be drawn in the scene
@@ -323,21 +322,21 @@ void RenderManager::render(const unsigned int start){
     currentScene->drawDepthPass(shaderAtlas[0]);
 
     //1.2- Multisampled blitting to depth texture
-    multiSampledFBO.blitTo(simpleFBO, GL_DEPTH_BUFFER_BIT);
+    // multiSampledFBO.blitTo(simpleFBO, GL_DEPTH_BUFFER_BIT);
 
     //4-Light assignment
     cullLightsAABB->use();
     cullLightsAABB->setMat4("viewMatrix", sceneCamera->viewMatrix);
     cullLightsAABB->dispatch(1,1,6);
 
-    //5 - Actual shading
+    //5 - Actual shading;
     //5.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
     glDepthFunc(GL_LEQUAL);
     glDepthMask(false);
     currentScene->drawFullScene(shaderAtlas[1], shaderAtlas[2]);
 
     //5.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
-    multiSampledFBO.blitTo(simpleFBO, GL_COLOR_BUFFER_BIT);
+    multiSampledFBO.blitTo(simpleFBO, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //6 -postprocess
     postProcess(start);
@@ -358,6 +357,7 @@ void RenderManager::postProcess(const unsigned int start){
         ImGui::SliderFloat("Exposure", &sceneCamera->exposure, 0.1f, 5.0f);
     }
     pingPongFBO.bind();
+    pingPongFBO.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, glm::vec3(0.0f));
     if( sceneCamera->blurAmount > 0){
         shaderAtlas[3]->use();
         canvas.draw(simpleFBO.texColorBuffer);

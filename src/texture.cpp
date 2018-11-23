@@ -223,3 +223,66 @@ unsigned int Texture::loadDDSTexture(char const* Filename){
     }
     return TextureName;
 }
+
+
+unsigned int Texture::genTextureDirectlyOnGPU(const int width, const int height,
+                                              const unsigned int attachmentNum, TextureType type){
+    unsigned int genTextureID; 
+    float borderColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+    glGenTextures(1, &genTextureID);
+    switch(type){
+        case MULT_2D_HDR_COL:
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, genTextureID);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, width, height, GL_TRUE);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentNum, GL_TEXTURE_2D_MULTISAMPLE, genTextureID, 0);
+        return genTextureID;
+        case SING_2D_HDR_COL:
+            glBindTexture(GL_TEXTURE_2D, genTextureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentNum, GL_TEXTURE_2D, genTextureID, 0);
+        return genTextureID;
+        case MULT_2D_HDR_DEP:
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, genTextureID);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH_COMPONENT32F, width, height, GL_TRUE);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, genTextureID, 0);
+        return genTextureID;
+        case SING_2D_HDR_DEP:
+            glBindTexture(GL_TEXTURE_2D, genTextureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, genTextureID, 0);
+        return genTextureID;
+        case SING_2D_HDR_COL_CLAMP:
+            glBindTexture(GL_TEXTURE_2D, genTextureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentNum, GL_TEXTURE_2D, genTextureID, 0);
+        return genTextureID;
+        case SING_2D_HDR_DEP_BORDER:
+            glBindTexture(GL_TEXTURE_2D, genTextureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, genTextureID, 0);
+        return genTextureID;
+        default:
+            return 0;
+    }
+}
