@@ -19,31 +19,27 @@ DisplayManager::~DisplayManager(){}
 
 // Initialization sequence of all rendering related libraries such as SDL, GLAD and ImGUI.
 bool DisplayManager::startUp(){
-    bool success = true;
     if( !startSDL() ){
-        success = false;
+        return false;
     }
-    else{
-        if( !startOpenGL() ){
-            success = false;
-        }
-        else{
-            if (!createWindow()){
-                success = false;
-            }
-            else{
-                if( !createGLContext()){
-                    success = false;
-                }
-                else{
-                    if( !createImGuiContext()){
-                        success = false;
-                    }
-                }
-            }
-        }
+
+    if( !startOpenGL() ){
+        return false;
     }
-    return success;
+
+    if (!createWindow()){
+        return false;
+    }
+
+    if( !createGLContext()){
+        return false;
+    }
+
+    if( !createImGuiContext()){
+        return false;
+    }
+
+    return true;
 }
 
 //Closes down all contexts and subsystems in the reverse initialization order
@@ -101,20 +97,20 @@ bool DisplayManager::startOpenGL(){
         printf("Failed to initialize OpenGL. Error: %s\n", SDL_GetError() );
         return false;
     }
-    else{
-        // Request an OpenGL 4.5 context (should be core)
-        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
-        // No point in having a deplth buffer if you're using the default 
-        // buffer only for post processing
-        // SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    // Request an OpenGL 4.5 context (should be core)
+    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
-        //Also set the default buffer to be sRGB 
-        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-        SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
-    }
+    // No point in having a deplth buffer if you're using the default 
+    // buffer only for post processing
+    // SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    //Also set the default buffer to be sRGB 
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+
     return true;
 }
 
@@ -144,31 +140,29 @@ bool DisplayManager::createGLContext(){
         printf("Could not create OpenGL context. Error: %s\n", SDL_GetError() );
         return false;
     }
-    else{
-        if (!gladLoadGLLoader(SDL_GL_GetProcAddress)){
-            printf("GLAD could not load SDL Context.\n");
-            return false;
-        }
-        else{
-            //Printing some vendor Information
-            printf("Vendor:   %s\n", glGetString(GL_VENDOR));
-            printf("Renderer: %s\n", glGetString(GL_RENDERER));
-            printf("Version:  %s\n", glGetString(GL_VERSION));
 
-            //Init GL context settings
-            SDL_GL_SetSwapInterval(0);
-            glEnable(GL_CULL_FACE);
-            glEnable(GL_MULTISAMPLE);
-            glEnable(GL_FRAMEBUFFER_SRGB);
-            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-            //Setting the glViewport to be the size of the SDL window
-            int w, h;
-            SDL_GetWindowSize(mWindow, &w, &h);
-            glViewport(0, 0, w, h);
-            return true;
-        }
+    if (!gladLoadGLLoader(SDL_GL_GetProcAddress)){
+        printf("GLAD could not load SDL Context.\n");
+        return false;
     }
+
+    //Printing some vendor Information
+    printf("Vendor:   %s\n", glGetString(GL_VENDOR));
+    printf("Renderer: %s\n", glGetString(GL_RENDERER));
+    printf("Version:  %s\n", glGetString(GL_VERSION));
+
+    //Init GL context settings
+    SDL_GL_SetSwapInterval(0);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_FRAMEBUFFER_SRGB);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+    //Setting the glViewport to be the size of the SDL window
+    int w, h;
+    SDL_GetWindowSize(mWindow, &w, &h);
+    glViewport(0, 0, w, h);
+    return true;
 }
 
 // Inits our GUI library and calls all init functions related to configuring it for use
@@ -179,16 +173,15 @@ bool DisplayManager::createImGuiContext(){
         printf("Could not load IMGUI context!\n");
         return false;
     }
-    else{
-        //Init and configure for OpenGL and SDL
-        ImGui_ImplSDL2_InitForOpenGL(mWindow, mContext);
-        ImGui_ImplOpenGL3_Init(glsl_version);
 
-        //Imgui first frame setup
-        ImGui::StyleColorsDark();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame(mWindow);
-        ImGui::NewFrame();
-        return true;
-    }
+    //Init and configure for OpenGL and SDL
+    ImGui_ImplSDL2_InitForOpenGL(mWindow, mContext);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    //Imgui first frame setup
+    ImGui::StyleColorsDark();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(mWindow);
+    ImGui::NewFrame();
+    return true;
 }

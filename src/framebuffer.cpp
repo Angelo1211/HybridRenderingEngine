@@ -130,6 +130,11 @@ bool CaptureBuffer::setupFrameBuffer(unsigned int w, unsigned int h){
     return checkForCompleteness();
 }
 
+void CaptureBuffer::resizeFrameBuffer(int resolution){
+    glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, resolution, resolution);
+}
+
 /*
 Framebuffer Characteristics
 1. 1 depth

@@ -16,43 +16,39 @@ Engine::~Engine(){}
 
 bool Engine::startUp(){
     unsigned int start = SDL_GetTicks(); //Could probably be its own timer class 
-    bool success = true;
 
     //Start up of all SDL and opengl Display related content
-    if( !gDisplayManager.startUp() ){
-        success = false;
+    if(!gDisplayManager.startUp()){
         printf("Failed to initialize window display manager.\n");
+        return false;
     }
-    else{
-        // Inits scene manager and loads default scene
-        if( !gSceneManager.startUp() ){
-            success = false;
-            printf("Failed to initialize scene manager.\n");
-        }
-        else{
-            //Initializes rendererer manager, which is in charge of high level
-            //rendering tasks (render queue, locating render scene etc)
-            //It gets passed references to the other major subsystems for use later
-            if( !gRenderManager.startUp(gDisplayManager, gSceneManager) ){
-                success = false;
-                printf("Failed to initialize Render manager.\n");
-            }
-            else{
-                //Initializing input manager that manages all mouse, keyboard and
-                //mousewheel input. It needs access to the scene manager to apply the
-                //changes on the scene caused by user input. 
-                if ( !gInputManager.startUp(gSceneManager) ){
-                    success = false;
-                    printf("Failed to initialize input manager.\n");
-                }
-            }
-        }
+
+    // Inits scene manager and loads default scene
+    if(!gSceneManager.startUp()){
+        printf("Failed to initialize scene manager.\n");
+        return false;
+    }
+
+    //Initializes rendererer manager, which is in charge of high level
+    //rendering tasks (render queue, locating render scene etc)
+    //It gets passed references to the other major subsystems for use later
+    if (!gRenderManager.startUp(gDisplayManager, gSceneManager)){
+        printf("Failed to initialize Render manager.\n");
+        return false;
+    }
+
+    //Initializing input manager that manages all mouse, keyboard and
+    //mousewheel input. It needs access to the scene manager to apply the
+    //changes on the scene caused by user input.
+    if (!gInputManager.startUp(gSceneManager)){
+        printf("Failed to initialize input manager.\n");
+        return false;
     }
 
     //Want to keep track of how much time the whole loading process took
     unsigned int deltaT = SDL_GetTicks() - start;
     printf("(Load time: %ums)\n",deltaT);
-    return success;
+    return true;
 }
 
 //Closing in opposite order to avoid dangling pointers

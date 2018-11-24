@@ -40,7 +40,6 @@ class RenderManager{
 
         //Internal Rendering functions
         void postProcess(const unsigned int start);
-        void buildRenderQueue();
 
         //Todo:: shaders should belong to a material not the rendermanager
         Shader depthPrePassShader, PBRClusteredShader, skyboxShader,
@@ -82,7 +81,7 @@ class RenderManager{
         FrameBufferMultiSampled multiSampledFBO;
         ResolveBuffer simpleFBO;
         QuadHDRBuffer pingPongFBO;
-        CaptureBuffer captureFBOBig, captureFBOSmall;
+        CaptureBuffer captureFBO;
         DirShadowBuffer  dirShadowFBO;
         PointShadowBuffer   *pointLightShadowFBOs;
 };

@@ -256,31 +256,29 @@ bool Scene::loadContent(){
         printf("Error! Config file: %s does not belong to current scene, check configuration.\n", sceneConfigFilePath.c_str());
         return false;
     }
+
     //now we can parse the rest of the file "safely"
-    //TODO: more safety checks
-    else{
-        printf("Loading camera...\n");
-        loadCamera(configJson);
+    printf("Loading camera...\n");
+    loadCamera(configJson);
 
-        printf("Loading models...\n");
-        loadSceneModels(configJson);
+    printf("Loading models...\n");
+    loadSceneModels(configJson);
 
-        printf("Loading skybox...\n");
-        CubeMap::cubeMapCube.setup();
-        loadSkyBox(configJson);
+    printf("Loading skybox...\n");
+    CubeMap::cubeMapCube.setup();
+    loadSkyBox(configJson);
 
-        printf("Loading lights...\n");
-        loadLights(configJson);
+    printf("Loading lights...\n");
+    loadLights(configJson);
 
-        printf("Generating environment maps...\n");
-        generateEnvironmentMaps();
+    printf("Generating environment maps...\n");
+    generateEnvironmentMaps();
 
-        printf("Reticulating splines...\n");
+    printf("Reticulating splines...\n");
 
-        //lastly we check if the scene is empty and return
-        printf("Loading Complete!...\n");
-        return !modelsInScene.empty();
-    }
+    //lastly we check if the scene is empty and return
+    printf("Loading Complete!...\n");
+    return !modelsInScene.empty();
 }
 
 void Scene::loadLights(const json &sceneConfigJson){

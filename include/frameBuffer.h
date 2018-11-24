@@ -44,6 +44,7 @@ struct QuadHDRBuffer : public FrameBuffer{
     bool setupFrameBuffer();
 };
 struct CaptureBuffer : public FrameBuffer {
+    void resizeFrameBuffer(int resolution);
     bool setupFrameBuffer(unsigned int w, unsigned int h);
 };
 

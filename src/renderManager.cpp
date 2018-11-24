@@ -37,61 +37,63 @@ struct ScreenToView{
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
 bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneManager ){
+    //Getting pointers to the data we'll render
     screen = &displayManager;
     sceneLocator = &sceneManager;
     currentScene = sceneLocator->getCurrentScene();
+    sceneCamera = currentScene->getCurrentCamera();
 
     if( !initFBOs() ){
-        printf("One of the FBO's failed to be initialized correctly.\n");
+        printf("FBO's failed to be initialized correctly.\n");
         return false;
     }
-    else{
-        if (!loadShaders()){
-            return false;
-        }
-        else{
-            //Setup of other important rendering items
-            //TODO:: not everything should be here
-            buildRenderQueue();
-            canvas.setup();
-            initSSBOs();
-
-            //TODO:: not everything should be here
-            buildAABBGridCompShader.use();
-            buildAABBGridCompShader.setFloat("zNear", sceneCamera->cameraFrustum.nearPlane);
-            buildAABBGridCompShader.setFloat("zFar", sceneCamera->cameraFrustum.farPlane);
-            buildAABBGridCompShader.dispatch(gridSizeX, gridSizeY, gridSizeZ);
-
-            //Passing equirectangular map to cubemap
-            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOBig.frameBufferID);
-            currentScene->mainSkyBox.fillCubeMapWithTexture(fillCubeMapShader);
-
-            //Cubemap convolution TODO:: Fix ugly function call
-            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
-            unsigned int environmentID = currentScene->mainSkyBox.skyBoxCubeMap.textureID;
-            currentScene->irradianceMap.convolveCubeMap(environmentID, convolveCubeMap);
-
-            //Cubemap prefiltering
-            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
-            unsigned int captureRBO = captureFBOSmall.depthBuffer;
-            currentScene->specFilteredMap.preFilterCubeMap(environmentID, captureRBO, preFilterSpecShader);
-
-            //BRDF lookup texture
-            glBindFramebuffer(GL_FRAMEBUFFER, captureFBOSmall.frameBufferID);
-            glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-            unsigned int res = currentScene->brdfLUTTexture.height;
-            unsigned int id = currentScene->brdfLUTTexture.textureID;
-
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, res,  res);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
-            integrateBRDFShader.use();
-            glViewport(0, 0, res, res);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            canvas.draw();
-
-            glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
-        }
+    
+    if (!loadShaders()){
+        printf("Shaders failed to be initialized correctly.\n");
+        return false;
     }
+
+    if (!initSSBOs()){
+        printf("SSBO's failed to be initialized correctly.\n");
+        return false;
+    }
+
+    canvas.setup();
+
+    buildAABBGridCompShader.use();
+    buildAABBGridCompShader.setFloat("zNear", sceneCamera->cameraFrustum.nearPlane);
+    buildAABBGridCompShader.setFloat("zFar", sceneCamera->cameraFrustum.farPlane);
+    buildAABBGridCompShader.dispatch(gridSizeX, gridSizeY, gridSizeZ);
+
+    //Passing equirectangular map to cubemap
+    captureFBO.bind();
+    currentScene->mainSkyBox.fillCubeMapWithTexture(fillCubeMapShader);
+
+    //Cubemap convolution TODO:: Fix ugly function call
+    int res = currentScene->irradianceMap.width;
+    captureFBO.resizeFrameBuffer(res);
+    unsigned int environmentID = currentScene->mainSkyBox.skyBoxCubeMap.textureID;
+    currentScene->irradianceMap.convolveCubeMap(environmentID, convolveCubeMap);
+
+    //Cubemap prefiltering
+    unsigned int captureRBO = captureFBO.depthBuffer;
+    currentScene->specFilteredMap.preFilterCubeMap(environmentID, captureRBO, preFilterSpecShader);
+
+    //BRDF lookup texture
+    integrateBRDFShader.use();
+
+    res = currentScene->brdfLUTTexture.height;
+    captureFBO.resizeFrameBuffer(res);
+
+    unsigned int id = currentScene->brdfLUTTexture.textureID;
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
+
+    glViewport(0, 0, res, res);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    canvas.draw();
+
+    glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
+
     return true;
 }
 
@@ -243,9 +245,9 @@ bool RenderManager::loadShaders(){
 }
 
 void RenderManager::shutDown(){
+    screen = nullptr;
     sceneCamera  = nullptr;
     sceneLocator = nullptr;
-    screen = nullptr;
 }
 
 //Todo:: cleanup this mess
@@ -261,10 +263,7 @@ bool RenderManager::initFBOs(){
     bool initFBOFLag4 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution);
 
     int skyboxRes = currentScene->mainSkyBox.resolution;
-    captureFBOBig.setupFrameBuffer(skyboxRes, skyboxRes);
-
-    int irradianceRes = currentScene->irradianceMap.width;
-    captureFBOSmall.setupFrameBuffer(irradianceRes, irradianceRes);
+    captureFBO.setupFrameBuffer(skyboxRes, skyboxRes);
 
     bool initFBOFlagPointLights = true;
     for(unsigned int i = 0; i < numLights; ++i ){
@@ -309,9 +308,6 @@ void RenderManager::render(const unsigned int start){
         dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
         currentScene->drawDirLightShadows(dirShadowShader, dirShadowFBO.depthBuffer);
     }
-
-    //Preps all the items that will be drawn in the scene
-    buildRenderQueue();
 
     //Camera controls
     ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position);
@@ -365,8 +361,7 @@ void RenderManager::postProcess(const unsigned int start){
     }
     //Applying Gaussian blur in ping pong fashion
     gaussianBlurShader.use();
-    for (int i = 0; i < sceneCamera->blurAmount; ++i)
-    {
+    for (int i = 0; i < sceneCamera->blurAmount; ++i){
         //Horizontal pass
         glBindFramebuffer(GL_FRAMEBUFFER, simpleFBO.frameBufferID);
         glDrawBuffer(GL_COLOR_ATTACHMENT1);
@@ -391,13 +386,4 @@ void RenderManager::postProcess(const unsigned int start){
     screenSpaceShader.setInt("computeTexture", 2);
     //Convoluting both images
     canvas.draw(simpleFBO.texColorBuffer, pingPongFBO.texColorBuffer);
-}
-
-//Done every frame in case scene changes
-void RenderManager::buildRenderQueue(){
-    //set scene info
-    currentScene = sceneLocator->getCurrentScene();
-    
-    //Set renderer camera
-    sceneCamera = currentScene->getCurrentCamera();
 }
