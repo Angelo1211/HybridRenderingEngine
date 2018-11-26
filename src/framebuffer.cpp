@@ -167,6 +167,7 @@ bool PointShadowBuffer::setupFrameBuffer(unsigned int w, unsigned int h){
 
     drawingTexture.generateCubeMap(width, height, SHADOW_MAP);
     depthBuffer = drawingTexture.textureID;
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthBuffer, 0);
 
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);

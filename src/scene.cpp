@@ -65,7 +65,7 @@ void Scene::drawPointLightShadow(const Shader &pointLightShader, unsigned int in
     //Matrix setup
     glm::mat4 lightMatrix, M;
     glm::mat4 shadowProj = light->shadowProjectionMat;
-    for (unsigned int face = 0; face < PointLight::numFaces; ++face){
+    for (unsigned int face = 0; face < 6; ++face){
         std::string number = std::to_string(face);
         lightMatrix = shadowProj * light->lookAtPerFace[face];
         pointLightShader.setMat4(("shadowMatrices[" + number + "]").c_str(), lightMatrix);
@@ -92,7 +92,7 @@ void Scene::drawDirLightShadows(const Shader &dirLightShader, unsigned int targe
     float top = left;
     float bottom = -top;
     dirLight.shadowProjectionMat = glm::ortho(left, right, bottom, top, dirLight.zNear, dirLight.zFar);
-    dirLight.lightView = glm::lookAt(dirLight.distance * -dirLight.direction,
+    dirLight.lightView = glm::lookAt(100.0f * -dirLight.direction,
                                      glm::vec3(0.0f, 0.0f, 0.0f),
                                      glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -130,7 +130,6 @@ void Scene::drawFullScene(const Shader &mainSceneShader,const  Shader &skyboxSha
         ImGui::ColorEdit3("Color", (float *)&dirLight.color);
         ImGui::SliderFloat("Strength", &dirLight.strength, 0.1f, 200.0f);
         ImGui::SliderFloat("BoxSize", &dirLight.orthoBoxSize, 0.1f, 500.0f);
-        ImGui::SliderFloat("Distance", &dirLight.distance, 0.1f, 500.0f);
         ImGui::SliderFloat3("Direction", (float*)&dirLight.direction, -5.0f, 5.0f);
     }
 
@@ -201,7 +200,6 @@ void Scene::drawDepthPass(const Shader &depthPassShader){
     glm::mat4 MVP = glm::mat4(1.0);
     glm::mat4 VP  = mainCamera->projectionMatrix * mainCamera->viewMatrix;
 
-    glColorMask(0,0,0,0);
     //Drawing every object into the depth buffer
     for(unsigned int i = 0; i < modelsInScene.size(); ++i){
         Model * currentModel = modelsInScene[i];
@@ -216,7 +214,6 @@ void Scene::drawDepthPass(const Shader &depthPassShader){
         //Draw object
         currentModel->draw(depthPassShader, false);
     }
-    glColorMask(1,1,1,1);
 }
 
 //-----------------------------GETTERS----------------------------------------------
@@ -287,11 +284,6 @@ void Scene::loadLights(const json &sceneConfigJson){
     {
         json light = sceneConfigJson["directionalLight"];
 
-        //Vector values
-        dirLight.ambient  = glm::vec3((float)light["ambient"]);
-        dirLight.diffuse  = glm::vec3((float)light["diffuse"]);
-        dirLight.specular = glm::vec3((float)light["specular"]);
-
         json direction = light["direction"];
         dirLight.direction = glm::vec3((float)direction[0],
                                         (float)direction[1],
@@ -331,37 +323,27 @@ void Scene::loadLights(const json &sceneConfigJson){
 
         for(unsigned int i = 0; i < pointLightCount; ++i){
             json light = sceneConfigJson["pointLights"][i];
-            //Vector values
-            pointLights[i].ambient = glm::vec3((float)light["ambient"]);
-            pointLights[i].diffuse = glm::vec3((float)light["diffuse"]);
-            pointLights[i].specular = glm::vec3((float)light["specular"]);
 
             json position = light["position"];
             pointLights[i].position = glm::vec3((float)position[0],
-                                           (float)position[1],
-                                           (float)position[2]);
+                                                (float)position[1],
+                                                (float)position[2]);
 
             json color = light["color"];
             pointLights[i].color = glm::vec3((float)color[0],
-                                       (float)color[1],
-                                       (float)color[2]);
-
-            json attenuation = light["attenuation"];
-            pointLights[i].attenuation = glm::vec3((float)attenuation[0],
-                                       (float)attenuation[1],
-                                       (float)attenuation[2]);
+                                             (float)color[1],
+                                             (float)color[2]);
 
             //Scalar values
             pointLights[i].strength = (float)light["strength"];
             pointLights[i].zNear = (float)light["zNear"];
             pointLights[i].zFar = (float)light["zFar"];
             pointLights[i].shadowRes = (unsigned int)light["shadowRes"];
-            //Always using cubefaces so we can hard code this to 1
-            pointLights[i].aspect = 1.0f;
 
             //Matrix setup
-            pointLights[i].shadowProjectionMat = glm::perspective(pointLights[i].ang,
-                pointLights[i].aspect, pointLights[i].zNear,pointLights[i].zFar);
+            pointLights[i].shadowProjectionMat = glm::perspective(glm::radians(90.0f), 1.0f,
+                                                                  pointLights[i].zNear,
+                                                                  pointLights[i].zFar);
             
             glm::vec3 lightPos = pointLights[i].position;
             pointLights[i].lookAtPerFace[0] = glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
@@ -414,7 +396,6 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
         //attempts to load model with the initparameters it has read
         modelMesh = "../assets/models/" + modelName + "/" + modelMesh;
         if (!FLOAD::checkFileValidity(modelMesh)){
-            //If the mesh deos not exist it's very likely nothing else does, quit early
             printf("Error! Mesh: %s does not exist.\n", modelMesh.c_str());
         }
         else{

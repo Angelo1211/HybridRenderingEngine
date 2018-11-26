@@ -7,32 +7,14 @@ DATE	     : 2018-09-13
 
 //Includes
 #include "renderManager.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 #include "imgui/imgui.h"
 #include "debugUtils.h"
+#include "gpuData.h"
 #include "cmath"
 
 //Dummy constructors / Destructors
 RenderManager::RenderManager(){}
 RenderManager::~RenderManager(){}
-
-//Temporarily here will move them later
-struct VolumeTileAABB{
-    glm::vec4 minPoint;
-    glm::vec4 maxPoint;
-} frustrum;
-
-struct ScreenToView{
-    glm::mat4 inverseProjectionMat;
-
-    unsigned int tileSizes[4];
-
-    unsigned int screenWidth;
-    unsigned int screenHeight;
-    float sliceScalingFactor;
-    float sliceBiasFactor;
-}screen2View;
 
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
@@ -58,45 +40,73 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
         return false;
     }
 
+    if (!preProcess()){
+        printf("SSBO's failed to be initialized correctly.\n");
+        return false;
+    }
+
+    return true;
+}
+
+bool RenderManager::preProcess(){
+    //Initializing the surface that we use to draw screen-space effects
     canvas.setup();
 
+    //Building the grid of AABB enclosing the view frustum clusters
     buildAABBGridCompShader.use();
     buildAABBGridCompShader.setFloat("zNear", sceneCamera->cameraFrustum.nearPlane);
     buildAABBGridCompShader.setFloat("zFar", sceneCamera->cameraFrustum.farPlane);
     buildAABBGridCompShader.dispatch(gridSizeX, gridSizeY, gridSizeZ);
 
+    //Environment Mapping
     //Passing equirectangular map to cubemap
     captureFBO.bind();
     currentScene->mainSkyBox.fillCubeMapWithTexture(fillCubeMapShader);
 
-    //Cubemap convolution TODO:: Fix ugly function call
+    //Cubemap convolution TODO:: This could probably be moved to a function of the scene or environment maps
+    //themselves as a class / static function
     int res = currentScene->irradianceMap.width;
     captureFBO.resizeFrameBuffer(res);
     unsigned int environmentID = currentScene->mainSkyBox.skyBoxCubeMap.textureID;
     currentScene->irradianceMap.convolveCubeMap(environmentID, convolveCubeMap);
 
-    //Cubemap prefiltering
+    //Cubemap prefiltering TODO:: Same as above
     unsigned int captureRBO = captureFBO.depthBuffer;
     currentScene->specFilteredMap.preFilterCubeMap(environmentID, captureRBO, preFilterSpecShader);
 
     //BRDF lookup texture
     integrateBRDFShader.use();
-
     res = currentScene->brdfLUTTexture.height;
     captureFBO.resizeFrameBuffer(res);
-
     unsigned int id = currentScene->brdfLUTTexture.textureID;
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
-
     glViewport(0, 0, res, res);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     canvas.draw();
 
+    //Making sure that the viewport is the correct size after rendering
     glViewport(0, 0, DisplayManager::SCREEN_WIDTH, DisplayManager::SCREEN_HEIGHT);
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(true);
+
+    //Populating depth cube maps for the point light shadows
+    for (unsigned int i = 0; i < currentScene->pointLightCount; ++i){
+        pointLightShadowFBOs[i].bind();
+        pointLightShadowFBOs[i].clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
+        currentScene->drawPointLightShadow(pointShadowShader, i, pointLightShadowFBOs[i].depthBuffer);
+    }
+
+    // Directional shadows
+    dirShadowFBO.bind();
+    dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
+    currentScene->drawDirLightShadows(dirShadowShader, dirShadowFBO.depthBuffer);
+
+    //As we add more error checking this will change from a dummy variable to an actual thing
     return true;
 }
 
+//TODO:: some of the buffer generation and binding should be abstracted into a function
 bool RenderManager::initSSBOs(){
     //Setting up tile size on both X and Y 
     sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
@@ -104,13 +114,14 @@ bool RenderManager::initSSBOs(){
     float zFar    =  sceneCamera->cameraFrustum.farPlane;
     float zNear   =  sceneCamera->cameraFrustum.nearPlane;
 
+    //Buffer containing all the clusters
     {
-        glGenBuffers(1, &volumeGridAABB_SSBO);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, volumeGridAABB_SSBO);
+        glGenBuffers(1, &AABBvolumeGridSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, AABBvolumeGridSSBO);
 
         //We generate the buffer but don't populate it yet.
         glBufferData(GL_SHADER_STORAGE_BUFFER, numClusters * sizeof(struct VolumeTileAABB), NULL, GL_STATIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, volumeGridAABB_SSBO);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, AABBvolumeGridSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -127,6 +138,7 @@ bool RenderManager::initSSBOs(){
         screen2View.tileSizes[3] = sizeX;
         screen2View.screenWidth  = DisplayManager::SCREEN_WIDTH;
         screen2View.screenHeight = DisplayManager::SCREEN_HEIGHT;
+        //Basically reduced a log function into a simple multiplication an addition by pre-calculating these
         screen2View.sliceScalingFactor = (float)gridSizeZ / std::log2f(zFar / zNear) ;
         screen2View.sliceBiasFactor    = -((float)gridSizeZ * std::log2f(zNear) / std::log2f(zFar / zNear)) ;
 
@@ -160,39 +172,39 @@ bool RenderManager::initSSBOs(){
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-    //Setting up light index list
+    //A list of indices to the lights that are active and intersect with a cluster
     {
-        unsigned int totalNumLights =  numClusters * maxLightsPerTile; //100 lights per tile max
-        glGenBuffers(1, &lightIndexList);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexList);
+        unsigned int totalNumLights =  numClusters * maxLightsPerTile; //50 lights per tile max
+        glGenBuffers(1, &lightIndexListSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexListSSBO);
 
         //We generate the buffer but don't populate it yet.
         glBufferData(GL_SHADER_STORAGE_BUFFER,  totalNumLights * sizeof(unsigned int), NULL, GL_STATIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightIndexList);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightIndexListSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-    //Setting up light grid 
+    //Every tile takes two unsigned ints one to represent the number of lights in that grid
+    //Another to represent the offset to the light index list from where to begin reading light indexes from
+    //This implementation is straight up from Olsson paper
     {
-        glGenBuffers(1, &lightGrid);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightGrid);
+        glGenBuffers(1, &lightGridSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightGridSSBO);
 
-        //Every tile takes two unsigned ints one to represent the number of lights in that grid
-        //Another to represent the offset 
         glBufferData(GL_SHADER_STORAGE_BUFFER, numClusters * 2 * sizeof(unsigned int), NULL, GL_STATIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, lightGrid);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, lightGridSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     //Setting up simplest ssbo in the world
     {
-        glGenBuffers(1, &lightIndexGlobalCount);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexGlobalCount);
+        glGenBuffers(1, &lightIndexGlobalCountSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightIndexGlobalCountSSBO);
 
         //Every tile takes two unsigned ints one to represent the number of lights in that grid
         //Another to represent the offset 
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), NULL, GL_STATIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, lightIndexGlobalCount);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, lightIndexGlobalCountSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
    
@@ -250,26 +262,48 @@ void RenderManager::shutDown(){
     sceneLocator = nullptr;
 }
 
-//Todo:: cleanup this mess
-//Fix capture FBO name convention
 bool RenderManager::initFBOs(){
-    numLights = currentScene->pointLightCount;
-    pointLightShadowFBOs = new PointShadowBuffer[numLights];
+    //Init variables
     unsigned int shadowMapResolution = currentScene->getShadowRes();
-
-    bool initFBOFlag1 = multiSampledFBO.setupFrameBuffer();
-    bool initFBOFlag2 = pingPongFBO.setupFrameBuffer();
-    bool initFBOFlag3 = simpleFBO.setupFrameBuffer();
-    bool initFBOFLag4 = dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution);
-
     int skyboxRes = currentScene->mainSkyBox.resolution;
-    captureFBO.setupFrameBuffer(skyboxRes, skyboxRes);
+    numLights = currentScene->pointLightCount;
+    bool stillValid = true;
 
-    bool initFBOFlagPointLights = true;
+    //Shadow Framebuffers
+    pointLightShadowFBOs = new PointShadowBuffer[numLights];
+
+    //Directional light
+    stillValid  &= dirShadowFBO.setupFrameBuffer(shadowMapResolution, shadowMapResolution);
+
+    //Point light
     for(unsigned int i = 0; i < numLights; ++i ){
-        initFBOFlagPointLights = initFBOFlagPointLights && pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution);
+        stillValid &= pointLightShadowFBOs[i].setupFrameBuffer(shadowMapResolution, shadowMapResolution);
     }
-    return true;
+
+    if(!stillValid){
+        printf("Error initializing shadow map FBO's!\n");
+        return false;
+    }
+
+    //Rendering buffers
+    stillValid &= multiSampledFBO.setupFrameBuffer();
+    stillValid &= captureFBO.setupFrameBuffer(skyboxRes, skyboxRes);
+
+    if(!stillValid){
+        printf("Error initializing rendering FBO's!\n");
+        return false;
+    }
+
+    //Post processing buffers
+    stillValid &= pingPongFBO.setupFrameBuffer();
+    stillValid &= simpleFBO.setupFrameBuffer();
+
+    if(!stillValid){
+        printf("Error initializing postPRocessing FBO's!\n");
+        return false;
+    }
+
+    return stillValid;
 }
 
 /* This time using volume tiled forward
@@ -280,46 +314,25 @@ Algorithm steps:
 1. Depth-pre pass :: DONE
 2. Mark Active tiles :: POSTPONED AS OPTIMIZATION
 3. Build Tile list ::  POSTPONED AS OPTIMIZATION
-4. Assign lights to tiles 
-5. Actually perform shading as usual 
+4. Assign lights to tiles :: DONE (BUT SHOULD BE OPTIMIZED) 
+5. Shading by reading from the active tiles list :: DONE 
+6. Post processing and screen space effects :: DONE
 */
 void RenderManager::render(const unsigned int start){
     //Initiating rendering gui
     ImGui::Begin("Rendering Controls");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position); //Camera controls
+    ImGui::SliderFloat("Movement speed", &sceneCamera->camSpeed, 0.005f, 1.0f);
 
     //Making sure depth testing is enabled 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
 
-    //Shadow mapping
-    ImGui::Checkbox("Dynamic shadow Mapping", &hasMoved);
-    
-    if(hasMoved){
-        //Populating depth cube maps for the point lights
-        for (unsigned int i = 0; i < currentScene->pointLightCount; ++i){
-            pointLightShadowFBOs[i].bind();
-            pointLightShadowFBOs[i].clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
-            currentScene->drawPointLightShadow(pointShadowShader, i, pointLightShadowFBOs[i].depthBuffer);
-        }
-
-        // Directional shadows
-        dirShadowFBO.bind();
-        dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
-        currentScene->drawDirLightShadows(dirShadowShader, dirShadowFBO.depthBuffer);
-    }
-
-    //Camera controls
-    ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position);
-    ImGui::SliderFloat("Movement speed", &sceneCamera->camSpeed, 0.005f, 1.0f);
-
     //1.1- Multisampled Depth pre-pass
     multiSampledFBO.bind();
     multiSampledFBO.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, glm::vec3(0.0f));
     currentScene->drawDepthPass(depthPrePassShader);
-
-    //1.2- Multisampled blitting to depth texture
-    // multiSampledFBO.blitTo(simpleFBO, GL_DEPTH_BUFFER_BIT);
 
     //4-Light assignment
     cullLightsCompShader.use();
@@ -332,10 +345,10 @@ void RenderManager::render(const unsigned int start){
     glDepthMask(false);
     currentScene->drawFullScene(PBRClusteredShader, skyboxShader);
 
-    //5.2 - resolve the zBuffer from multisampled to regular one using blitting for postprocessing
+    //5.2 - resolve the from multisampled to normal resolution for postProcessing
     multiSampledFBO.blitTo(simpleFBO, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //6 -postprocess
+    //6 -postprocessing, includes bloom, exposure mapping
     postProcess(start);
 
     //Rendering gui scope ends here cannot be done later because the whole frame
@@ -353,13 +366,18 @@ void RenderManager::postProcess(const unsigned int start){
         ImGui::SliderInt("Blur", &sceneCamera->blurAmount, 0, 10);
         ImGui::SliderFloat("Exposure", &sceneCamera->exposure, 0.1f, 5.0f);
     }
+
+    //TODO:: Very clear candidate for making this a pure compute shader function
     pingPongFBO.bind();
     pingPongFBO.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, glm::vec3(0.0f));
     if( sceneCamera->blurAmount > 0){
+        //Filtering pixel rgb values > 1.0
         highPassFilterShader.use();
         canvas.draw(simpleFBO.texColorBuffer);
     }
+
     //Applying Gaussian blur in ping pong fashion
+    //TODO:: ALso make it a compute shader
     gaussianBlurShader.use();
     for (int i = 0; i < sceneCamera->blurAmount; ++i){
         //Horizontal pass
@@ -384,6 +402,8 @@ void RenderManager::postProcess(const unsigned int start){
     screenSpaceShader.setInt("screenTexture", 0);
     screenSpaceShader.setInt("bloomBlur", 1);
     screenSpaceShader.setInt("computeTexture", 2);
-    //Convoluting both images
+
+    //Merging the blurred high pass image with the low pass values
+    //Also tonemapping and doing other post processing
     canvas.draw(simpleFBO.texColorBuffer, pingPongFBO.texColorBuffer);
 }

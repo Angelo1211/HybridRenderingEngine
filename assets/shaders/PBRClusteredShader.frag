@@ -193,7 +193,7 @@ void main(){
         ambient = (kD * diffuse + specular);
     }
 
-    radianceOut += ambient;
+    // radianceOut += ambient;
 
     //Adding any emissive
     radianceOut += emissive;
@@ -307,7 +307,6 @@ float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDi
             shadow += fraction;
         }
     }
-
     return shadow;
 }
 
