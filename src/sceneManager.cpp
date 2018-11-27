@@ -55,5 +55,5 @@ Scene* SceneManager::getCurrentScene(){
 //load and attempt to quit early of the whole program
 bool SceneManager::loadScene(std::string sceneID){
     currentScene = new Scene(sceneID);
-    return  !currentScene->checkIfEmpty(); //True if empty, so it's negated for startup
+    return  !currentScene->loadingError; //True if empty, so it's negated for startup
 }

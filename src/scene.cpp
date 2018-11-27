@@ -21,17 +21,17 @@ Scene::Scene(const std::string &sceneName){
     if( !FLOAD::checkFileValidity(folderPath + sceneName + fileExtension) ){
         //If you do not find the scene file set the quit flag to true 
         printf("Cannot find scene descriptor file for %s \n", sceneID.c_str());
-        missingScene = true; 
+        loadingError = true; 
     }
     else{
         //Load all cameras, models and lights and return false if it fails
-        missingScene = !loadContent();
+        loadingError = !loadContent();
     }
 }
 
 Scene::~Scene(){
     //Making sure you don't attempt to delete models that don't exist
-    if (!missingScene){
+    if (!loadingError){
         for(Model *models : modelsInScene){
             delete models;
         }
@@ -40,19 +40,20 @@ Scene::~Scene(){
     }
 }
 
-//Update Order is critical for correct culling
+//Update Order is critical for correct culling since we want to cull the objects after moving,
+//not before. That would be very dumb, who would do that...
 void Scene::update(unsigned int deltaT){
     visibleModels.clear();
     mainCamera->update(deltaT);
-    // for(int i=0; i < lightCount; ++i){
-    //     lights[i].update(deltaT);
-    // }
+    //Light update could go here too
     for(Model *model : modelsInScene){
         model->update(deltaT);
     }
     frustrumCulling();
 }
-
+//TODO:: refactor this function too with the shadow mapping rewrite, could possibly use virtual 
+//shadow maps to switch VAO and have one draw call per mesh, but render to multiple parts of the 
+//texture.
 void Scene::drawPointLightShadow(const Shader &pointLightShader, unsigned int index, unsigned int cubeMapTarget){
     //Current light
     PointLight * light = &pointLights[index];
@@ -83,6 +84,9 @@ void Scene::drawPointLightShadow(const Shader &pointLightShader, unsigned int in
     }
 }
 
+//Currently assumes there's only one directional light, also uses the simplest shadow map algorithm
+//that leaves a lot to be desired in terms of resolution, thinking about moving to cascaded shadow maps
+//or maybe variance idk yet.
 void Scene::drawDirLightShadows(const Shader &dirLightShader, unsigned int targetTextureID){
     glm::mat4 ModelLS = glm::mat4(1.0);
     dirLight.depthMapTextureID = targetTextureID;
@@ -114,6 +118,8 @@ void Scene::drawDirLightShadows(const Shader &dirLightShader, unsigned int targe
     }
 }
 
+//Sets up the common uniforms for each model and loaded all texture units. A lot of driver calls here
+//Re-watch the beyond porting talk to try to reduce api calls. Specifically texture related calls.
 void Scene::drawFullScene(const Shader &mainSceneShader,const  Shader &skyboxShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);
@@ -195,6 +201,8 @@ void Scene::drawFullScene(const Shader &mainSceneShader,const  Shader &skyboxSha
     mainSkyBox.draw();
 }
 
+//Very simple setup that iterates through all objects and draws their depth value to a buffer
+//Optimization is very possible here, specifically because we draw all items.
 void Scene::drawDepthPass(const Shader &depthPassShader){
     //Matrix Setup
     glm::mat4 MVP = glm::mat4(1.0);
@@ -216,6 +224,10 @@ void Scene::drawDepthPass(const Shader &depthPassShader){
     }
 }
 
+//This is definitely getting refactored out on the model loading / mesh / material system rewrite
+//This is what I thought you had to do for all classes because I had only read about OOP but now 
+//I want to give a try the more functional/ data oriented programming philosophy I have been reading
+//about and therefore simple getters like these seem very out of place.
 //-----------------------------GETTERS----------------------------------------------
 std::vector<Model*>* Scene::getVisiblemodels(){
     return &visibleModels;
@@ -231,10 +243,6 @@ unsigned int Scene::getShadowRes(){
 
 PointLight *Scene::getPointLight(unsigned int index){
     return &pointLights[index];
-}
-//----------------------------------------------------------------
-bool Scene::checkIfEmpty(){
-    return missingScene;
 }
 //-----------------------------SCENE LOADING-----------------------------------
 
@@ -254,7 +262,11 @@ bool Scene::loadContent(){
         return false;
     }
 
-    //now we can parse the rest of the file "safely"
+    //now we parse the rest of the file, but don't do any other checks. It would be worth it to
+    //have a preliminary check that looks at the content of the scene description file and only then
+    //decides what to load and what to generate incase it can't find the data, because right now
+    //if you can't find the data it will just crash. So a check for correct formatting might not only
+    //make sense in a correctness based 
     printf("Loading camera...\n");
     loadCamera(configJson);
 
@@ -307,6 +319,9 @@ void Scene::loadLights(const json &sceneConfigJson){
         float right  = -left;
         float top    = left;
         float bottom = -top;
+        //I'm not sure yet why we have to multiply by the distance here, I understand that if I don't much of the
+        //screen won't be shown, but I am confused as this goes against my understanding of how an orthographic 
+        //projection works. This will have to be reviewed at a later point.
         dirLight.shadowProjectionMat = glm::ortho(left, right, bottom, top, dirLight.zNear, dirLight.zFar);
         dirLight.lightView = glm::lookAt(dirLight.distance * -dirLight.direction,
                                         glm::vec3(0.0f, 0.0f, 0.0f),
@@ -365,6 +380,7 @@ void Scene::loadSkyBox(const json &sceneConfigJson){
     mainSkyBox.setup(skyBoxName, isHDR, resolution);
 }
 
+//TODO:: rewrite during the material system update
 void Scene::loadSceneModels(const json &sceneConfigJson ){
     //model setup
     std::string modelMesh, modelName;
@@ -403,6 +419,7 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
         }
     }
 }
+
 //TODO move the fixed size somewhere else
 void Scene::generateEnvironmentMaps(){
     //Diffuse map
