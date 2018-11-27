@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 out vec4 Fragcolor;
 in vec3 localPos;
 
@@ -12,6 +12,9 @@ float radicalInverse(uint bits);
 vec2 hammersley(uint i, float invN);
 vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness);
 
+//Filtering down an incoming environment cubemap to different surface roughness levels
+//the levels are essentially mipmaps of the cube
+//the different mip levels are called when the shader is loaded on the application
 void main(){
     //We use the world space vector as a normal to the surface since in a cubemap it will
     //be interpolated over every face and make a unit sphere

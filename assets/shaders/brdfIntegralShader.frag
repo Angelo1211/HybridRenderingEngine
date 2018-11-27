@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 out vec2 FragColor;
 in vec2 TexCoords;
 
@@ -12,10 +12,12 @@ vec2 hammersley(uint i, float invN);
 vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness);
 vec2 integratedBRDF(float nDotV, float roughness);
 
+//TODO:: definitely move this into a compute shader
 void main(){
     FragColor =  integratedBRDF(TexCoords.x, TexCoords.y);
 }
 
+//TODO:: Good place for a blog post to explain this in detail?
 vec2 integratedBRDF(float nDotV, float roughness){
     float invCount = 1.0/float(SAMPLE_COUNT);
 
@@ -54,6 +56,7 @@ vec2 integratedBRDF(float nDotV, float roughness){
     return vec2(A,B);
 }
 
+// taken from http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 float radicalInverse(uint bits){
     bits = (bits << 16u) | (bits >> 16u);
     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
@@ -62,7 +65,6 @@ float radicalInverse(uint bits){
     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
-
 vec2 hammersley(uint i, float invN ){
     return vec2(float(i) * invN, radicalInverse(i));
 }
@@ -70,6 +72,7 @@ vec2 hammersley(uint i, float invN ){
 vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness){
     float a = roughness * roughness;
 
+    //hemisphere sample 
     float phi = 2.0 * PI * Xi.x;
     float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
     float sinTheta = sqrt(1.0 - cosTheta *cosTheta);

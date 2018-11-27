@@ -6,11 +6,17 @@
     },
     "models": [{
         "mesh": "Sponza.gltf",
-        "pbr": true,
-        "material": "",
+        "IBL": false,
         "position": [0.0, 0.0, 0.0],
         "rotation": [0.0, 1.0, 0.0, 0.0],
         "scaling" : [0.10, 0.10, 0.10]
+    },
+    {
+        "mesh": "MetalRoughSpheres.gltf",
+        "IBL": true,
+        "position": [0.0, 20.0, -6.0],
+        "rotation": [90.0, 1.0, 0.0, 0.0],
+        "scaling" : [1.0, 1.0, 1.0]
     }],
     "camera":{
         "speed": 0.05,

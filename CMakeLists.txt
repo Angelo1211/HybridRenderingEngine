@@ -13,7 +13,6 @@ if(WIN32)
     set(ASSIMP_ROOT_DIR "${CMAKE_SOURCE_DIR}/libs/assimp")
   endif()
 endif()
-# Picking correct sdl2 lib for each compiler for the windwos version
 
 find_package(OpenMP REQUIRED)
 

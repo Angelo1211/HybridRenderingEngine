@@ -1,15 +1,14 @@
-#version 460 core
+#version 430 core
 layout(local_size_x = 1, local_size_y = 1) in;
 
+//ssbo initialization
 struct VolumeTileAABB{
     vec4 minPoint;
     vec4 maxPoint;
 };
-
 layout (std430, binding = 1) buffer clusterAABB{
     VolumeTileAABB cluster[ ];
 };
-
 layout (std430, binding = 2) buffer screenToView{
     mat4 inverseProjection;
     uvec4 tileSizes;
@@ -30,7 +29,6 @@ void main(){
     const vec3 eyePos = vec3(0.0);
 
     //Per Tile variables
-    // uint tileSizePx = uint( (screenDimensions.x + tileSizes.x - 1 ) / tileSizes.x);
     uint tileSizePx = tileSizes[3];
     uint tileIndex = gl_WorkGroupID.x +
                      gl_WorkGroupID.y * gl_NumWorkGroups.x +

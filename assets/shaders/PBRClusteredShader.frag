@@ -1,11 +1,9 @@
-#version 460 core
+#version 430 core
 //Naming scheme clarification
 // mS = model Space
 // vS = view Space
 // wS = world Space
 // tS = tangent Space
-
-// layout(early_fragment_tests) in;
 
 out vec4 FragColor;
 
@@ -34,17 +32,22 @@ uniform sampler2D lightMap;
 uniform sampler2D metalRoughMap;
 uniform sampler2D shadowMap;
 
+//IBL textures to sample, all pre-computed
+//Really these would be mostly the same for all objects, so why not make this be binded directly?
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
 
-//Misc Uniforms
 uniform vec3 cameraPos_wS;
 
 //To be changed in the future..
+//This is at the core as to why I want to change the current shadow mapping system to something
+//like a virtual texture addressing, so we don't have to explicitely tell the compiler how many shadow casting
+//lights there will be in a given scene
 #define SHADOW_CASTING_POINT_LIGHTS 4
 #define M_PI 3.1415926535897932384626433832795
-//PointLight buffer in GPU
+
+//Cluster shading structs and buffers
 struct PointLight{
     vec4 position;
     vec4 color;
@@ -52,12 +55,10 @@ struct PointLight{
     float intensity;
     float range;
 };
-
 struct LightGrid{
     uint offset;
     uint count;
 };
-
 layout (std430, binding = 2) buffer screenToView{
     mat4 inverseProjection;
     uvec4 tileSizes;
@@ -68,11 +69,9 @@ layout (std430, binding = 2) buffer screenToView{
 layout (std430, binding = 3) buffer lightSSBO{
     PointLight pointLight[];
 };
-
 layout (std430, binding = 4) buffer lightIndexSSBO{
     uint globalLightIndexList[];
 };
-
 layout (std430, binding = 5) buffer lightGridSSBO{
     LightGrid lightGrid[];
 };
@@ -93,8 +92,13 @@ uniform float far_plane;
 uniform float zFar;
 uniform float zNear;
 
+//TODO:: Instead of bools I could detect upstream if I am going to need these things and have different shaders?
+//Or maybe have default ao and normal map values that they can read instead so no if/else branching is necessary
+//although I'm not sure if branching here is problematic, since all fragments will actuall have the same result
+//since they come from the same mesh. TODO:: profile!
 uniform bool normalMapped;
 uniform bool aoMapped;
+uniform bool IBL;
 
 //Function prototypes
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float metal, float shadow, vec3 F0);
@@ -110,11 +114,8 @@ float distributionGGX(vec3 N, vec3 H, float rough);
 float geometrySchlickGGX(float nDotV, float rough);
 float geometrySmith(float nDotV, float nDotL, float rough);
 
-// uniform sampler2D metalRoughMap;
-
 void main(){
     //Texture Reads
-    // vec3 albedo     =  texture(albedoMap, fs_in.texCoords).rgb;
     vec4 color      =  texture(albedoMap, fs_in.texCoords).rgba;
     vec3 emissive   =  texture(emissiveMap, fs_in.texCoords).rgb;
     float ao        =  texture(lightMap, fs_in.texCoords).r;
@@ -124,7 +125,7 @@ void main(){
 
     vec3 albedo = color.rgb;
     float alpha = color .a;
-
+    //TODO::this kills perf, look for alternatives?
     if(alpha < 0.5){
         discard;
     }
@@ -137,6 +138,7 @@ void main(){
         norm = normalize(TBN * normal ); //going -1 to 1
     }
     else{
+        //default to using the vertex normal if no normal map is used
         norm = normalize(fs_in.N);
     }
 
@@ -169,33 +171,36 @@ void main(){
     uint lightCount       = lightGrid[tileIndex].count;
     uint lightIndexOffset = lightGrid[tileIndex].offset;
 
+    //Reading from the global light list and calculating the radiance contribution of each light.
     for(uint i = 0; i < lightCount; i++){
-        uint bigAssLightVectorIndex = globalLightIndexList[lightIndexOffset + i];
-        radianceOut += calcPointLight(bigAssLightVectorIndex, norm, fs_in.fragPos_wS, viewDir, albedo, roughness, metallic, F0, viewDistance);
+        uint lightVectorIndex = globalLightIndexList[lightIndexOffset + i];
+        radianceOut += calcPointLight(lightVectorIndex, norm, fs_in.fragPos_wS, viewDir, albedo, roughness, metallic, F0, viewDistance);
     }
 
-    //Ambient term for the fragment    
-    vec3  kS = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0), F0, roughness);
-    vec3  kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
-    vec3 irradiance = texture(irradianceMap, norm).rgb;
-    vec3 diffuse    = irradiance * albedo;
+    //Treating the ambient light term as the incoming indirect light affecting the fragment
+    //We have two options, if IBL is not enabled for hte given object, we use a flat ambient term
+    //which generally looks terrible but it's an okay fallback
+    //If IBL is enabled it will use an environment map to do a very rough incoming light approximation from it
+    vec3 ambient = vec3(0.02)* albedo;
+    if(IBL){
+        vec3  kS = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0), F0, roughness);
+        vec3  kD = 1.0 - kS;
+        kD *= 1.0 - metallic;
+        vec3 irradiance = texture(irradianceMap, norm).rgb;
+        vec3 diffuse    = irradiance * albedo;
 
-    const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-    vec2 envBRDF = texture(brdfLUT, vec2(max(dot(norm, viewDir), 0.0), roughness)).rg;
-    vec3 specular = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
-    vec3 ambient = vec3(0.0);
-    if(aoMapped){
-        ambient = (kD * diffuse + specular) * ao;
-    }
-    else{
+        const float MAX_REFLECTION_LOD = 4.0;
+        vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+        vec2 envBRDF = texture(brdfLUT, vec2(max(dot(norm, viewDir), 0.0), roughness)).rg;
+        vec3 specular = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
         ambient = (kD * diffuse + specular);
     }
+    if(aoMapped){
+        ambient *= ao;
+    }
+    radianceOut += ambient;
 
-    // radianceOut += ambient;
-
-    //Adding any emissive
+    //Adding any emissive if there is an assigned map
     radianceOut += emissive;
 
     FragColor = vec4(radianceOut, 1.0);
@@ -229,6 +234,7 @@ vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float 
     return radiance;
 }
 
+//Sample offsets for the pcf are the same for both dir and point shadows
 float calcDirShadow(vec4 fragPosLightSpace){
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -291,7 +297,8 @@ vec3 calcPointLight(uint index, vec3 normal, vec3 fragPos,
     return radiance;
 }
 
-
+//sample amount is small but this was killing perf
+//This will probably be re-written as soon as the shadow mapping update comes in
 float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDistance){
     float shadow      = 0.0;
     float bias        = 0.0;
@@ -314,7 +321,6 @@ float linearDepth(float depthSample){
     float depthRange = 2.0 * depthSample - 1.0;
     // Near... Far... wherever you are...
     float linear = 2.0 * zNear * zFar / (zFar + zNear - depthRange * (zFar - zNear));
-    // float linear = 2.0; 
     return linear;
 }
 

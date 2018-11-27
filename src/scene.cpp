@@ -385,12 +385,14 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
     //model setup
     std::string modelMesh, modelName;
     TransformParameters initParameters;
+    bool IBL;
     unsigned int modelCount = (unsigned int)sceneConfigJson["models"].size();
 
     for (unsigned int i = 0; i < modelCount; ++i){
         //get model mesh and material info
         json currentModel = sceneConfigJson["models"][i];
         modelMesh = currentModel["mesh"];
+        IBL       = currentModel["IBL"];
 
         modelName = modelMesh.substr(0, modelMesh.find_last_of('.'));
 
@@ -415,7 +417,7 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
             printf("Error! Mesh: %s does not exist.\n", modelMesh.c_str());
         }
         else{
-            modelsInScene.push_back(new Model(modelMesh, initParameters));
+            modelsInScene.push_back(new Model(modelMesh, initParameters, IBL));
         }
     }
 }

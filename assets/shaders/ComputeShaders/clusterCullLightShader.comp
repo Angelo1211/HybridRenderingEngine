@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 layout(local_size_x = 16, local_size_y = 9, local_size_z = 4) in;
 
 struct PointLight{
@@ -58,10 +58,6 @@ void main(){
     uint threadCount = gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z;
     uint lightCount  = pointLight.length();
     uint numBatches = (lightCount + threadCount -1) / threadCount;
-
-    // uint tileIndex = gl_GlobalInvocationID.x  +
-    //                  gl_GlobalInvocationID.y  * gl_WorkGroupSize.x  +
-    //                  gl_GlobalInvocationID.z  * (gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
     uint tileIndex = gl_LocalInvocationIndex + gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z * gl_WorkGroupID.z;
     

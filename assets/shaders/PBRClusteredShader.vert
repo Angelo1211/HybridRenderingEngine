@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 
 //Naming scheme clarification
 // mS = model Space
@@ -22,11 +22,9 @@ out VS_OUT{
     mat3 TBN;
 } vs_out;
 
-
 uniform mat4 MVP;
 uniform mat4 M;
-uniform mat4 lightSpaceMatrix;
-
+uniform mat4 lightSpaceMatrix; // Technically this only allows for one directional light, but will do for now
 
 void main(){
     //Position in clip space
@@ -46,27 +44,3 @@ void main(){
     //Lights space output
     vs_out.fragPos_lS  = lightSpaceMatrix * vec4(vs_out.fragPos_wS, 1.0);
 }
-
-    // vec3 B = normalize(cross(N, T));
-
-    // vec3 T = (mat3(M) * tangent_tS);
-    // vec3 N = (mat3(M) * normal_mS);
-    // vec3 B = (mat3(M) * biTangent_tS);
-
-    // vec3 T = normalize(mat3(M) * tangent_tS);
-    // vec3 B = normalize(mat3(M) * biTangent_tS);
-    // vec3 N = normalize(mat3(M) * normal_mS);
-
-    // if(dot(cross(N, T), B) < 0.0){
-    //     T = T * -1.0;
-    // }
-
-    // T = normalize(T - dot(T, N ) * N);
-    // vs_out.TBN = transpose(mat3(T, B, N));
-    // T = normalize(T - dot(T, N ) * N);
-    // vec3 B = cross(N, T);
-    // vs_out.TBN = mat3(T, B, N);
-    // vs_out.TBN = mat3(T, B, N);
-    // vs_out.T = T;
-    // vs_out.B = B;
-    // vs_out.N = N;

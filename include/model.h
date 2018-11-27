@@ -36,7 +36,7 @@ struct TransformParameters{
 };
 
 struct Model {
-    Model(const std::string meshPath, const TransformParameters initParameters){
+    Model(const std::string meshPath, const TransformParameters initParameters, bool IBL) : IBL(IBL){
         loadModel(meshPath);
         modelMatrix = glm::mat4(1.0);
         modelMatrix = glm::translate(modelMatrix, initParameters.translation);
@@ -54,6 +54,7 @@ struct Model {
     std::vector<unsigned int> processTextures(const aiMaterial *material);
 
     //Object to world space matrix
+    bool IBL;
     glm::mat4 modelMatrix;
     std::vector<Mesh> meshes; //Does it need to be a vector after initialization?
 

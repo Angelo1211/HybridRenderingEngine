@@ -29,6 +29,7 @@ void Model::loadModel(std::string path){
 //The model currently is just a vessel for the meshes of the scene,
 //In a future revision this will probably change
 void Model::draw(const Shader &shader, const  bool textured){
+    shader.setBool("IBL", IBL);
     for(int i = 0; i < meshes.size(); ++i){
         meshes[i].draw(shader, textured);
     }
