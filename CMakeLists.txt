@@ -37,8 +37,16 @@ target_link_libraries(hybridRenderer ${SDL2_LIBRARY})
 target_link_libraries(hybridRenderer ${ASSIMP_LIBRARY})
 
 if(WIN32)
+    set_target_properties(hybridRenderer PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
+    #Copy sdl2 dll file
     add_custom_command(TARGET hybridRenderer POST_BUILD COMMAND
     ${CMAKE_COMMAND} -E copy_if_different
     ${SDL2_DLL}
+    $<TARGET_FILE_DIR:hybridRenderer>)
+    
+    #Copy assimp dll
+    add_custom_command(TARGET hybridRenderer POST_BUILD COMMAND
+    ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_SOURCE_DIR}/libs/assimp/lib64/release/assimp-vc140-mt.dll"
     $<TARGET_FILE_DIR:hybridRenderer>)
 endif()
