@@ -19,8 +19,8 @@ SPECIAL NOTES: The screen width and height are compile time constants for now an
 class DisplayManager{
     public:
         //The screen size is fixed and set at compile time 
-        const static int SCREEN_WIDTH  = 1280; //640 1920
-        const static int SCREEN_HEIGHT = 720 ; //480 1080
+        const static int SCREEN_WIDTH  = 1920;//1280; //640 1920
+        const static int SCREEN_HEIGHT = 1080;//720 ; //480 1080
         constexpr static float SCREEN_ASPECT_RATIO = SCREEN_WIDTH /(float)SCREEN_HEIGHT;
 
         //Shader version used in ImGUI 

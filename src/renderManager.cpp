@@ -324,16 +324,22 @@ void RenderManager::render(const unsigned int start){
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
     if(ImGui::CollapsingHeader("Controls")){
-        ImGui::Text("Strafe: w a s d ");
-        ImGui::Text("Rotate Camera: left click hold + mouse movement");
-        ImGui::Text("Up&Down: q e  ");
+        ImGui::Text("Strafe: w a s d");
+        ImGui::Text("Rotate Camera: hold left click + mouse");
+        ImGui::Text("Up&Down: q e");
         ImGui::Text("Reset Camera: r");
+        ImGui::Text("Exit: ESC");
         ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position); //Camera controls
         ImGui::SliderFloat("Movement speed", &sceneCamera->camSpeed, 0.005f, 1.0f);
     }
     //Making sure depth testing is enabled 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
+
+    // Directional shadows
+    dirShadowFBO.bind();
+    dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
+    currentScene->drawDirLightShadows(dirShadowShader, dirShadowFBO.depthBuffer);
 
     //1.1- Multisampled Depth pre-pass
     multiSampledFBO.bind();
@@ -343,7 +349,7 @@ void RenderManager::render(const unsigned int start){
     //4-Light assignment
     cullLightsCompShader.use();
     cullLightsCompShader.setMat4("viewMatrix", sceneCamera->viewMatrix);
-    cullLightsCompShader.dispatch(1,1,6);
+    cullLightsCompShader.dispatch(1,1,6); // we can't do dynamic resolution yet because of this number...
 
     //5 - Actual shading;
     //5.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
