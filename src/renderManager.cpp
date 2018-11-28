@@ -322,9 +322,15 @@ void RenderManager::render(const unsigned int start){
     //Initiating rendering gui
     ImGui::Begin("Rendering Controls");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position); //Camera controls
-    ImGui::SliderFloat("Movement speed", &sceneCamera->camSpeed, 0.005f, 1.0f);
 
+    if(ImGui::CollapsingHeader("Controls")){
+        ImGui::Text("Strafe: w a s d ");
+        ImGui::Text("Rotate Camera: left click hold + mouse movement");
+        ImGui::Text("Up&Down: q e  ");
+        ImGui::Text("Reset Camera: r");
+        ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position); //Camera controls
+        ImGui::SliderFloat("Movement speed", &sceneCamera->camSpeed, 0.005f, 1.0f);
+    }
     //Making sure depth testing is enabled 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
@@ -367,7 +373,7 @@ void RenderManager::postProcess(const unsigned int start){
         ImGui::SliderFloat("Exposure", &sceneCamera->exposure, 0.1f, 5.0f);
     }
 
-    //TODO:: Very clear candidate for making this a pure compute shader function
+    //TODO:: should be a compute shader 
     pingPongFBO.bind();
     pingPongFBO.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, glm::vec3(0.0f));
     if( sceneCamera->blurAmount > 0){

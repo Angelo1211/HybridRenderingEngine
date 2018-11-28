@@ -36,6 +36,8 @@ struct Camera{
         originalTarget   = tar;
         originalFront    = front;
         originalSide     = side;
+        originalPitch    = pitch;
+        originalYaw      = yaw;
 
         //Shaping the frustum to the scene's imported values
         cameraFrustum.fov = fov;
