@@ -1,5 +1,7 @@
 # HRE :: Hybrid (Clustered Forward/Deferred) Rendering Engine 
 
+HRE is a real-time, Physically Based, Clustered renderer built with OpenGL and based on the technique described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. Cluster shading offers two major benefits over traditional rendering algorithms: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends, as GPU compute capabilities continue to outpace memory bandwidth growth. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti).
+
 ## Download
 
 ## Render Samples
@@ -39,7 +41,7 @@
 * Fully commented for future referencing
 * Environment map generation on load (for skyboxes)
 * Free flight camera
-* Windows only (for now...)
+* Windows Platform
 
 ## Development Timeline & Planned Features
 
