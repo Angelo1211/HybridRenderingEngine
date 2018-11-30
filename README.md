@@ -1,8 +1,22 @@
 # HRE :: Hybrid (Clustered Forward/Deferred) Rendering Engine 
 
-HRE is a real-time, Physically Based, Clustered renderer built with OpenGL and based on the technique described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. Cluster shading offers two major benefits over traditional rendering algorithms: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends, as GPU compute capabilities continue to outpace memory bandwidth growth. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti).
+![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
+![GitHub commit activity the past week, 4 weeks, year](https://img.shields.io/github/commit-activity/y/eslint/eslint.svg)
+![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)
+![GitHub top language](https://img.shields.io/github/languages/top/badges/shields.svg)
+
+
+
+
+HRE is a real-time, Physically Based, Clustered renderer built with OpenGL and based on the technique described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. Clustered shading offers two major benefits over traditional rendering algorithms: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends, as GPU compute capabilities continue to outpace memory bandwidth growth. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti).
+
+HRE is built with the sole aim of showcasing the strengths of this rendering algorithm and is currently in active development, with planned features outlined for the coming months.  
 
 ## Download
+
+Stable builds can be found on the [HRE releases](https://github.com/Angelo1211/HybridRenderingEngine/releases) page. 
+
+Currently only Windows platforms are supported.
 
 ## Render Samples
 
@@ -45,6 +59,31 @@ HRE is a real-time, Physically Based, Clustered renderer built with OpenGL and b
 
 ## Development Timeline & Planned Features
 
+The first development cycle began September 2018 and concluded late November 2018 with the inclusion of Image Based Lighting and the release of the first stable version: [HRE 0.01 "Aachen"](). For the next couple of months I'll be tackling the issues outlined in the [Projects section](https://github.com/Angelo1211/HybridRenderingEngine/projects) beginning with fixes for the remaining non-critical bugs and then moving on to a major re-write of the material system. The following is a a list of the engine features I aim to include over the coming months, it's obviously subject to change and all that stuff. 
+
+#### Update #1: Materials & Shadow Mapping
+ * Full material system re-write to decouple mesh & textures.
+ * Implementing a shadow mapping atlas and automatic shadow map reuse.
+ * Fix some unneccessary STL calls.
+
+#### Update #2: Deferred / Screen Space Effects
+* Rewriting screen space fragment shaders as compute shaders
+* Screen Space Ambient Occlusion
+* Screen Space Reflections
+* Temporal AA
+* Improved Color Grading & Tone Mapping
+
+#### Update #3: Cluster Optimizations
+* Large amounts of lights via BVH construction
+* Advanced environment mapping
+* View Frustum culling
+* Compute shader based particles
+* Approaching Zero Driver Overhead (AZDO)
+
+I'll be writing accompanying blog posts at the end of each major milestone, outlining the new features and their implementations and any complications I found along the way.
+
+Meanwhile, [Here's the first post]() which contains an overview of other traditional rendering algorithms and builds the case for Clustered rendering. 
+
 ## Repository structure
 
 ```bash
@@ -53,7 +92,7 @@ Hybrid Rendering Engine
 |   |-- models              # Meshes and textures
 |   |-- scenes              # Scene description files in JSON format
 |   |-- shaders             
-|   |   |-- computeShaders  # Compute shaders for cluster forward
+|   |   |-- computeShaders  # Compute shaders for clustered forward
 |   |   |-- OldShaders      # Shaders not currently in use
 |   |   `-- currentShaders  # Shaders for the current rendering pipeline
 |   `-- skyboxes            # Skyboxes in either cubemap or equirectangular map form
@@ -90,7 +129,7 @@ Here's a list of the libraries currently included in the project:
 * [SDL2](https://www.libsdl.org/download-2.0.php): Hardware abstraction layer.
 * [stb_image](https://github.com/nothings/stb): Image loading/decoding for JPG, PNG, HDR.
 
-All libraries are included under their respective licenses which can be referred to at the links above.
+All libraries are included under their respective licenses which can be found in the links above or in the licenses markdown document.
 
 ## References
 
@@ -100,7 +139,7 @@ There's a comprehensive indexed list of references for the project that I keep m
 * [Parallel Computer Architecture and Programming](http://15418.courses.cs.cmu.edu/tsinghua2017/home) : Intro to the GPU programming model. 
 * [Doom(2016) - Graphics Study](http://www.adriancourreges.com/blog/2016/09/09/doom-2016-graphics-study/): Dissection of a frame in the id Tech 6 engine.
 * [Siggraph2016 - The Devil is in the Details: idTech 666](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666?next_slideshow=1): A behind-the scenes look into the renderer tech of DOOM 2016. Probably the biggest inspiration in terms of features and overall quality level that I'm striving for.  
-* [Efficient Real-Time Shading with Many Lights](https://www.zora.uzh.ch/id/eprint/107598/1/a11-olsson.pdf): An introduction to cluster shading directly from the writers of the original paper. Also outlines some practical tips from industry veterans.
+* [Efficient Real-Time Shading with Many Lights](https://www.zora.uzh.ch/id/eprint/107598/1/a11-olsson.pdf): An introduction to clustered shading directly from the writers of the original paper. Also outlines some practical tips from industry veterans.
 * [Real Shading in Unreal Engine 4](https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf): The principles and implementation details behind UE4 physically based shading model. Includes shader code!
 * [Forward vs Deferred vs Forward+ Rendering with DirectX 11](https://www.3dgep.com/forward-plus/): Detailed overview of different rendering algorithms.
 
