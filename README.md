@@ -4,10 +4,6 @@
 [![GitHub license](https://img.shields.io/github/license/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/blob/master/LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
 [![GitHub issues](https://img.shields.io/github/issues/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/issues)
-[![GitHub stars](https://img.shields.io/github/stars/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/stargazers)
-[![GitHub top language](https://img.shields.io/github/languages/top/badges/shields.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
-[![GitHub commit activity the past week, 4 weeks, year](https://img.shields.io/github/commit-activity/y/eslint/eslint.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
-
 
 
 HRE is a real-time, Physically Based, Clustered renderer built with OpenGL and based on the technique described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. Clustered shading offers two major benefits over traditional rendering algorithms: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends, as GPU compute capabilities continue to outpace memory bandwidth growth. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti).
