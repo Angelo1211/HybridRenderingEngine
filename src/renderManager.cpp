@@ -349,7 +349,7 @@ void RenderManager::render(const unsigned int start){
     //4-Light assignment
     cullLightsCompShader.use();
     cullLightsCompShader.setMat4("viewMatrix", sceneCamera->viewMatrix);
-    cullLightsCompShader.dispatch(1,1,6); // we can't do dynamic resolution yet because of this number...
+    cullLightsCompShader.dispatch(1,1,6);  
 
     //5 - Actual shading;
     //5.1 - Forward render the scene in the multisampled FBO using the z buffer to discard early
