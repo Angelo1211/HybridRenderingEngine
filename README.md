@@ -8,7 +8,38 @@
 
 ### Rendering 
 
+* Clustered Forward/Deferred Renderer
+* Physically Based shading
+* Image Based Lighting
+* Metallic workflow
+* Cook-Torrance specular BRDF (w/ lambert diffuse)
+* Ambient Occlusion & Emissive mapping
+* Tangent space normal mapping
+* HDR/linear lighting
+* HDR/LDR skyboxes
+* Exposure based tone mapping
+* Bloom
+* Multisample Anti-aliasing (MSAA)
+* Directional & point light sources
+* Compute shader based light culling
+* Alpha tested foliage (sponza atrium)
+* Directional light dynamic shadow mapping
+* Static Omnidirectional Shadow Mapping for Point Lights
+* Forward, Tiled Forward and Deferred rendering implementations
+    * Located in other branches of the repo. Only clustered rendering is actively being developed
+
 ### Engine
+* OpenGL 4.5+
+* SDL2 backend 
+* JSON Parsing via Nlohmann: JSON for C++
+* Model Loading via ASSIMP (OBJ, FBX, gLTF2.0 etc)
+* Scene contents outlined in JSON file
+* Multiple image loading paths via stb-image and GLI
+* Immediate mode GUI for debugging via ImGUI
+* Fully commented for future referencing
+* Environment map generation on load (for skyboxes)
+* Free flight camera
+* Windows only (for now...)
 
 ## Development Timeline & Planned Features
 
@@ -37,7 +68,7 @@ Hybrid Rendering Engine
 |   `-- SDL2 
 |-- modules                 # CMake lib setup scripts
 |-- src                     # C++ implementation files
-`-- CMakeLists.txt          # CMake build scripts
+`-- CMakeLists.txt          # CMake build script
 ```
 
 ## Dependencies 
@@ -61,14 +92,18 @@ All libraries are included under their respective licenses which can be referred
 
 ## References
 
-There's a comprehensive indexed list of references for the project that I am continually updating in this [page of the wiki](). However, I am constantly returning to a subset of these for reference and/or inspiration so I added links to them below to highlight them and share their awesomeness: 
+There's a comprehensive indexed list of references for the project that I keep more or less up to date in this [page of the wiki](). However, I find myself constantly returning to a subset of them for further reading or when I need inspiration, so I've added links below to share them and spread the word of their awesomeness. Check them out! 
 
 * [Learn OpenGL](https://learnopengl.com/Introduction): OpenGL tutorials and general introduction to 3D graphics concepts.
 * [Parallel Computer Architecture and Programming](http://15418.courses.cs.cmu.edu/tsinghua2017/home) : Intro to the GPU programming model. 
-* [Siggraph2016 - The Devil is in the Details: idTech 666](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666?next_slideshow=1): Main guideline and inspiration for features of the HRE. 
-* [Efficient Real-Time Shading with Many Lights](https://www.zora.uzh.ch/id/eprint/107598/1/a11-olsson.pdf): Great explanation of cluster shading directly from the writers of the original paper and practical tips from industry veterans who have implemented it.
+* [Doom(2016) - Graphics Study](http://www.adriancourreges.com/blog/2016/09/09/doom-2016-graphics-study/): Dissection of a frame in the id Tech 6 engine.
+* [Siggraph2016 - The Devil is in the Details: idTech 666](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666?next_slideshow=1): A behind-the scenes look into the renderer tech of DOOM 2016. Probably the biggest inspiration in terms of features and overall quality level that I'm striving for.  
+* [Efficient Real-Time Shading with Many Lights](https://www.zora.uzh.ch/id/eprint/107598/1/a11-olsson.pdf): An introduction to cluster shading directly from the writers of the original paper. Also outlines some practical tips from industry veterans.
+* [Real Shading in Unreal Engine 4](https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf): The principles and implementation details behind UE4 physically based shading model. Includes shader code!
+* [Forward vs Deferred vs Forward+ Rendering with DirectX 11](https://www.3dgep.com/forward-plus/): Detailed overview of different rendering algorithms.
 
-## Model & Textures Acknowledgements
+## Acknowledgements
+### Models & Textures
 
 * [Sponza (gLTF2 Version)](https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/Sponza)
 : Original model: [Frank Meinl](https://www.artstation.com/artwork/K5bEr), First modified by: [Morgan McGuire](http://casual-effects.com/data/index.html), PBR Textures: [Alexandre-pestana](http://www.alexandre-pestana.com/pbr-textures-sponza/).
@@ -79,10 +114,13 @@ There's a comprehensive indexed list of references for the project that I am con
 * [sIBL Archive](http://www.hdrlabs.com/sibl/archive.html): All other HDR maps & skyboxes.
 * [Default Skybox](http://www.custommapmakers.org/skyboxes.php)
 
-Thank you to all the 3D & texture artists who have made their assets free to use and so awesome to look at. If it weren't for you guys I'd probably still be staring at the same old boring utah teapot all damn day!  
+Thank you to all the 3D & texture artists who have made their assets free to use and so beautiful to look at. If it weren't for you guys I'd probably still be staring at the same old boring utah teapot all damn day!  
 
 If I've mis-acknowledged, misattributed, or missed any references, please, create a new GitHub issue or send me a DM on Twitter and I'll make sure to fix it immediately.
 
+### Graphics Programming Community <3
+
+Shout-out to Kostas Anagnostou and Eric Arnebäck for taking the time to answer all of my questions for the last couple of months, your explanations made understanding every daunting topic a breeze!
 
 ## License
 
