@@ -1,10 +1,12 @@
 # HRE :: Hybrid (Clustered Forward/Deferred) Rendering Engine 
 
-![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
-![GitHub commit activity the past week, 4 weeks, year](https://img.shields.io/github/commit-activity/y/eslint/eslint.svg)
-![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)
-![GitHub top language](https://img.shields.io/github/languages/top/badges/shields.svg)
 
+[![GitHub license](https://img.shields.io/github/license/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/blob/master/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
+[![GitHub issues](https://img.shields.io/github/issues/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/issues)
+[![GitHub stars](https://img.shields.io/github/stars/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/stargazers)
+[![GitHub top language](https://img.shields.io/github/languages/top/badges/shields.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
+[![GitHub commit activity the past week, 4 weeks, year](https://img.shields.io/github/commit-activity/y/eslint/eslint.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
 
 
 
