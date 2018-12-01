@@ -62,6 +62,7 @@ class Scene{
 
     private:
         std::string sceneID;
+        bool slices = false;
 
         //TODO:: unify light model so that we can have a single array pointing to a base class (or single class)
         //so that we can iterate through it

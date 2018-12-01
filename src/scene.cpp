@@ -140,7 +140,11 @@ void Scene::drawFullScene(const Shader &mainSceneShader,const  Shader &skyboxSha
     }
 
     mainSceneShader.use();
+    if(ImGui::CollapsingHeader("Cluster Debugging Light Settings")){
+        ImGui::Checkbox("Display depth Slices", &slices);
+    }
     mainSceneShader.setVec3("dirLight.direction", dirLight.direction);
+    mainSceneShader.setBool("slices", slices);
     mainSceneShader.setVec3("dirLight.color",   dirLight.strength * dirLight.color);
     mainSceneShader.setMat4("lightSpaceMatrix", dirLight.lightSpaceMatrix);
     mainSceneShader.setVec3("cameraPos_wS", mainCamera->position);

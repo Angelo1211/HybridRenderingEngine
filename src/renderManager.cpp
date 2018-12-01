@@ -102,8 +102,6 @@ bool RenderManager::preProcess(){
     dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
     currentScene->drawDirLightShadows(dirShadowShader, dirShadowFBO.depthBuffer);
     
-    //Remove Before Release
-    // currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->irradianceMap.textureID;
     //As we add more error checking this will change from a dummy variable to an actual thing
     return true;
 }
@@ -411,6 +409,7 @@ void RenderManager::postProcess(const unsigned int start){
 
     //Shader setup for postprocessing
     screenSpaceShader.use();
+
     screenSpaceShader.setInt("offset", start);
     screenSpaceShader.setFloat("exposure", sceneCamera->exposure);
     screenSpaceShader.setInt("screenTexture", 0);

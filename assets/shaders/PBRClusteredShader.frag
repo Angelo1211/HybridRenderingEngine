@@ -86,6 +86,15 @@ vec3 sampleOffsetDirections[20] = vec3[]
    vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
 );
 
+vec3 colors[24] = vec3[](
+   vec3( 0,  0,  1),     vec3( 0, 1, 0),  vec3(0, 1,  1),  vec3(1,  0,  0), 
+   vec3( 1,  0,  1),     vec3( 1, 1, 0),   vec3(1, 1, 1),   vec3(0, 0, 0),
+   vec3( 0,  0,  1),     vec3( 0, 1, 0),  vec3(0, 1,  1),  vec3(1,  0,  0), 
+   vec3( 0,  0,  1),     vec3( 0, 1, 0),  vec3(0, 1,  1),  vec3(1,  0,  0), 
+   vec3( 1,  0,  1),     vec3( 1, 1, 0),   vec3(1, 1, 1),   vec3(0, 0, 0),
+   vec3( 1,  0,  1),     vec3( 1, 1, 0),   vec3(1, 1, 1),   vec3(0, 0, 0)
+);
+
 //TODO: change far plane to a different location
 uniform samplerCube depthMaps[SHADOW_CASTING_POINT_LIGHTS];
 uniform float far_plane;
@@ -99,6 +108,7 @@ uniform float zNear;
 uniform bool normalMapped;
 uniform bool aoMapped;
 uniform bool IBL;
+uniform bool slices;
 
 //Function prototypes
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float metal, float shadow, vec3 F0);
@@ -202,8 +212,12 @@ void main(){
 
     //Adding any emissive if there is an assigned map
     radianceOut += emissive;
-
-    FragColor = vec4(radianceOut, 1.0);
+    if(slices){
+        FragColor = vec4(colors[zTile], 1.0);
+    }
+    else{
+        FragColor = vec4(radianceOut, 1.0);
+    }
 }
 
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float rough, float metal, float shadow, vec3 F0){
