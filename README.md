@@ -23,9 +23,9 @@ Currently only Windows platforms are supported.
 ![metallicspheres](https://user-images.githubusercontent.com/11263073/49331373-01e09980-f59c-11e8-87c1-63c320ec9e3b.PNG)
 
 ![sponza](https://user-images.githubusercontent.com/11263073/49331374-01e09980-f59c-11e8-9306-beaec08e8ad6.PNG)
-
 ![correct colors](https://user-images.githubusercontent.com/11263073/49331468-ad3e1e00-f59d-11e8-9a1a-86813ea4f85e.PNG)
 
+<center> <h4>Cluster z slices</h4> </center>
 
 ## Main Features
 

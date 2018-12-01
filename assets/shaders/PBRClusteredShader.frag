@@ -86,13 +86,7 @@ vec3 sampleOffsetDirections[20] = vec3[]
    vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
 );
 
-vec3 colors[24] = vec3[](
-   vec3(0, 0, 0),    vec3( 0,  0,  1), vec3( 0, 1, 0),  vec3(0, 1,  1),
-   vec3(1,  0,  0),  vec3( 1,  0,  1), vec3( 1, 1, 0),  vec3(1, 1, 1),
-
-   vec3(0, 0, 0),    vec3( 0,  0,  1), vec3( 0, 1, 0),  vec3(0, 1,  1),
-   vec3(1,  0,  0),  vec3( 1,  0,  1), vec3( 1, 1, 0),  vec3(1, 1, 1),
-
+vec3 colors[8] = vec3[](
    vec3(0, 0, 0),    vec3( 0,  0,  1), vec3( 0, 1, 0),  vec3(0, 1,  1),
    vec3(1,  0,  0),  vec3( 1,  0,  1), vec3( 1, 1, 0),  vec3(1, 1, 1)
 );
@@ -163,7 +157,7 @@ void main(){
     F0 = mix(F0, albedo, metallic);
 
     //Locating which cluster you are a part of
-    uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0));
+    uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0.0));
     uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy / tileSizes[3] ), zTile);
     uint tileIndex = tiles.x +
                      tileSizes.x * tiles.y +
@@ -214,8 +208,9 @@ void main(){
 
     //Adding any emissive if there is an assigned map
     radianceOut += emissive;
+
     if(slices){
-        FragColor = vec4(colors[zTile], 1.0);
+        FragColor = vec4(colors[uint(mod(zTile, 8.0))], 1.0);
     }
     else{
         FragColor = vec4(radianceOut, 1.0);
