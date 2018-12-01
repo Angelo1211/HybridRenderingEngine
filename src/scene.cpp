@@ -147,18 +147,17 @@ void Scene::drawFullScene(const Shader &mainSceneShader,const  Shader &skyboxSha
     mainSceneShader.setFloat("zFar", mainCamera->cameraFrustum.farPlane);
     mainSceneShader.setFloat("zNear", mainCamera->cameraFrustum.nearPlane);
 
-    if(ImGui::CollapsingHeader("PointLights", ImGuiTreeNodeFlags_DefaultOpen)){
-        for (unsigned int i = 0; i < pointLightCount; ++i)
-        {
-            PointLight *light = &pointLights[i];
-            std::string number = std::to_string(i);
+    for (unsigned int i = 0; i < pointLightCount; ++i)
+    {
+        PointLight *light = &pointLights[i];
+        std::string number = std::to_string(i);
 
-            glActiveTexture(GL_TEXTURE0 + numTextures + i); 
-            mainSceneShader.setInt(("depthMaps[" + number + "]").c_str(), numTextures + i);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
-            mainSceneShader.setFloat("far_plane", light->zFar);
-        }   
-    }    
+        glActiveTexture(GL_TEXTURE0 + numTextures + i); 
+        mainSceneShader.setInt(("depthMaps[" + number + "]").c_str(), numTextures + i);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, light->depthMapTextureID);
+        mainSceneShader.setFloat("far_plane", light->zFar);
+    }   
+
     //Setting directional shadow depth map textures
     glActiveTexture(GL_TEXTURE0 + numTextures + pointLightCount);
     mainSceneShader.setInt("shadowMap", numTextures + pointLightCount);

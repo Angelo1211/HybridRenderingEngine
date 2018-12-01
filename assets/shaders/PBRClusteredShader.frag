@@ -181,7 +181,7 @@ void main(){
     //We have two options, if IBL is not enabled for hte given object, we use a flat ambient term
     //which generally looks terrible but it's an okay fallback
     //If IBL is enabled it will use an environment map to do a very rough incoming light approximation from it
-    vec3 ambient = vec3(0.02)* albedo;
+    vec3 ambient = vec3(0.025)* albedo;
     if(IBL){
         vec3  kS = fresnelSchlickRoughness(max(dot(norm, viewDir), 0.0), F0, roughness);
         vec3  kD = 1.0 - kS;

@@ -101,7 +101,9 @@ bool RenderManager::preProcess(){
     dirShadowFBO.bind();
     dirShadowFBO.clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
     currentScene->drawDirLightShadows(dirShadowShader, dirShadowFBO.depthBuffer);
-
+    
+    //Remove Before Release
+    // currentScene->mainSkyBox.skyBoxCubeMap.textureID = currentScene->irradianceMap.textureID;
     //As we add more error checking this will change from a dummy variable to an actual thing
     return true;
 }
