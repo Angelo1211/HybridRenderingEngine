@@ -16,6 +16,16 @@ Stable builds can be found on the [HRE releases](https://github.com/Angelo1211/H
 Currently only Windows platforms are supported.
 
 ## Render Samples
+![helmetcrop](https://user-images.githubusercontent.com/11263073/49331372-01e09980-f59c-11e8-93af-c706c0571fb4.PNG)
+
+![waterbottlefixed](https://user-images.githubusercontent.com/11263073/49331375-01e09980-f59c-11e8-9b62-34c7b8e5a986.PNG)
+
+![metallicspheres](https://user-images.githubusercontent.com/11263073/49331373-01e09980-f59c-11e8-87c1-63c320ec9e3b.PNG)
+
+![sponza](https://user-images.githubusercontent.com/11263073/49331374-01e09980-f59c-11e8-9306-beaec08e8ad6.PNG)
+
+![correct colors](https://user-images.githubusercontent.com/11263073/49331468-ad3e1e00-f59d-11e8-9a1a-86813ea4f85e.PNG)
+
 
 ## Main Features
 
