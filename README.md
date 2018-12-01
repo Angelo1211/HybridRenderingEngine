@@ -5,10 +5,9 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
 [![GitHub issues](https://img.shields.io/github/issues/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/issues)
 
+HRE is a real-time, Physically based, Clustered renderer built with OpenGL and based on the techniques described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. The aim of this project is to build a testing framework to showcase deferred and forward graphics techniques (hence the hybrid part) and to examine the strengths of Clustered shading. 
 
-HRE is a real-time, Physically Based, Clustered renderer built with OpenGL and based on the technique described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. Clustered shading offers two major benefits over traditional rendering algorithms: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends, as GPU compute capabilities continue to outpace memory bandwidth growth. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti).
-
-HRE is built with the sole aim of showcasing the strengths of this rendering algorithm and is currently in active development, with planned features outlined for the coming months.  
+This algorithm was selected for its two major benefits over traditional deferred/tiled solutions: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends, as improvements in GPU compute capabilities continually outpace memory bandwidth growth. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti). 
 
 ## Download
 
@@ -40,20 +39,19 @@ Currently only Windows platforms are supported.
 * Directional light dynamic shadow mapping
 * Static Omnidirectional Shadow Mapping for Point Lights
 * Forward, Tiled Forward and Deferred rendering implementations
-    * Located in other branches of the repo. Only clustered rendering is actively being developed
+    * Located in other branches of the repo. Only clustered rendering is actively being developed.
 
 ### Engine
 * OpenGL 4.5+
 * SDL2 backend 
 * JSON Parsing via Nlohmann: JSON for C++
 * Model Loading via ASSIMP (OBJ, FBX, gLTF2.0 etc)
-* Scene contents outlined in JSON file
+* Scene contents clearly outlined in JSON file
 * Multiple image loading paths via stb-image and GLI
 * Immediate mode GUI for debugging via ImGUI
 * Fully commented for future referencing
-* Environment map generation on load (for skyboxes)
+* Environment map generation on load for IBL and skyboxes
 * Free flight camera
-* Windows Platform
 
 ## Development Timeline & Planned Features
 
@@ -76,11 +74,9 @@ The first development cycle began September 2018 and concluded late November 201
 * Advanced environment mapping
 * View Frustum culling
 * Compute shader based particles
-* Approaching Zero Driver Overhead (AZDO)
+* Include Approaching Zero Driver Overhead (AZDO) principles 
 
-I'll be writing accompanying blog posts at the end of each major milestone, outlining the new features and their implementations and any complications I found along the way.
-
-Meanwhile, [Here's the first post]() which contains an overview of other traditional rendering algorithms and builds the case for Clustered rendering. 
+I'll be writing accompanying blog posts at the end of each major milestone, outlining the new features and their implementations and any complications I found along the way. Meanwhile, [Here's the first post]() which contains an overview of other traditional rendering algorithms and builds the case for Clustered rendering. 
 
 ## Repository structure
 
@@ -94,7 +90,7 @@ Hybrid Rendering Engine
 |   |   |-- OldShaders      # Shaders not currently in use
 |   |   `-- currentShaders  # Shaders for the current rendering pipeline
 |   `-- skyboxes            # Skyboxes in either cubemap or equirectangular map form
-|-- build                   
+|-- build                   # CMake compile  
 |-- include                 # Project header files
 |-- libs                    # Check dependencies section for descriptions & links
 |   |-- ASSIMP               
@@ -112,26 +108,29 @@ Hybrid Rendering Engine
 
 ## Dependencies 
 
-In my previous project, [SSGE](https://github.com/Angelo1211/SoftwareRenderer), I made an effort to reduce the amount of dependencies to a minimum. This time however, the pendulum has swung the other way and I've made no restriction whatsoever (within reason) as to what libraries I would include in the project. I did this because I wanted to get more comfortable with the process of including and working with external libraries in C++.
+In my previous project, [SSGE](https://github.com/Angelo1211/SoftwareRenderer), I made an effort to reduce the amount of dependencies to a minimum. This time however, the pendulum has swung the other way and I've made no restriction whatsoever (within reason) as to what libraries I could include in the project. I did this because I wanted to get more comfortable with the process of including and working with external libraries in C++.
 
 Here's a list of the libraries currently included in the project:
 
 * [ASSIMP](https://github.com/assimp/assimp): Mesh and material loading.
-* [CMake](https://github.com/Kitware/CMake): Build generation.
 * [dear imgui,](https://github.com/ocornut/imgui): Immediate Mode GUI.
 * [glad](https://github.com/Dav1dde/glad): GL loader-generator.
 * [JSON for Modern C++](https://github.com/nlohmann/json): Scene description and serialization.
-* [OpenGL](https://www.opengl.org/): All things GPU & graphics.
 * [OpenGL Image (GLI)](https://github.com/g-truc/gli): Image loading for DDS files.
 * [OpenGL Mathematics (GLM)](https://glm.g-truc.net/0.9.9/index.html): Linear algebra / matrix library.
 * [SDL2](https://www.libsdl.org/download-2.0.php): Hardware abstraction layer.
 * [stb_image](https://github.com/nothings/stb): Image loading/decoding for JPG, PNG, HDR.
 
-All libraries are included under their respective licenses which can be found in the links above or in the licenses markdown document.
+Here's a list of the libraries **not** included:
+
+* [CMake](https://github.com/Kitware/CMake): Build generation.
+* [OpenGL](https://www.opengl.org/): All things GPU & graphics.
+
+All included libraries are represented here under their respective licenses which can be found in the links above or in the licenses.txt doc in the libs folder.
 
 ## References
 
-There's a comprehensive indexed list of references for the project that I keep more or less up to date in this [page of the wiki](). However, I find myself constantly returning to a subset of them for further reading or when I need inspiration, so I've added links below to share them and spread the word of their awesomeness. Check them out! 
+There's a comprehensive indexed list of references for the project that I keep more or less up to date in this [page of the wiki](https://github.com/Angelo1211/HybridRenderingEngine/wiki/References). However, I find myself constantly returning to a subset of them for further reading or when I need inspiration, so I've added links below to share them and spread the word of their awesomeness. Check them out! 
 
 * [Learn OpenGL](https://learnopengl.com/Introduction): OpenGL tutorials and general introduction to 3D graphics concepts.
 * [Parallel Computer Architecture and Programming](http://15418.courses.cs.cmu.edu/tsinghua2017/home) : Intro to the GPU programming model. 
