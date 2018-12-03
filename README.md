@@ -86,7 +86,7 @@ The first development cycle began September 2018 and concluded late November 201
 * Compute shader based particles
 * Include Approaching Zero Driver Overhead (AZDO) principles 
 
-I'll be writing accompanying blog posts at the end of each major milestone, outlining the new features and their implementations and any complications I found along the way. Meanwhile, [Here's the first post]() which contains an overview of other traditional rendering algorithms and builds the case for Clustered rendering. 
+I'll be writing accompanying blog posts at the end of each major milestone, outlining the new features and their implementations and any complications I found along the way. Meanwhile, [Here's the first post](http://www.aortiz.me/2018/06/15/CG.html) which contains an overview of other traditional rendering algorithms and builds the case for Clustered rendering. 
 
 ## Repository structure
 
