@@ -2,7 +2,6 @@
 
 
 [![GitHub license](https://img.shields.io/github/license/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/blob/master/LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/Angelo1211/HybridRenderingEngine)
 [![GitHub issues](https://img.shields.io/github/issues/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/issues)
 
 HRE is a real-time, Physically based, Clustered renderer built with OpenGL and based on the techniques described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. The aim of this project is to build a testing framework to showcase deferred and forward graphics techniques (hence the hybrid part) and to examine the strengths of Clustered shading. 
