@@ -4,9 +4,9 @@
 [![GitHub license](https://img.shields.io/github/license/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/blob/master/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/issues)
 
-HRE is a real-time, Physically based, Clustered renderer built with OpenGL and based on the techniques described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. The aim of this project is to build a testing framework to showcase deferred and forward graphics techniques (hence the hybrid part) and to examine the strengths of Clustered shading. 
+HRE is a real-time, Physically based, Clustered renderer built with OpenGL and based on the techniques described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. The aim of this project is to build a testing framework to showcase deferred and forward graphics techniques (hence the hybrid part) and to examine the strengths of Clustered shading. I wrote a lengthy blog post full of cool animations that can serve as an introduction to efficient rendering algorithms as well as a detailed guide of my implementation of Clustered Shading, so make sure to check it out [here!](http://www.aortiz.me/2018/12/21/CG.html)
 
-This algorithm was selected for its two major benefits over traditional deferred/tiled solutions: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends, as improvements in GPU compute capabilities continually outpace memory bandwidth growth. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti). 
+This algorithm was selected for its two major benefits over traditional deferred/tiled solutions: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti). 
 
 ## Download
 
@@ -64,7 +64,7 @@ Currently only Windows platforms are supported.
 
 ## Development Timeline & Planned Features
 
-The first development cycle began September 2018 and concluded late November 2018 with the inclusion of Image Based Lighting and the release of the first stable version: [HRE 0.01 "Aachen"](). For the next couple of months I'll be tackling the issues outlined in the [Projects section](https://github.com/Angelo1211/HybridRenderingEngine/projects) beginning with fixes for the remaining non-critical bugs and then moving on to a major re-write of the material system. The following is a a list of the engine features I aim to include over the coming months, it's obviously subject to change and all that stuff. 
+The first development cycle began September 2018 and concluded December 2018 with the inclusion of Image Based Lighting and the release of the first stable version: HRE 0.01 "Aachen". For the next couple of months I'll be tackling the issues outlined in the [Projects section](https://github.com/Angelo1211/HybridRenderingEngine/projects) beginning with fixes for the remaining non-critical bugs and then moving on to a major re-write of the material system. The following is a a list of the engine features I aim to include over the coming months, it's obviously subject to change and all that stuff. 
 
 #### Update #1: Materials & Shadow Mapping
  * Full material system re-write to decouple mesh & textures.
@@ -85,7 +85,7 @@ The first development cycle began September 2018 and concluded late November 201
 * Compute shader based particles
 * Include Approaching Zero Driver Overhead (AZDO) principles 
 
-I'll be writing accompanying blog posts at the end of each major milestone, outlining the new features and their implementations and any complications I found along the way. Meanwhile, [Here's the first post](http://www.aortiz.me/2018/06/15/CG.html) which contains an overview of other traditional rendering algorithms and builds the case for Clustered rendering. 
+I'll be writing accompanying blog posts at the end of each major milestone, outlining the new features and their implementations and any complications I found along the way. Meanwhile, [Here's the first post](http://www.aortiz.me/2018/12/21/CG.html) which contains an overview of other traditional rendering algorithms and builds the case for Clustered rendering. 
 
 ## Repository structure
 
@@ -167,7 +167,7 @@ If I've mis-acknowledged, misattributed, or missed any references, please, creat
 
 ### Graphics Programming Community <3
 
-Shout-out to Kostas Anagnostou and Eric Arnebäck for taking the time to answer all of my questions for the last couple of months, your explanations made understanding every daunting topic a breeze!
+Shout-out to Kostas Anagnostou and Eric Arnebäck for taking the time to answer all of my questions for the last couple of months, your explanations made understanding every daunting topic so much easier!
 
 ## License
 
