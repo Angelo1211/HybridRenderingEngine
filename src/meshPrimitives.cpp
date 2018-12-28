@@ -34,7 +34,6 @@ void Primitive::draw(const unsigned int readTexture1, const unsigned int readTex
 
     glDrawArrays(GL_TRIANGLES, 0, numVertices);
 
-    glBindVertexArray(0);
 }
 
 //----------------------------------------------------------------------------------------------------

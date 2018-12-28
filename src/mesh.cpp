@@ -49,13 +49,11 @@ void Mesh::draw(const Shader &shader, bool textured){
             shader.setInt("metalRoughMap", 4);
             glBindTexture(GL_TEXTURE_2D, textures[4]);
 
-            glActiveTexture(GL_TEXTURE0);
     }
 
     //Mesh Drawing
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
 }
 
 //Sending the data to the GPU and formatting it in memory

@@ -19,32 +19,38 @@ RenderManager::~RenderManager(){}
 //Sets the internal pointers to the screen and the current scene and inits the software
 //renderer instance. 
 bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneManager ){
+    printf("\nInitializing Renderer.\n");
     //Getting pointers to the data we'll render
     screen = &displayManager;
     sceneLocator = &sceneManager;
     currentScene = sceneLocator->getCurrentScene();
     sceneCamera = currentScene->getCurrentCamera();
 
+    printf("Loading FBO's...\n");
     if( !initFBOs() ){
         printf("FBO's failed to be initialized correctly.\n");
         return false;
     }
-    
+ 
+    printf("Loading Shaders...\n");
     if (!loadShaders()){
         printf("Shaders failed to be initialized correctly.\n");
         return false;
     }
 
+    printf("Loading SSBO's...\n");
     if (!initSSBOs()){
         printf("SSBO's failed to be initialized correctly.\n");
         return false;
     }
 
+    printf("Preprocessing...\n");
     if (!preProcess()){
         printf("SSBO's failed to be initialized correctly.\n");
         return false;
     }
 
+    printf("Renderer Initialization complete.\n");
     return true;
 }
 
@@ -94,7 +100,7 @@ bool RenderManager::preProcess(){
     for (unsigned int i = 0; i < currentScene->pointLightCount; ++i){
         pointLightShadowFBOs[i].bind();
         pointLightShadowFBOs[i].clear(GL_DEPTH_BUFFER_BIT, glm::vec3(1.0f));
-        currentScene->drawPointLightShadow(pointShadowShader, i, pointLightShadowFBOs[i].depthBuffer);
+        currentScene->drawPointLightShadow(pointShadowShader,i, pointLightShadowFBOs[i].depthBuffer);
     }
 
     // Directional shadows
