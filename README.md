@@ -1,12 +1,15 @@
 # HRE :: Hybrid (Clustered Forward/Deferred) Rendering Engine 
 
-
 [![GitHub license](https://img.shields.io/github/license/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/blob/master/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/Angelo1211/HybridRenderingEngine.svg)](https://github.com/Angelo1211/HybridRenderingEngine/issues)
 
-HRE is a real-time, Physically based, Clustered renderer built with OpenGL and based on the techniques described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. The aim of this project is to build a testing framework to showcase deferred and forward graphics techniques (hence the hybrid part) and to examine the strengths of Clustered shading. I wrote a lengthy blog post full of cool animations that can serve as an introduction to efficient rendering algorithms as well as a detailed guide of my implementation of Clustered Shading, so make sure to check it out [here!](http://www.aortiz.me/2018/12/21/CG.html)
+HRE was a real-time, Physically based, Clustered renderer built with OpenGL and based on the techniques described on the paper [Clustered Deferred and Forward shading](http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf) by Ola Olsson, Markus Billeter and Ulf Assarsson. The aim of this project is to build a testing framework to showcase deferred and forward graphics techniques (hence the hybrid part) and to examine the strengths of Clustered shading. I wrote a lengthy blog post full of cool animations that can serve as an introduction to efficient rendering algorithms as well as a detailed guide of my implementation of Clustered Shading, so make sure to check it out [here!](http://www.aortiz.me/2018/12/21/CG.html)
 
 This algorithm was selected for its two major benefits over traditional deferred/tiled solutions: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti). 
+
+### Project is now archived :(
+
+Unfortunately this project is no longer maintained. I got hired to work at Rockstar Games as a Graphics Programmer shortly after posting this and don't have the time to work on a sideproject of this size anymore. I plan on keeping it up (as well as my other major graphics project [SSGE](https://github.com/Angelo1211/SoftwareRenderer)) so others can see what it took me to break into the industry. I will still be helping anyone who runs into any issues with it or has any questions about it. Feel free to reach me here or at [my twitter](https://twitter.com/aortizelguero) about this or any other GFX topic you'd like to talk about! Thanks to everyone who checked this project out! :D 
 
 ## Download
 
@@ -62,7 +65,9 @@ Currently only Windows platforms are supported.
 * Environment map generation on load for IBL and skyboxes
 * Free flight camera
 
-## Development Timeline & Planned Features
+## Development Timeline & Planned Features 
+
+### Alas, I am unfortunately unable to work on this project anymore and won't be updating it any time soon. I am still keeping this section in here as a record in case I ever do return and as proof of my naive optimism. Thanks to everyone who checked out this project! :) 
 
 The first development cycle began September 2018 and concluded December 2018 with the inclusion of Image Based Lighting and the release of the first stable version: HRE 0.01 "Aachen". For the next couple of months I'll be tackling the issues outlined in the [Projects section](https://github.com/Angelo1211/HybridRenderingEngine/projects) beginning with fixes for the remaining non-critical bugs and then moving on to a major re-write of the material system. The following is a a list of the engine features I aim to include over the coming months, it's obviously subject to change and all that stuff. 
 
