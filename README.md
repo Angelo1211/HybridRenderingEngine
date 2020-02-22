@@ -7,7 +7,7 @@ HRE was a real-time, Physically based, Clustered renderer built with OpenGL and 
 
 This algorithm was selected for its two major benefits over traditional deferred/tiled solutions: it allows for more freedom to choose forward or deferred shading paths as desired and is a better long term fit for the modern GPU performance trends. It has already been succesfully implemented in some of the best looking games of the last couple of years, with some notable examples being: [DOOM 2016](https://www.slideshare.net/TiagoAlexSousa/siggraph2016-the-devil-is-in-the-details-idtech-666), [Just Cause 3](http://www.humus.name/Articles/PracticalClusteredShading.pdf) and [Detroit: Become Human](https://www.gdcvault.com/play/1025420/Cluster-Forward-Rendering-and-Anti). 
 
-### Project is now archived :(
+### Project is now on hold :(
 
 Unfortunately this project is no longer maintained. I got hired to work at Rockstar Games as a Graphics Programmer shortly after posting this and don't have the time to work on a sideproject of this size anymore. I plan on keeping it up (as well as my other major graphics project [SSGE](https://github.com/Angelo1211/SoftwareRenderer)) so others can see what it took me to break into the industry. I will still be helping anyone who runs into any issues with it or has any questions about it. Feel free to reach me here or at [my twitter](https://twitter.com/aortizelguero) about this or any other GFX topic you'd like to talk about! Thanks to everyone who checked this project out! :D 
 
