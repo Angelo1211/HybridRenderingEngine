@@ -210,7 +210,7 @@ void main(){
     radianceOut += emissive;
 
     if(slices){
-        FragColor = vec4(colors[uint(mod(zTile, 8.0))], 1.0);
+        FragColor = vec4(colors[uint(mod(zTile, 8))], 1.0);
     }
     else{
         FragColor = vec4(radianceOut, 1.0);

@@ -24,7 +24,7 @@ void Skybox::draw(){
 
 //Two setup paths for HDR and non HDR cubemap
 void Skybox::setup(const std::string &skyboxName, bool isHDR, int res){
-    std::string skyBoxFolderPath = "../assets/skyboxes/";
+    std::string skyBoxFolderPath = "../../../assets/skyboxes/";
     skyBoxFolderPath += skyboxName;
     std::string skyBoxFilePath = skyBoxFolderPath + "/" + skyboxName + ".hdr";
 

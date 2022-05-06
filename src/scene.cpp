@@ -13,7 +13,7 @@ DATE	     : 2018-09-12
 #include "imgui/imgui.h"
 
 Scene::Scene(const std::string &sceneName){
-    std::string folderPath = "../assets/scenes/";
+    std::string folderPath = "../../../assets/scenes/";
     std::string fileExtension = ".json";
     sceneID = sceneName;
 
@@ -252,7 +252,7 @@ PointLight *Scene::getPointLight(unsigned int index){
 //Config file parsing, gets all the important 
 bool Scene::loadContent(){
     //Parsing into Json file readable format
-    std::string folderPath = "../assets/scenes/";
+    std::string folderPath = "../../../assets/scenes/";
     std::string fileExtension = ".json";
     std::string sceneConfigFilePath = folderPath + sceneID + fileExtension;
     std::ifstream file(sceneConfigFilePath.c_str());
@@ -394,7 +394,7 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
     for (unsigned int i = 0; i < modelCount; ++i){
         //get model mesh and material info
         json currentModel = sceneConfigJson["models"][i];
-        modelMesh = currentModel["mesh"];
+        modelMesh = currentModel["mesh"].get<std::string>();
         IBL       = currentModel["IBL"];
 
         modelName = modelMesh.substr(0, modelMesh.find_last_of('.'));
@@ -415,7 +415,7 @@ void Scene::loadSceneModels(const json &sceneConfigJson ){
         initParameters.scaling = glm::vec3((float)scaling[0], (float)scaling[1], (float)scaling[2]);
 
         //attempts to load model with the initparameters it has read
-        modelMesh = "../assets/models/" + modelName + "/" + modelMesh;
+        modelMesh = "../../../assets/models/" + modelName + "/" + modelMesh;
         if (!FLOAD::checkFileValidity(modelMesh)){
             printf("Error! Mesh: %s does not exist.\n", modelMesh.c_str());
         }

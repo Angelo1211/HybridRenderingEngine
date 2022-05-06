@@ -15,7 +15,7 @@ DATE	     : 2018-09-08
 bool Shader::setup(const std::string vertexPath, const std::string fragmentPath, const std::string geometryPath){
     //Getting the vertex shader code from the text file at file path
     bool gShaderOn = geometryPath != "";
-    std::string shaderFolderPath = "../assets/shaders/";
+    std::string shaderFolderPath = "../../../assets/shaders/";
 
     std::string vertexCode, fragmentCode, geometryCode;
     std::stringstream vShaderStream, fShaderStream, gShaderStream;
@@ -150,7 +150,7 @@ void Shader::setVec3(const std::string &name, const glm::vec3 &vec) const {
 //Could be simplified?
 bool ComputeShader::setup(const std::string computePath){
     //Getting the compute shader code from the text file at file path
-    std::string shaderFolderPath = "../assets/shaders/ComputeShaders/";
+    std::string shaderFolderPath = "../../../assets/shaders/ComputeShaders/";
     std::string computeCode;
     std::ifstream cShaderFile(shaderFolderPath + computePath);
     std::stringstream cShaderStream;
