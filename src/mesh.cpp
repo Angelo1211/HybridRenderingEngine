@@ -53,7 +53,7 @@ void Mesh::draw(const Shader &shader, bool textured){
 
     //Mesh Drawing
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, NULL);
 }
 
 //Sending the data to the GPU and formatting it in memory
