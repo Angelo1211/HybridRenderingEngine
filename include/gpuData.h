@@ -1,5 +1,5 @@
 #ifndef GPUDATA_H
-#define GPUTDATA_H
+#define GPUDATA_H
 
 /*
 AUTHOR       : Angel Ortiz (angelo12 AT vt DOT edu)
