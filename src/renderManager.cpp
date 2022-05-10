@@ -406,6 +406,7 @@ void RenderManager::postProcess(const unsigned int start){
 
         //Vertical pass
         glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO.frameBufferID);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
         gaussianBlurShader.setBool("horizontal", false);
         canvas.draw(simpleFBO.blurHighEnd);
     }

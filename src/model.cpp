@@ -152,7 +152,8 @@ std::vector<unsigned int> Model::processTextures(const aiMaterial *material){
             //If this texture has not been added to the atlas yet we load it
             if (textureAtlas.count(fullTexturePath) == 0){
                 Texture texture;
-                bool srgb = false;
+                // Diffuse is sRGB, the rest aren't
+                bool srgb = tex == aiTextureType_DIFFUSE;
                 texture.loadTexture(fullTexturePath, srgb);
                 textureAtlas.insert({fullTexturePath, texture});
             }
