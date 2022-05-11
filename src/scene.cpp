@@ -17,7 +17,7 @@ Scene::Scene(const std::string &sceneName){
     std::string fileExtension = ".json";
     sceneID = sceneName;
 
-    printf("\nBeginning Scene load, checking scene description file:\n");
+    printf("\nBeginning Scene load, checking scene description file: %s %s \n", sceneID.c_str(), folderPath.c_str());
     if( !FLOAD::checkFileValidity(folderPath + sceneName + fileExtension) ){
         //If you do not find the scene file set the quit flag to true 
         printf("Cannot find scene descriptor file for %s \n", sceneID.c_str());

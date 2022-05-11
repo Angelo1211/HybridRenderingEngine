@@ -17,6 +17,7 @@ SceneManager::~SceneManager(){}
 bool SceneManager::startUp(){
     // currentSceneID = "pbrTest";
     currentSceneID = "Sponza";
+    // currentSceneID = "sponza";
     if (!loadScene(currentSceneID)){
         printf("Could not load default sponza scene. No models succesfully loaded!\n");
         return false;
