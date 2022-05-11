@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.7)
 project(hybridRenderer)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/modules")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS  "-fPIC")
 
 if(WIN32)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -14,13 +16,30 @@ if(WIN32)
   endif()
 endif()
 
+
+option(ENABLE_ASSIMP "using ASSIMP as importor or not" ON)
+
+
 find_package(OpenMP REQUIRED)
 
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR} include libs)
 
-find_package(ASSIMP REQUIRED)
-include_directories(${ASSIMP_INCLUDE_DIR} include libs )
+if (ENABLE_ASSIMP)
+    # set(ASSIMP_BUILD_SMD_IMPORTER OFF)
+    set(ASSIMP_BUILD_AC_IMPORTER OFF)
+    set(ASSIMP_BUILD_Q3D_IMPORTER OFF)
+    set(ASSIMP_BUILD_CSM_IMPORTER OFF)
+    set(ASSIMP_BUILD_ASSJSON_IMPORTER OFF)
+    set(ASSIMP_BUILD_STEP_IMPORTER OFF)
+    set(ASSIMP_BUILD_PBRT_IMPORTER OFF)
+    set(ASSIMP_BUILD_3MF_IMPORTER OFF)
+    set(ASSIMP_BUILD_ASSXML_IMPORTER OFF)
+    add_subdirectory(external/assimp)
+    set(ASSIMP_INCLUDE_DIRS "external/assimp/include" "external/assimp/build/include")
+    include_directories(${ASSIMP_INCLUDE_DIRS})
+    include_directories(${PROJECT_SOURCE_DIR}/external/assimp/include)
+endif()
 
 # Some useful compiler flags
 #-fopt-info-vec-all -xCORE-AVX2 -no-prec-sqrt -g -ffast-math -static -static-libgcc -static-libstdc++ 
@@ -35,6 +54,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
 target_link_libraries(hybridRenderer ${SDL2_LIBRARY})
 target_link_libraries(hybridRenderer ${ASSIMP_LIBRARY})
+target_link_libraries(hybridRenderer assimp)
 
 if(WIN32)
     set_target_properties(hybridRenderer PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build")

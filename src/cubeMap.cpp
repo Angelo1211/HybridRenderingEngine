@@ -161,8 +161,8 @@ void CubeMap::preFilterCubeMap(const unsigned int environmentMap,
     //For each Mip level we have to pre-filter the cubemap at each cube face
     for( unsigned int mip = 0; mip < maxMipLevels; ++mip){
         //Mip levels are decreasing powers of two of the original resolution of the cubemap
-        unsigned int mipWidth  = unsigned int( width  * std::pow(0.5f, mip));
-        unsigned int mipHeight = unsigned int( height * std::pow(0.5f, mip));
+        unsigned int mipWidth  = (unsigned int)( width  * std::pow(0.5f, mip));
+        unsigned int mipHeight = (unsigned int)( height * std::pow(0.5f, mip));
 
         //The depth component needs to be resized for each mip level too
         glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);

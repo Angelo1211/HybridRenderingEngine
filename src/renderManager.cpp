@@ -11,6 +11,7 @@ DATE	     : 2018-09-13
 #include "debugUtils.h"
 #include "gpuData.h"
 #include "cmath"
+#include <algorithm>
 
 //Dummy constructors / Destructors
 RenderManager::RenderManager(){}
@@ -115,7 +116,7 @@ bool RenderManager::preProcess(){
 //TODO:: some of the buffer generation and binding should be abstracted into a function
 bool RenderManager::initSSBOs(){
     //Setting up tile size on both X and Y 
-    sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
+    sizeX =  (unsigned int)::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
 
     float zFar    =  sceneCamera->cameraFrustum.farPlane;
     float zNear   =  sceneCamera->cameraFrustum.nearPlane;
