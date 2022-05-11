@@ -6,6 +6,7 @@ DATE	     : 2018-09-08
 */
 
 #include "shader.h"
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -22,7 +23,7 @@ bool Shader::setup(const std::string vertexPath, const std::string fragmentPath,
     std::ifstream vShaderFile(shaderFolderPath + vertexPath),
                   fShaderFile(shaderFolderPath + fragmentPath),
                   gShaderFile(shaderFolderPath + geometryPath);
-
+    printf("frag: %s, vert: %s \n", fragmentPath.c_str(), vertexPath.c_str());
     //Check if shader files exist
     if(!vShaderFile.good()){
         printf("Couldn't find vertex shader file: %s in shaders folder.\n ", vertexPath.c_str());
