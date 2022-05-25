@@ -165,11 +165,11 @@ void main(){
     uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0.0));
     uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy * tileSizePx ), zTile);
     uint tileIndex = tiles.x +
+                     tileSizeX * tiles.y +
+                     (tileSizeX * tileSizeY) * tiles.z;
 
     //Solving outgoing reflectance of fragment
     vec3 radianceOut = vec3(0.0);
-                     tileSizeX * tiles.y +
-                     (tileSizeX * tileSizeY) * tiles.z;
 
     // shadow calcs
     float shadow = calcDirShadow(fs_in.fragPos_lS);
