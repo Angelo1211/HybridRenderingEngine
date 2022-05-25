@@ -55,6 +55,8 @@ bool RenderManager::startUp(DisplayManager &displayManager, SceneManager &sceneM
 }
 
 bool RenderManager::preProcess(){
+    glDisable(GL_BLEND);
+
     //Initializing the surface that we use to draw screen-space effects
     canvas.setup();
 
@@ -340,7 +342,8 @@ void RenderManager::render(){
         ImGui::InputFloat3("Camera Pos", (float*)&sceneCamera->position); //Camera controls
         ImGui::SliderFloat("Movement speed", &sceneCamera->camSpeed, 0.005f, 1.0f);
     }
-    //Making sure depth testing is enabled 
+
+    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
 
