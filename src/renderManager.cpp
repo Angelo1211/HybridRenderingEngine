@@ -326,7 +326,7 @@ Algorithm steps:
 5. Shading by reading from the active tiles list :: DONE 
 6. Post processing and screen space effects :: DONE
 */
-void RenderManager::render(const unsigned int start){
+void RenderManager::render(){
     //Initiating rendering gui
     ImGui::Begin("Rendering Controls");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -369,7 +369,7 @@ void RenderManager::render(const unsigned int start){
     multiSampledFBO.blitTo(simpleFBO, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //6 -postprocessing, includes bloom, exposure mapping
-    postProcess(start);
+    postProcess();
 
     //Rendering gui scope ends here cannot be done later because the whole frame
     //is reset in the display buffer swap
@@ -381,7 +381,7 @@ void RenderManager::render(const unsigned int start){
 }
 
 
-void RenderManager::postProcess(const unsigned int start){
+void RenderManager::postProcess(){
     if(ImGui::CollapsingHeader("Post-processing")){
         ImGui::SliderInt("Blur", &sceneCamera->blurAmount, 0, 10);
         ImGui::SliderFloat("Exposure", &sceneCamera->exposure, 0.1f, 5.0f);
@@ -419,7 +419,6 @@ void RenderManager::postProcess(const unsigned int start){
     //Shader setup for postprocessing
     screenSpaceShader.use();
 
-    screenSpaceShader.setInt("offset", start);
     screenSpaceShader.setFloat("exposure", sceneCamera->exposure);
     screenSpaceShader.setInt("screenTexture", 0);
     screenSpaceShader.setInt("bloomBlur", 1);

@@ -5,7 +5,6 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform sampler2D bloomBlur;
-uniform int offset; 
 uniform float exposure;
 
 void main(){

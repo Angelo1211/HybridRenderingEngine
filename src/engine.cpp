@@ -91,7 +91,7 @@ void Engine::run(){
         //Update all models, camera and lighting in the current scene
         gSceneManager.update(deltaT);
 
-        gRenderManager.render(start);
+        gRenderManager.render();
 
         //Obtaining deltaT for any 
         deltaT = SDL_GetTicks() - start;

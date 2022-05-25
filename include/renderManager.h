@@ -42,7 +42,7 @@ class RenderManager{
         //optimizations. In the future, (the magical land where all projects are complete) I plan on
         //heavily optimizing this part of the program along the lines of the 2014 talk, "beyond porting"
         //But in the mean-time it uses pretty basic an naive openGL.
-        void render(const unsigned int start);
+        void render();
     private:
         //Internal initialization functions
         bool initFBOs();
@@ -53,7 +53,7 @@ class RenderManager{
         bool preProcess(); 
 
         //Functions used to break up the main render function into more manageable parts.
-        void postProcess(const unsigned int start);
+        void postProcess();
 
         //Todo:: shaders should belong to a material not the rendermanager
         Shader depthPrePassShader, PBRClusteredShader, skyboxShader,

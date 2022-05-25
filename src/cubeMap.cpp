@@ -168,7 +168,9 @@ void CubeMap::preFilterCubeMap(const unsigned int environmentMap,
         glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
         glViewport(0, 0, mipWidth, mipHeight);
-        
+
+        filterShader.setFloat("roughness", mip / (float)(maxMipLevels - 1));
+
         for(unsigned int i = 0; i < numSidesInCube; ++i){
             filterShader.setMat4("view", captureViews[i]);
 
