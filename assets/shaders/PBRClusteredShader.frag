@@ -14,7 +14,6 @@ in VS_OUT{
     vec3 T;
     vec3 B;
     vec3 N;
-    mat3 TBN;
 } fs_in;
 
 //Dir light uniform
@@ -61,10 +60,16 @@ struct LightGrid{
 };
 layout (std430, binding = 2) buffer screenToView{
     mat4 inverseProjection;
-    uvec4 tileSizes;
-    uvec2 screenDimensions;
+    uint tileSizeX;
+    uint tileSizeY;
+    uint tileSizeZ;
+    uint padding1;
+    vec2 tileSizePx;
+    vec2 viewPxSize;
     float scale;
     float bias;
+    uint padding2;
+    uint padding3;
 };
 layout (std430, binding = 3) buffer lightSSBO{
     PointLight pointLight[];
@@ -158,13 +163,13 @@ void main(){
 
     //Locating which cluster you are a part of
     uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0.0));
-    uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy / tileSizes[3] ), zTile);
+    uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy * tileSizePx ), zTile);
     uint tileIndex = tiles.x +
-                     tileSizes.x * tiles.y +
-                     (tileSizes.x * tileSizes.y) * tiles.z;  
 
     //Solving outgoing reflectance of fragment
     vec3 radianceOut = vec3(0.0);
+                     tileSizeX * tiles.y +
+                     (tileSizeX * tileSizeY) * tiles.z;
 
     // shadow calcs
     float shadow = calcDirShadow(fs_in.fragPos_lS);

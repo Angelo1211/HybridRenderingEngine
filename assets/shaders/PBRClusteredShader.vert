@@ -19,7 +19,6 @@ out VS_OUT{
     vec3 T;
     vec3 B;
     vec3 N;
-    mat3 TBN;
 } vs_out;
 
 uniform mat4 MVP;

@@ -116,6 +116,7 @@ bool RenderManager::preProcess(){
 bool RenderManager::initSSBOs(){
     //Setting up tile size on both X and Y 
     sizeX =  (unsigned int)std::ceilf(DisplayManager::SCREEN_WIDTH / (float)gridSizeX);
+    sizeY =  (unsigned int)std::ceilf(DisplayManager::SCREEN_HEIGHT / (float)gridSizeY);
 
     float zFar    =  sceneCamera->cameraFrustum.farPlane;
     float zNear   =  sceneCamera->cameraFrustum.nearPlane;
@@ -138,12 +139,13 @@ bool RenderManager::initSSBOs(){
 
         //Setting up contents of buffer
         screen2View.inverseProjectionMat = glm::inverse(sceneCamera->projectionMatrix);
-        screen2View.tileSizes[0] = gridSizeX;
-        screen2View.tileSizes[1] = gridSizeY;
-        screen2View.tileSizes[2] = gridSizeZ;
-        screen2View.tileSizes[3] = sizeX;
-        screen2View.screenWidth  = DisplayManager::SCREEN_WIDTH;
-        screen2View.screenHeight = DisplayManager::SCREEN_HEIGHT;
+        screen2View.tileSizeX = gridSizeX;
+        screen2View.tileSizeY = gridSizeY;
+        screen2View.tileSizeZ = gridSizeZ;
+        screen2View.tilePixelSize.x = 1.0f / (float)sizeX;
+        screen2View.tilePixelSize.y = 1.0f / (float)sizeY;
+        screen2View.viewPixelSize.x = 1.0f / (float)DisplayManager::SCREEN_WIDTH;
+        screen2View.viewPixelSize.y = 1.0f / (float)DisplayManager::SCREEN_HEIGHT;
         //Basically reduced a log function into a simple multiplication an addition by pre-calculating these
         screen2View.sliceScalingFactor = (float)gridSizeZ / std::log2f(zFar / zNear) ;
         screen2View.sliceBiasFactor    = -((float)gridSizeZ * std::log2f(zNear) / std::log2f(zFar / zNear)) ;

@@ -19,11 +19,16 @@ struct VolumeTileAABB{
 
 struct ScreenToView{
     glm::mat4 inverseProjectionMat;
-    unsigned int tileSizes[4];
-    unsigned int screenWidth;
-    unsigned int screenHeight;
+    unsigned int tileSizeX;
+    unsigned int tileSizeY;
+    unsigned int tileSizeZ;
+    unsigned int padding1;
+    glm::vec2 tilePixelSize;
+    glm::vec2 viewPixelSize;
     float sliceScalingFactor;
     float sliceBiasFactor;
+    unsigned int padding2;
+    unsigned int padding3;
 }screen2View;
 
 #endif
