@@ -324,7 +324,7 @@ float calcPointLightShadows(samplerCube depthMap, vec3 fragToLight, float viewDi
     float currentDepth = (length(fragToLight) - bias);
 
     for(int i = 0; i < samples; ++i){
-        float closestDepth = texture(depthMap, fragToLight + sampleOffsetDirections[i], diskRadius).r;
+        float closestDepth = texture(depthMap, fragToLight + (sampleOffsetDirections[i] * diskRadius)).r;
         closestDepth *= far_plane;
         if(currentDepth > closestDepth){
             shadow += fraction;
