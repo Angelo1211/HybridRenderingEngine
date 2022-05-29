@@ -46,7 +46,7 @@ layout (std430, binding = 6) buffer globalIndexCountSSBO{
 };
 
 //Shared variables 
-shared PointLight sharedLights[16*9*4];
+shared uint sharedLights[16*9*4];
 
 uniform mat4 viewMatrix;
 
@@ -71,12 +71,12 @@ void main(){
         lightIndex = min(lightIndex, lightCount);
 
         //Populating shared light array
-        sharedLights[gl_LocalInvocationIndex] = pointLight[lightIndex];
+        sharedLights[gl_LocalInvocationIndex] = lightIndex;
         barrier();
 
         //Iterating within the current batch of lights
         for( uint light = 0; light < threadCount; ++light){
-            if( sharedLights[light].enabled  == 1){
+            if( pointLight[sharedLights[light]].enabled  == 1){
                 if( testSphereAABB(light, tileIndex) ){
                     visibleLightIndices[visibleLightCount] = batch * threadCount + light;
                     visibleLightCount += 1;
@@ -99,8 +99,8 @@ void main(){
 }
 
 bool testSphereAABB(uint light, uint tile){
-    float radius = sharedLights[light].range;
-    vec3 center  = vec3(viewMatrix * sharedLights[light].position);
+    float radius = pointLight[sharedLights[light]].range;
+    vec3 center  = vec3(viewMatrix * pointLight[sharedLights[light]].position);
     float squaredDistance = sqDistPointAABB(center, tile);
 
     return squaredDistance <= (radius * radius);
